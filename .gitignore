@@ -1,0 +1,8 @@
+.env
+
+tmp/
+assets/
+logs/
+tests/
+
+.idea
