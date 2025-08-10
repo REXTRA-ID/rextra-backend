@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"net/http"
 	myerror "rextra-backend/internal/pkg/error"
 	"rextra-backend/internal/pkg/response"
 
@@ -15,7 +14,7 @@ func (m Middleware) OnlyDebug() gin.HandlerFunc {
 		if secretToken != "Mint4AkseSdong!!" {
 			response.NewFailed(
 				"invalid secret token you are intruder",
-				myerror.New("no no no no yohan", http.StatusUnauthorized),
+				myerror.New("no no no no yohan", myerror.Error_Unauthorized),
 			).Send(ctx)
 			ctx.Abort()
 			return

@@ -3,15 +3,15 @@ package userService
 import (
 	"context"
 
+	userDto_response "rextra-backend/internal/api/user/dto/response"
 	userRepository "rextra-backend/internal/api/user/repository"
-	"rextra-backend/internal/dto"
 
 	"gorm.io/gorm"
 )
 
 type (
 	UserService interface {
-		GetById(ctx context.Context, userId string) (dto.UserResponse, error)
+		GetById(ctx context.Context, userId string) (userDto_response.UserResponse, error)
 	}
 
 	userService struct {
@@ -28,16 +28,16 @@ func New(userRepository userRepository.UserRepository,
 	}
 }
 
-func (s *userService) GetById(ctx context.Context, userId string) (dto.UserResponse, error) {
+func (s *userService) GetById(ctx context.Context, userId string) (userDto_response.UserResponse, error) {
 	// user, err := s.userRepository.GetByIdWithFilmList(ctx, nil, userId)
 	// if err != nil {
-	// 	return dto.UserResponse{}, err
+	// 	return userDto_response.UserResponse{}, err
 	// }
 
-	// return dto.UserResponse{
+	// return userDto_response.UserResponse{
 	// 	ID:          user.ID.String(),
 	// 	Username:    user.Username,
 	// 	PhoneNumber: us,
 	// }, nil
-	return dto.UserResponse{}, nil
+	return userDto_response.UserResponse{}, nil
 }

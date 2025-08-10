@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	authDto "rextra-backend/internal/api/auth/dto/request"
+	authDto_request "rextra-backend/internal/api/auth/dto/request"
+	authDto_response "rextra-backend/internal/api/auth/dto/response"
 	userRepository "rextra-backend/internal/api/user/repository"
-	"rextra-backend/internal/dto"
 	"rextra-backend/internal/entity"
 	mailer "rextra-backend/internal/pkg/email"
 	myerror "rextra-backend/internal/pkg/error"
@@ -15,7 +18,6 @@ import (
 
 	"github.com/google/uuid"
 
-	"net/http"
 	"os"
 	"time"
 
@@ -24,13 +26,13 @@ import (
 
 type (
 	AuthService interface {
-		Register(ctx context.Context, req dto.RegisterRequest, token string) (dto.RegisterResponse, error)
-		Login(ctx context.Context, req dto.LoginRequest) (dto.LoginResponse, error)
+		Register(ctx context.Context, req authDto_request.RegisterRequest, token string) (authDto_response.RegisterResponse, error)
+		Login(ctx context.Context, req authDto.LoginRequest) (authDto_response.LoginResponse, error)
 		Verify(ctx context.Context, authtoken string) error
-		// ForgotPassword(ctx context.Context, req dto.ForgotPasswordRequest) error
-		// ChangePassword(ctx context.Context, req dto.ChangePasswordRequest) error
-		GetMe(ctx context.Context, userId string) (dto.GetMe, error)
-		LoginWithGoogle(ctx context.Context, code, state string) (dto.LoginWithGoogleResponse, error)
+		// ForgotPassword(ctx context.Context, req authDto.ForgotPasswordRequest) error
+		// ChangePassword(ctx context.Context, req authDto.ChangePasswordRequest) error
+		GetMe(ctx context.Context, userId string) (authDto_response.GetMe, error)
+		LoginWithGoogle(ctx context.Context, code, state string) (authDto_response.LoginWithGoogleResponse, error)
 	}
 
 	authService struct {
@@ -53,10 +55,10 @@ func New(userRepository userRepository.UserRepository,
 	}
 }
 
-func (s *authService) Register(ctx context.Context, req dto.RegisterRequest, authtoken string) (dto.RegisterResponse, error) {
+func (s *authService) Register(ctx context.Context, req authDto_request.RegisterRequest, authtoken string) (authDto_response.RegisterResponse, error) {
 	_, err := s.userRepository.GetByEmail(ctx, nil, req.Email)
 	if err == nil {
-		return dto.RegisterResponse{}, myerror.New("user with this email already exist", http.StatusConflict)
+		return authDto_response.RegisterResponse{}, myerror.New("user with this email already exist", myerror.Error_RecordAlreadyExist)
 	}
 
 	userCreation := entity.User{
@@ -69,9 +71,11 @@ func (s *authService) Register(ctx context.Context, req dto.RegisterRequest, aut
 	if authtoken != "" {
 		payload, err := myjwt.GetPayloadInsideToken(authtoken)
 		if err != nil {
-			return dto.RegisterResponse{}, myerror.New("failed get payload token", http.StatusBadRequest)
+			return authDto_response.RegisterResponse{}, myerror.InvalidToken()
 		} else if payload["email"] == "" || payload["email"] != req.Email {
-			return dto.RegisterResponse{}, myerror.New("email not match with token payload", http.StatusBadRequest)
+			return authDto_response.RegisterResponse{}, myerror.InvalidRequest(
+				fmt.Errorf("email not match with token payload"),
+			)
 		}
 
 		userCreation.ID = uuid.MustParse(payload["user_id"])
@@ -80,7 +84,7 @@ func (s *authService) Register(ctx context.Context, req dto.RegisterRequest, aut
 
 	createResult, err := s.userRepository.Create(ctx, nil, userCreation)
 	if err != nil {
-		return dto.RegisterResponse{}, err
+		return authDto_response.RegisterResponse{}, err
 	}
 
 	if authtoken == "" {
@@ -89,7 +93,7 @@ func (s *authService) Register(ctx context.Context, req dto.RegisterRequest, aut
 			"email":   createResult.Email,
 		}, 24*time.Hour)
 		if err != nil {
-			return dto.RegisterResponse{}, err
+			return authDto_response.RegisterResponse{}, err
 		}
 
 		token = fmt.Sprintf("%s/auth/verify?token=%s", os.Getenv("APP_URL"), token)
@@ -97,11 +101,11 @@ func (s *authService) Register(ctx context.Context, req dto.RegisterRequest, aut
 			"Username": createResult.Username,
 			"Verify":   token,
 		}).Send(createResult.Email, "Verify Your Account").Error; err != nil {
-			return dto.RegisterResponse{}, err
+			return authDto_response.RegisterResponse{}, err
 		}
 	}
 
-	return dto.RegisterResponse{
+	return authDto_response.RegisterResponse{
 		ID:          createResult.ID.String(),
 		Username:    createResult.Username,
 		Email:       createResult.Email,
@@ -131,22 +135,22 @@ func (s *authService) Verify(ctx context.Context, token string) error {
 	return nil
 }
 
-func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (dto.LoginResponse, error) {
+func (s *authService) Login(ctx context.Context, req authDto.LoginRequest) (authDto_response.LoginResponse, error) {
 	user, err := s.userRepository.GetByEmail(ctx, nil, req.Email)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return dto.LoginResponse{}, myerror.New("email or password invalid", http.StatusBadRequest)
+			return authDto_response.LoginResponse{}, myerror.InvalidCreds()
 		}
-		return dto.LoginResponse{}, err
+		return authDto_response.LoginResponse{}, err
 	}
 
 	if !user.IsVerified {
-		return dto.LoginResponse{}, myerror.New("user is not verify", http.StatusUnauthorized)
+		return authDto_response.LoginResponse{}, myerror.New("user is not verify", myerror.Error_Unauthorized)
 	}
 
 	checkPassword, err := utils.CheckPassword(user.Password, []byte(req.Password))
 	if !checkPassword || err != nil {
-		return dto.LoginResponse{}, myerror.New("email or password invalid", http.StatusBadRequest)
+		return authDto_response.LoginResponse{}, myerror.InvalidCreds()
 	}
 
 	token, err := myjwt.GenerateToken(map[string]string{
@@ -155,23 +159,23 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (dto.Logi
 		"role":    string(user.Role),
 	}, 24*time.Hour)
 	if err != nil {
-		return dto.LoginResponse{}, err
+		return authDto_response.LoginResponse{}, err
 	}
 
-	return dto.LoginResponse{
+	return authDto_response.LoginResponse{
 		Token: token,
 		Role:  string(user.Role),
 	}, nil
 }
 
-func (s *authService) GetMe(ctx context.Context, userId string) (dto.GetMe, error) {
+func (s *authService) GetMe(ctx context.Context, userId string) (authDto_response.GetMe, error) {
 	user, err := s.userRepository.GetById(ctx, nil, userId)
 	if err != nil {
-		return dto.GetMe{}, err
+		return authDto_response.GetMe{}, err
 	}
 
-	return dto.GetMe{
-		PersonalInfo: dto.PersonalInfo{
+	return authDto_response.GetMe{
+		PersonalInfo: authDto_response.PersonalInfo{
 			ID:          userId,
 			Username:    user.Username,
 			Email:       user.Email,
@@ -181,15 +185,15 @@ func (s *authService) GetMe(ctx context.Context, userId string) (dto.GetMe, erro
 	}, nil
 }
 
-func (s *authService) LoginWithGoogle(ctx context.Context, code, state string) (dto.LoginWithGoogleResponse, error) {
+func (s *authService) LoginWithGoogle(ctx context.Context, code, state string) (authDto_response.LoginWithGoogleResponse, error) {
 	tokenOauth, err := s.oauthService.Config.Exchange(ctx, code)
 	if err != nil {
-		return dto.LoginWithGoogleResponse{}, err
+		return authDto_response.LoginWithGoogleResponse{}, err
 	}
 
 	userInfo, err := s.oauthService.GetUserInfo(tokenOauth)
 	if err != nil {
-		return dto.LoginWithGoogleResponse{}, err
+		return authDto_response.LoginWithGoogleResponse{}, err
 	}
 
 	registerToken := ""
@@ -197,10 +201,10 @@ func (s *authService) LoginWithGoogle(ctx context.Context, code, state string) (
 	id := uuid.New()
 	user, err := s.userRepository.GetByEmail(ctx, nil, userInfo.Email)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return dto.LoginWithGoogleResponse{}, err
+		return authDto_response.LoginWithGoogleResponse{}, err
 	} else if errors.Is(err, gorm.ErrRecordNotFound) {
 		if !userInfo.VerifiedEmail {
-			return dto.LoginWithGoogleResponse{}, myerror.New("user with this email not verified", http.StatusBadRequest)
+			return authDto_response.LoginWithGoogleResponse{}, myerror.New("user with this email not verified", myerror.Error_Unauthorized)
 		} else {
 			needRegistration = true
 			registerToken, err = myjwt.GenerateToken(map[string]string{
@@ -209,7 +213,7 @@ func (s *authService) LoginWithGoogle(ctx context.Context, code, state string) (
 				"state":   state,
 			}, 10*time.Minute)
 			if err != nil {
-				return dto.LoginWithGoogleResponse{}, err
+				return authDto_response.LoginWithGoogleResponse{}, err
 			}
 		}
 	}
@@ -223,10 +227,10 @@ func (s *authService) LoginWithGoogle(ctx context.Context, code, state string) (
 		"email":   user.Email,
 	}, 24*time.Hour)
 	if err != nil {
-		return dto.LoginWithGoogleResponse{}, err
+		return authDto_response.LoginWithGoogleResponse{}, err
 	}
 
-	return dto.LoginWithGoogleResponse{
+	return authDto_response.LoginWithGoogleResponse{
 		NeedRegistration: needRegistration,
 		Token:            token,
 		Role:             string(user.Role),

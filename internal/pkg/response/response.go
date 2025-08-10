@@ -2,7 +2,9 @@ package response
 
 import (
 	"net/http"
+	"os"
 	myerror "rextra-backend/internal/pkg/error"
+	mylog "rextra-backend/internal/pkg/logger"
 
 	"github.com/gin-gonic/gin"
 )
@@ -12,6 +14,7 @@ type Response struct {
 	Success    bool   `json:"success"`
 	Message    string `json:"message"`
 	Error      any    `json:"error,omitempty"`
+	ErrorCode  any    `json:"error_code,omitempty"`
 	Data       any    `json:"data,omitempty"`
 	Meta       any    `json:"meta,omitempty"`
 }
@@ -41,7 +44,14 @@ func NewFailed(msg string, err error, data ...any) Response {
 	}
 
 	if myErr, ok := err.(myerror.Error); ok {
+		appMode := os.Getenv("APP_MODE")
 		res.StatusCode = myErr.StatusCode
+		res.ErrorCode = myErr.ErrorCode
+		if appMode == "development" {
+			res.Error = myErr.Detail
+		} else {
+			mylog.Errorf(myErr.Details())
+		}
 	}
 
 	if len(data) > 0 {

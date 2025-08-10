@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"fmt"
-	"net/http"
 	myerror "rextra-backend/internal/pkg/error"
 	myjwt "rextra-backend/internal/pkg/jwt"
 	"rextra-backend/internal/pkg/response"
@@ -15,14 +14,6 @@ const (
 	MESSAGE_FAILED_VERIFY_TOKEN = "failed to verify token"
 	MESSAGE_USER_NOT_AUTHORIZED = "user not authorized"
 	MESSAGE_API_IS_LOCKED       = "api is now locked"
-)
-
-var (
-	ErrTokenInvalid    = myerror.New("token invalid", http.StatusUnauthorized)
-	ErrTokenNotFound   = myerror.New("token not found", http.StatusUnauthorized)
-	ErrTokenExpired    = myerror.New("token expired", http.StatusUnauthorized)
-	ErrRoleNotAllowed  = myerror.New("role not allowed", http.StatusForbidden)
-	ErrTokenNotAllowed = myerror.New("token not allowed", http.StatusUnauthorized)
 )
 
 func (m Middleware) OnlyAllow(roles ...string) gin.HandlerFunc {
@@ -39,7 +30,7 @@ func (m Middleware) OnlyAllow(roles ...string) gin.HandlerFunc {
 		fmt.Println(userRole)
 		fmt.Println(roles)
 
-		res := response.NewFailed(MESSAGE_USER_NOT_AUTHORIZED, ErrRoleNotAllowed)
+		res := response.NewFailed(MESSAGE_USER_NOT_AUTHORIZED, myerror.RoleNotAllowed())
 		res.SendWithAbort(ctx)
 	}
 }
@@ -48,13 +39,13 @@ func (m Middleware) Authenticate() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
 		if authHeader == "" {
-			res := response.NewFailed(MESSAGE_FAILED_VERIFY_TOKEN, ErrTokenNotFound)
+			res := response.NewFailed(MESSAGE_FAILED_VERIFY_TOKEN, myerror.InvalidToken())
 			res.SendWithAbort(ctx)
 			return
 		}
 
 		if !strings.Contains(authHeader, "Bearer ") {
-			res := response.NewFailed(MESSAGE_FAILED_VERIFY_TOKEN, ErrTokenInvalid)
+			res := response.NewFailed(MESSAGE_FAILED_VERIFY_TOKEN, myerror.InvalidToken())
 			res.SendWithAbort(ctx)
 			return
 		}
@@ -64,7 +55,7 @@ func (m Middleware) Authenticate() gin.HandlerFunc {
 		idToken, err := myjwt.GetPayloadInsideToken(authHeader)
 		if err != nil {
 			if err.Error() == "token expired" {
-				res := response.NewFailed(MESSAGE_FAILED_VERIFY_TOKEN, ErrTokenExpired)
+				res := response.NewFailed(MESSAGE_FAILED_VERIFY_TOKEN, myerror.InvalidToken())
 				res.SendWithAbort(ctx)
 				return
 			}

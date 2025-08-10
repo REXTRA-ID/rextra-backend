@@ -1,8 +1,7 @@
 package utils
 
 import (
-	"net/http"
-	myerror "rextra-backend/internal/pkg/error"
+	"errors"
 
 	"github.com/gin-gonic/gin"
 )
@@ -10,12 +9,12 @@ import (
 func GetUserIdFromCtx(ctx *gin.Context) (string, error) {
 	user, exists := ctx.Get("user_id")
 	if !exists {
-		return "", myerror.New("user id not found", http.StatusInternalServerError)
+		return "", errors.New("user id not found")
 	}
 
 	userId, ok := user.(string)
 	if !ok {
-		return "", myerror.New("invalid user id", http.StatusInternalServerError)
+		return "", errors.New("invalid user id")
 	}
 
 	return userId, nil

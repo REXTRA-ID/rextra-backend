@@ -4,7 +4,6 @@ import (
 	"errors"
 	myerror "rextra-backend/internal/pkg/error"
 
-	"net/http"
 	"os"
 	"time"
 
@@ -41,7 +40,7 @@ func GetPayloadInsideToken(tokenString string) (map[string]string, error) {
 
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
-			return nil, myerror.New("token expired", http.StatusUnauthorized)
+			return nil, myerror.New("token expired", myerror.Error_InvalidToken)
 		}
 		return nil, err
 	}
@@ -72,7 +71,7 @@ func IsValid(tokenString string) (bool, error) {
 
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
-			return false, myerror.New("token expired", http.StatusUnauthorized)
+			return false, myerror.New("token expired", myerror.Error_InvalidToken)
 		}
 		return false, err
 	}

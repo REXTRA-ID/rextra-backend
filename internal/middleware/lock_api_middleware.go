@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"net/http"
 	myerror "rextra-backend/internal/pkg/error"
 	"rextra-backend/internal/pkg/response"
 	"time"
@@ -38,7 +37,7 @@ func (m Middleware) LockAPI(msg string, opts ...LockOption) gin.HandlerFunc {
 
 		// TODO: Ganti pesannya
 		if lockApiMiddleware.IsLocked {
-			response.NewFailed("Di luar masa pengumuman. Sabar ya!", myerror.New(msg, http.StatusForbidden)).SendWithAbort(ctx)
+			response.NewFailed(msg, myerror.APILocked()).SendWithAbort(ctx)
 			return
 		}
 

@@ -3,8 +3,8 @@ package authController
 import (
 	"net/http"
 
+	authDto_request "rextra-backend/internal/api/auth/dto/request"
 	authservice "rextra-backend/internal/api/auth/service"
-	"rextra-backend/internal/dto"
 	myerror "rextra-backend/internal/pkg/error"
 	"rextra-backend/internal/pkg/google/oauth"
 	myjwt "rextra-backend/internal/pkg/jwt"
@@ -42,15 +42,15 @@ func (c *authController) Register(ctx *gin.Context) {
 	if token != "" {
 		verified, err := myjwt.IsValid(token)
 		if err != nil || !verified {
-			response.NewFailed("failed get data from body", myerror.New("token invalid", http.StatusBadRequest)).Send(ctx)
+			response.NewFailed("failed get data from body", myerror.InvalidToken()).Send(ctx)
 			return
 		}
 	}
 
-	var req dto.RegisterRequest
+	var req authDto_request.RegisterRequest
 
 	if err := ctx.ShouldBind(&req); err != nil {
-		response.NewFailed("failed get data from body", myerror.New(err.Error(), http.StatusBadRequest)).Send(ctx)
+		response.NewFailed("failed get data from body", myerror.InvalidRequest(err)).Send(ctx)
 		return
 	}
 
@@ -64,7 +64,7 @@ func (c *authController) Register(ctx *gin.Context) {
 }
 
 func (c *authController) Login(ctx *gin.Context) {
-	var req dto.LoginRequest
+	var req authDto_request.LoginRequest
 	if err := ctx.ShouldBind(&req); err != nil {
 		response.NewFailed("failed get data from body", err).Send(ctx)
 		return
@@ -127,7 +127,7 @@ func (c *authController) CallbackGoogle(ctx *gin.Context) {
 	state := ctx.Query("state")
 	stateFromCookie, _ := ctx.Cookie("oauthstate")
 	if state != stateFromCookie {
-		response.NewFailed("failed get login callback", myerror.New("invalid oauth state", http.StatusBadRequest)).Send(ctx)
+		response.NewFailed("failed get login callback", myerror.New("invalid oauth state", myerror.Error_InvalidRequest)).Send(ctx)
 		return
 	}
 
