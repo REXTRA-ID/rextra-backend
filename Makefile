@@ -27,14 +27,14 @@ both:
 # test:
 # 	go test -v ./tests
 
-# init-docker:
-# 	docker compose up -d --build
+build-docker-dev:
+	docker compose -f docker-compose.dev.yml up -d --build
 
-# up: 
-# 	docker-compose up -d
+up-dev: 
+	docker-compose -f docker-compose.dev.yml up -d
 
-# down:
-# 	docker-compose down
+down-dev:
+	docker-compose -f docker-compose.dev.yml down
 
 # logs:
 # 	docker-compose logs -f
