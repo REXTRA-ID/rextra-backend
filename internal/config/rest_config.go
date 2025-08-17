@@ -13,6 +13,7 @@ import (
 	userService "rextra-backend/internal/api/user/service"
 	"rextra-backend/internal/middleware"
 	mailer "rextra-backend/internal/pkg/email"
+	myfirebase "rextra-backend/internal/pkg/firebase"
 	"rextra-backend/internal/pkg/google/oauth"
 
 	"log"
@@ -29,7 +30,8 @@ func NewRest() RestConfig {
 	db := db.New()
 	app := gin.Default()
 	server := NewRouter(app)
-	middleware := middleware.New(db)
+	firebaseApp := myfirebase.New()
+	middleware := middleware.New(db, firebaseApp.MustGetClient())
 
 	var (
 		//=========== (PACKAGE) ===========//

@@ -16,6 +16,7 @@ func GenerateToken(payload map[string]string, ExpiredAt time.Duration) (string, 
 	claims := jwt.MapClaims{}
 	claims["exp"] = expiredAt
 	claims["iss"] = getIssuer()
+	claims["version"] = os.Getenv("APP_VERSION")
 
 	for i, v := range payload {
 		claims[i] = v
@@ -92,5 +93,5 @@ func getSecretKey() string {
 }
 
 func getIssuer() string {
-	return "PRS Backend 2025"
+	return os.Getenv("APP_NAME")
 }

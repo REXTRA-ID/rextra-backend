@@ -15,7 +15,7 @@ func Serve(app *gin.Engine, authcontroller authController.AuthController, middle
 		routes.GET("/verify", authcontroller.Verify)
 		routes.GET("/me", middleware.Authenticate(), authcontroller.Me)
 
-		routes.GET("/google/login", authcontroller.LoginWithGoogle)
-		routes.GET("/google/callback", authcontroller.CallbackGoogle)
+		routes.POST("/google", middleware.Authenticate(), authcontroller.LoginWithGoogle)
+		// routes.GET("/google/callback", authcontroller.CallbackGoogle)
 	}
 }
