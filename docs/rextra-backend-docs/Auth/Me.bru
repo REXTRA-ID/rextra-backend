@@ -5,9 +5,13 @@ meta {
 }
 
 get {
-  url: {{host}}/api/v1/auth/me 
+  url: {{host}}/api/v1/auth/me
   body: none
-  auth: inherit
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImF6a2FyaXpxdWxsYWg5OUBnbWFpbC5jb20iLCJleHAiOjE3NTU2MDQ3MTEsImlzcyI6InJleHRyYS1iYWNrZW5kIiwicm9sZSI6IlVTRVIiLCJ1c2VyX2lkIjoiYTg3ZjI0NTUtYjg1Ny00YjgzLThjMTEtNmJjYzdjNGU3YmI2IiwidmVyc2lvbiI6IjEuMC4wIn0.aYIBiha2ZKcAYb-svZTsROtxSvahZyWTt35ULycO7cE
 }
 
 settings {
