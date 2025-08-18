@@ -8,6 +8,7 @@ import (
 	"rextra-backend/internal/entity"
 	myerror "rextra-backend/internal/pkg/error"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -38,7 +39,7 @@ func (s *personaService) Create(ctx context.Context, req dto_request.CreatePerso
 	}
 
 	createResult, err := s.personaRepository.Create(ctx, nil, entity.Persona{
-		UserID:         req.UserID,
+		UserID:         uuid.MustParse(req.UserID),
 		Institution:    req.Institution,
 		Study:          req.Study,
 		EducationLevel: req.EducationLevel,
@@ -54,8 +55,8 @@ func (s *personaService) Create(ctx context.Context, req dto_request.CreatePerso
 	}
 
 	return dto_response.CreatePersonaResponse{
-		ID:             createResult.ID,
-		UserID:         createResult.UserID,
+		ID:             createResult.ID.String(),
+		UserID:         createResult.UserID.String(),
 		Institution:    createResult.Institution,
 		Study:          createResult.Study,
 		EducationLevel: createResult.EducationLevel,
@@ -75,8 +76,8 @@ func (s *personaService) GetByUserID(ctx context.Context, userId string) (dto_re
 	}
 
 	return dto_response.CreatePersonaResponse{
-		ID:             persona.ID,
-		UserID:         persona.UserID,
+		ID:             persona.ID.String(),
+		UserID:         persona.UserID.String(),
 		Institution:    persona.Institution,
 		Study:          persona.Study,
 		EducationLevel: persona.EducationLevel,
@@ -111,8 +112,8 @@ func (s *personaService) Update(ctx context.Context, id string, req dto_request.
 	}
 
 	return dto_response.CreatePersonaResponse{
-		ID:             updateResult.ID,
-		UserID:         updateResult.UserID,
+		ID:             updateResult.ID.String(),
+		UserID:         updateResult.UserID.String(),
 		Institution:    updateResult.Institution,
 		Study:          updateResult.Study,
 		EducationLevel: updateResult.EducationLevel,

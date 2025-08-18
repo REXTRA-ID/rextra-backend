@@ -1,10 +1,12 @@
 package entity
 
+import "github.com/google/uuid"
+
 type Persona struct {
-	ID          string `json:"id" gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
-	UserID      string `json:"user_id" gorm:"not null"`
-	Institution string `json:"institution" gorm:"not null"`
-	Study       string `json:"study" gorm:"not null"`
+	ID          uuid.UUID `json:"id" gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
+	UserID      uuid.UUID `json:"user_id" gorm:"not null"`
+	Institution string    `json:"institution" gorm:"not null"`
+	Study       string    `json:"study" gorm:"not null"`
 
 	// enumerated [0 = D3, 1= D4/S1, 2 = S2, 3 = S3]
 	EducationLevel string `json:"education_level" gorm:"not null"`
@@ -18,4 +20,8 @@ type Persona struct {
 	Status string `json:"status" gorm:"not null"`
 
 	Timestamp
+}
+
+func (p *Persona) TableName() string {
+	return "personas"
 }

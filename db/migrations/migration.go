@@ -21,6 +21,7 @@ func Migrate(db *gorm.DB) error {
 		&entity.User{},
 		&entity.SessionToken{},
 		&entity.Persona{},
+		&entity.Riasec{},
 	); err != nil {
 		return err
 	}

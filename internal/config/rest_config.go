@@ -38,22 +38,26 @@ func NewRest() RestConfig {
 		userRepository    repository.UserRepository    = repository.NewUser(db)
 		sessionRepository repository.SessionRepository = repository.NewSession(db)
 		personaRepository repository.PersonaRepository = repository.NewPersona(db)
+		riasecRepository  repository.RiasecRepository  = repository.NewRiasec(db)
 
 		//=========== (SERVICE) ===========//
 		authService    service.AuthService    = service.NewAuth(userRepository, sessionRepository, mailerService, firebaseApp.MustGetClient(), db)
 		userService    service.UserService    = service.NewUser(userRepository, db)
 		personaService service.PersonaService = service.NewPersona(personaRepository, db)
+		riasecService  service.RiasecService  = service.NewRiasec(riasecRepository, db)
 
 		//=========== (CONTROLLER) ===========//
 		authController    controller.AuthController    = controller.NewAuth(authService)
 		userController    controller.UserController    = controller.NewUser(userService)
 		personaController controller.PersonaController = controller.NewPersona(personaService)
+		riasecController  controller.RiasecController  = controller.NewRiasec(riasecService)
 	)
 
 	// Register all routes
 	routes.ServeAuth(server, authController, middleware)
 	routes.ServeUser(server, userController, middleware)
 	routes.ServePersona(server, personaController, middleware)
+	routes.ServeRiasec(server, riasecController, middleware)
 
 	return RestConfig{
 		server: server,
