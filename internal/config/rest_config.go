@@ -39,19 +39,23 @@ func NewRest() RestConfig {
 		//=========== (REPOSITORY) ===========//
 		userRepository    repository.UserRepository    = repository.NewUser(db)
 		sessionRepository repository.SessionRepository = repository.NewSession(db)
+		personaRepository repository.PersonaRepository = repository.NewPersona(db)
 
 		//=========== (SERVICE) ===========//
-		authService service.AuthService = service.NewAuth(userRepository, sessionRepository, mailerService, oauthService, db)
-		userService service.UserService = service.NewUser(userRepository, db)
+		authService    service.AuthService    = service.NewAuth(userRepository, sessionRepository, mailerService, oauthService, db)
+		userService    service.UserService    = service.NewUser(userRepository, db)
+		personaService service.PersonaService = service.NewPersona(personaRepository, db)
 
 		//=========== (CONTROLLER) ===========//
-		authController controller.AuthController = controller.NewAuth(authService)
-		userController controller.UserController = controller.NewUser(userService)
+		authController    controller.AuthController    = controller.NewAuth(authService)
+		userController    controller.UserController    = controller.NewUser(userService)
+		personaController controller.PersonaController = controller.NewPersona(personaService)
 	)
 
 	// Register all routes
 	routes.ServeAuth(server, authController, middleware)
 	routes.ServeUser(server, userController, middleware)
+	routes.ServePersona(server, personaController, middleware)
 
 	return RestConfig{
 		server: server,
