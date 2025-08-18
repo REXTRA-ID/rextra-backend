@@ -1,7 +1,7 @@
-package userController
+package controller
 
 import (
-	userService "rextra-backend/internal/api/user/service"
+	"rextra-backend/internal/api/service"
 	"rextra-backend/internal/pkg/response"
 
 	"github.com/gin-gonic/gin"
@@ -13,11 +13,11 @@ type (
 	}
 
 	userController struct {
-		userService userService.UserService
+		userService service.UserService
 	}
 )
 
-func New(userService userService.UserService) UserController {
+func NewUser(userService service.UserService) UserController {
 	return &userController{
 		userService: userService,
 	}

@@ -18,32 +18,49 @@ migrate:
 both:
 	go run main.go --migrate --seeder
 
-# build: 
-# 	go build -o main main.go
+# Parsing argument --dev or --prod
+ENV ?= dev
+COMPOSE_FILE = docker-compose.$(ENV).yml
+APP_CONTAINER = rextra-backend-$(ENV)
+DB_CONTAINER  = rextra-backend-db-$(ENV)
 
-# run-build: build
-# 	./main
+# Docker targets
+up:
+	docker compose -f $(COMPOSE_FILE) up -d
 
-# test:
-# 	go test -v ./tests
+down:
+	docker compose -f $(COMPOSE_FILE) down
 
-build-docker-dev:
-	docker compose -f docker-compose.dev.yml up -d --build
+reset:
+	docker compose -f $(COMPOSE_FILE) down -v
 
-up-dev: 
-	docker-compose -f docker-compose.dev.yml up -d
+build-docker:
+	docker compose -f $(COMPOSE_FILE) up -d --build
 
-down-dev:
-	docker-compose -f docker-compose.dev.yml down
+DOCKER_CONTAINER = $(shell docker ps --filter "name=rextra-backend-$(ENV)" --format "{{.Names}}")
 
-# logs:
-# 	docker-compose logs -f
+docker-migrate:
+	docker exec -it $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --migrate"
 
+docker-seeder:
+	docker exec -it $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --seed"
+
+docker-both:
+	docker exec -it $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --migrate --seed"
+
+# Help
 help:
-	@echo "Usage: make [target]"
+	@echo "Usage: make [target] [--dev|--prod]"
 	@echo "Targets:"
 	@echo "  tidy        Tidy dependencies"
 	@echo "  run         Run the application"
-	@echo "  migrate     Run database migrations"
-	@echo "  seeder      Seed the database"
+	@echo "  migrate     Run database migrations locally"
+	@echo "  seeder      Seed the database locally"
 	@echo "  watch       Run program with auto loading"
+	@echo "  up          Start docker container (--dev|--prod)"
+	@echo "  down        Stop docker container (--dev|--prod)"
+	@echo "  reset       Stop and remove docker container and volumes (--dev|--prod)"
+	@echo "  build-docker Build docker container (--dev|--prod)"
+	@echo "  docker-migrate Run migrations inside Docker container"
+	@echo "  docker-seeder  Run seeder inside Docker container"
+	@echo "  docker-both    Run migrate and seeder inside Docker container"

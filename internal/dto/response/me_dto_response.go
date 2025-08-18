@@ -1,4 +1,4 @@
-package authDto_response
+package dto_response
 
 type (
 	GetMe struct {
@@ -7,7 +7,7 @@ type (
 
 	PersonalInfo struct {
 		ID          string `json:"id"`
-		Username    string `json:"username"`
+		Fullname    string `json:"username"`
 		Email       string `json:"email"`
 		PhoneNumber string `json:"phone_number"`
 		Role        string `json:"role"`

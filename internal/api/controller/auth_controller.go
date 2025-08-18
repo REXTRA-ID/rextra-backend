@@ -1,13 +1,12 @@
-package authController
+package controller
 
 import (
 	"net/http"
 
-	authDto_request "rextra-backend/internal/api/auth/dto/request"
-	authservice "rextra-backend/internal/api/auth/service"
+	"rextra-backend/internal/api/service"
+	dto_request "rextra-backend/internal/dto/request"
 	myerror "rextra-backend/internal/pkg/error"
 	"rextra-backend/internal/pkg/google/oauth"
-	myjwt "rextra-backend/internal/pkg/jwt"
 	"rextra-backend/internal/pkg/response"
 	"rextra-backend/internal/utils"
 
@@ -27,34 +26,25 @@ type (
 	}
 
 	authController struct {
-		authService authservice.AuthService
+		authService service.AuthService
 	}
 )
 
-func New(authService authservice.AuthService) AuthController {
+func NewAuth(authService service.AuthService) AuthController {
 	return &authController{
 		authService: authService,
 	}
 }
 
 func (c *authController) Register(ctx *gin.Context) {
-	token := ctx.Query("token")
-	if token != "" {
-		verified, err := myjwt.IsValid(token)
-		if err != nil || !verified {
-			response.NewFailed("failed get data from body", myerror.InvalidToken()).Send(ctx)
-			return
-		}
-	}
-
-	var req authDto_request.RegisterRequest
+	var req dto_request.RegisterRequest
 
 	if err := ctx.ShouldBind(&req); err != nil {
 		response.NewFailed("failed get data from body", myerror.InvalidRequest(err)).Send(ctx)
 		return
 	}
 
-	user, err := c.authService.Register(ctx, req, token)
+	user, err := c.authService.Register(ctx, req)
 	if err != nil {
 		response.NewFailed("failed register account", err).Send(ctx)
 		return
@@ -64,7 +54,7 @@ func (c *authController) Register(ctx *gin.Context) {
 }
 
 func (c *authController) Login(ctx *gin.Context) {
-	var req authDto_request.LoginRequest
+	var req dto_request.LoginRequest
 	if err := ctx.ShouldBind(&req); err != nil {
 		response.NewFailed("failed get data from body", err).Send(ctx)
 		return

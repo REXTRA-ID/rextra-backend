@@ -3,14 +3,11 @@ package config
 import (
 	"fmt"
 	"rextra-backend/db"
-	authController "rextra-backend/internal/api/auth/controller"
-	authRoutes "rextra-backend/internal/api/auth/routes"
-	authService "rextra-backend/internal/api/auth/service"
 
-	userController "rextra-backend/internal/api/user/controller"
-	userRepository "rextra-backend/internal/api/user/repository"
-	userRoutes "rextra-backend/internal/api/user/routes"
-	userService "rextra-backend/internal/api/user/service"
+	"rextra-backend/internal/api/controller"
+	"rextra-backend/internal/api/repository"
+	"rextra-backend/internal/api/routes"
+	"rextra-backend/internal/api/service"
 	"rextra-backend/internal/middleware"
 	mailer "rextra-backend/internal/pkg/email"
 	myfirebase "rextra-backend/internal/pkg/firebase"
@@ -40,20 +37,21 @@ func NewRest() RestConfig {
 		// awsS3Service  storage.AwsS3 = storage.NewAwsS3()
 
 		//=========== (REPOSITORY) ===========//
-		userRepository userRepository.UserRepository = userRepository.New(db)
+		userRepository    repository.UserRepository    = repository.NewUser(db)
+		sessionRepository repository.SessionRepository = repository.NewSession(db)
 
 		//=========== (SERVICE) ===========//
-		authService authService.AuthService = authService.New(userRepository, mailerService, oauthService, db)
-		userService userService.UserService = userService.New(userRepository, db)
+		authService service.AuthService = service.NewAuth(userRepository, sessionRepository, mailerService, oauthService, db)
+		userService service.UserService = service.NewUser(userRepository, db)
 
 		//=========== (CONTROLLER) ===========//
-		authController authController.AuthController = authController.New(authService)
-		userController userController.UserController = userController.New(userService)
+		authController controller.AuthController = controller.NewAuth(authService)
+		userController controller.UserController = controller.NewUser(userService)
 	)
 
 	// Register all routes
-	authRoutes.Serve(server, authController, middleware)
-	userRoutes.Serve(server, userController, middleware)
+	routes.ServeAuth(server, authController, middleware)
+	routes.ServeUser(server, userController, middleware)
 
 	return RestConfig{
 		server: server,
@@ -64,7 +62,7 @@ func (ap *RestConfig) Start() {
 	port := os.Getenv("APP_PORT")
 	host := os.Getenv("APP_HOST")
 	if port == "" {
-		port = "8998"
+		port = "8000"
 	}
 
 	serve := fmt.Sprintf("%s:%s", host, port)

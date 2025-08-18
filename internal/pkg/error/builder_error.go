@@ -57,6 +57,10 @@ func RecordAlreadyExist(item string) Error {
 	return newError(Error_RecordAlreadyExist, msg, msg)
 }
 
+func ProcessingError(err error) Error {
+	return newError(SystemError, Message[SystemError], err.Error())
+}
+
 func DatabaseError(err error) Error {
 	return newError(SystemError_Database, Message[SystemError_Database], err.Error())
 }

@@ -1,4 +1,4 @@
-package userRepository
+package repository
 
 import (
 	"context"
@@ -20,7 +20,7 @@ type (
 	}
 )
 
-func New(db *gorm.DB) UserRepository {
+func NewUser(db *gorm.DB) UserRepository {
 	return &userRepository{db}
 }
 

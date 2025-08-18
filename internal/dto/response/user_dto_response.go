@@ -1,4 +1,4 @@
-package userDto_response
+package dto_response
 
 type (
 	UserResponse struct {

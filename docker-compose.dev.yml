@@ -1,5 +1,5 @@
 services:
-  rextra-backend-dev:
+  app:
     build:
       context: .
       dockerfile: ./docker/dev/Dockerfile
@@ -12,9 +12,9 @@ services:
       - APP_MODE=development
       - APP_PORT=${APP_PORT:-8000}
     networks:
-      - rextra-backend-dev-network
+      - app-dev-network
 
-  db-dev:
+  db:
     image: postgres:latest
     container_name: ${APP_NAME:-rextra-backend}-db-dev
     environment:
@@ -24,11 +24,11 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
     ports:
-      - 5432:5432
+      - 5433:5432
     networks:
-      - rextra-backend-dev-network
+      - app-dev-network
 
-  nginx-dev:
+  nginx:
     image: nginx:latest
     container_name: ${APP_NAME:-rextra-backend}-nginx-dev
     volumes:
@@ -37,13 +37,13 @@ services:
     ports:
       - ${NGINX_PORT:-81}:80
     depends_on:
-      - rextra-backend-dev
+      - app
     networks:
-      - rextra-backend-dev-network
+      - app-dev-network
 
 volumes:
   db-data:
 
 networks:
-  rextra-backend-dev-network:
+  app-dev-network:
     driver: bridge

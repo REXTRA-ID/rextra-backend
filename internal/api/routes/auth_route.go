@@ -1,13 +1,13 @@
-package authRoutes
+package routes
 
 import (
-	authController "rextra-backend/internal/api/auth/controller"
+	"rextra-backend/internal/api/controller"
 	"rextra-backend/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
 
-func Serve(app *gin.Engine, authcontroller authController.AuthController, middleware middleware.Middleware) {
+func ServeAuth(app *gin.Engine, authcontroller controller.AuthController, middleware middleware.Middleware) {
 	routes := app.Group("/api/v1/auth")
 	{
 		routes.POST("/login", authcontroller.Login)
@@ -16,6 +16,5 @@ func Serve(app *gin.Engine, authcontroller authController.AuthController, middle
 		routes.GET("/me", middleware.Authenticate(), authcontroller.Me)
 
 		routes.POST("/google", middleware.Authenticate(), authcontroller.LoginWithGoogle)
-		// routes.GET("/google/callback", authcontroller.CallbackGoogle)
 	}
 }
