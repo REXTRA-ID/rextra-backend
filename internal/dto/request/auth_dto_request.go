@@ -13,6 +13,14 @@ type (
 		Password string `json:"password" binding:"required"`
 	}
 
+	LoginWithGoogleRequest struct {
+		IdToken string `json:"id_token" binding:"required"`
+	}
+
+	LogoutRequest struct {
+		RefreshToken string `json:"refresh_token" binding:"required"`
+	}
+
 	ForgotPasswordRequest struct {
 		Email string `json:"email" binding:"required,email"`
 	}

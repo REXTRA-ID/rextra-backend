@@ -1,12 +1,9 @@
 package controller
 
 import (
-	"net/http"
-
 	"rextra-backend/internal/api/service"
 	dto_request "rextra-backend/internal/dto/request"
 	myerror "rextra-backend/internal/pkg/error"
-	"rextra-backend/internal/pkg/google/oauth"
 	"rextra-backend/internal/pkg/response"
 	"rextra-backend/internal/utils"
 
@@ -22,7 +19,7 @@ type (
 		ChangePassword(ctx *gin.Context)
 		Me(ctx *gin.Context)
 		LoginWithGoogle(ctx *gin.Context)
-		CallbackGoogle(ctx *gin.Context)
+		Logout(ctx *gin.Context)
 	}
 
 	authController struct {
@@ -38,7 +35,6 @@ func NewAuth(authService service.AuthService) AuthController {
 
 func (c *authController) Register(ctx *gin.Context) {
 	var req dto_request.RegisterRequest
-
 	if err := ctx.ShouldBind(&req); err != nil {
 		response.NewFailed("failed get data from body", myerror.InvalidRequest(err)).Send(ctx)
 		return
@@ -104,29 +100,32 @@ func (c *authController) Me(ctx *gin.Context) {
 }
 
 func (c *authController) LoginWithGoogle(ctx *gin.Context) {
-	googleOauthConfig := oauth.GetConfig()
-	oauthState := oauth.RandomState()
-
-	domain, secure := utils.GetDomain()
-	ctx.SetCookie("oauthstate", oauthState, 300, "/", domain, secure, true)
-	url := googleOauthConfig.AuthCodeURL(oauthState)
-	ctx.Redirect(http.StatusTemporaryRedirect, url)
-}
-
-func (c *authController) CallbackGoogle(ctx *gin.Context) {
-	state := ctx.Query("state")
-	stateFromCookie, _ := ctx.Cookie("oauthstate")
-	if state != stateFromCookie {
-		response.NewFailed("failed get login callback", myerror.New("invalid oauth state", myerror.Error_InvalidRequest)).Send(ctx)
+	var req dto_request.LoginWithGoogleRequest
+	if err := ctx.ShouldBind(&req); err != nil {
+		response.NewFailed("failed get data from body", myerror.InvalidRequest(err)).Send(ctx)
 		return
 	}
 
-	code := ctx.Query("code")
-	result, err := c.authService.LoginWithGoogle(ctx, code, state)
+	result, err := c.authService.LoginWithGoogle(ctx.Request.Context(), req.IdToken)
 	if err != nil {
 		response.NewFailed("failed login with google", err).Send(ctx)
 		return
 	}
 
 	response.NewSuccess("success login with google", result).Send(ctx)
+}
+
+func (c *authController) Logout(ctx *gin.Context) {
+	var req dto_request.LogoutRequest
+	if err := ctx.ShouldBind(&req); err != nil {
+		response.NewFailed("failed get data from body", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
+
+	if err := c.authService.Logout(ctx.Request.Context(), req); err != nil {
+		response.NewFailed("failed logout", err).Send(ctx)
+		return
+	}
+
+	response.NewSuccess("success logout", nil).Send(ctx)
 }

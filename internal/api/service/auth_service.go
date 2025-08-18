@@ -11,15 +11,15 @@ import (
 	"rextra-backend/internal/entity"
 	mailer "rextra-backend/internal/pkg/email"
 	myerror "rextra-backend/internal/pkg/error"
-	"rextra-backend/internal/pkg/google/oauth"
+	myfirebase "rextra-backend/internal/pkg/firebase"
 	myjwt "rextra-backend/internal/pkg/jwt"
 	"rextra-backend/internal/utils"
-
-	"github.com/google/uuid"
 
 	"os"
 	"time"
 
+	"firebase.google.com/go/v4/auth"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -31,14 +31,15 @@ type (
 		// ForgotPassword(ctx context.Context, req authDto.ForgotPasswordRequest) error
 		// ChangePassword(ctx context.Context, req authDto.ChangePasswordRequest) error
 		GetMe(ctx context.Context, userId string) (dto_response.GetMe, error)
-		LoginWithGoogle(ctx context.Context, code, state string) (dto_response.LoginWithGoogleResponse, error)
+		LoginWithGoogle(ctx context.Context, idToken string) (dto_response.LoginResponse, error)
+		Logout(ctx context.Context, req dto_request.LogoutRequest) error
 	}
 
 	authService struct {
 		userRepository    repository.UserRepository
 		sessionRepository repository.SessionRepository
 		mailService       mailer.Mailer
-		oauthService      oauth.Oauth
+		firebaseClient    *auth.Client
 		db                *gorm.DB
 	}
 )
@@ -46,13 +47,13 @@ type (
 func NewAuth(userRepository repository.UserRepository,
 	sessionRepository repository.SessionRepository,
 	mailService mailer.Mailer,
-	oauthService oauth.Oauth,
+	firebaseClient *auth.Client,
 	db *gorm.DB) AuthService {
 	return &authService{
 		userRepository:    userRepository,
 		sessionRepository: sessionRepository,
 		mailService:       mailService,
-		oauthService:      oauthService,
+		firebaseClient:    firebaseClient,
 		db:                db,
 	}
 }
@@ -195,54 +196,97 @@ func (s *authService) GetMe(ctx context.Context, userId string) (dto_response.Ge
 	}, nil
 }
 
-func (s *authService) LoginWithGoogle(ctx context.Context, code, state string) (dto_response.LoginWithGoogleResponse, error) {
-	tokenOauth, err := s.oauthService.Config.Exchange(ctx, code)
+func (s *authService) LoginWithGoogle(ctx context.Context, idToken string) (dto_response.LoginResponse, error) {
+	fmt.Println(idToken)
+	authToken, err := s.firebaseClient.VerifyIDToken(ctx, idToken)
 	if err != nil {
-		return dto_response.LoginWithGoogleResponse{}, err
+		return dto_response.LoginResponse{}, myerror.InvalidToken()
 	}
 
-	userInfo, err := s.oauthService.GetUserInfo(tokenOauth)
+	uid := authToken.UID
+
+	userRecord, err := s.firebaseClient.GetUser(ctx, uid)
 	if err != nil {
-		return dto_response.LoginWithGoogleResponse{}, err
+		return dto_response.LoginResponse{}, myerror.ProcessingError(err)
 	}
 
-	registerToken := ""
-	needRegistration := false
-	id := uuid.New()
-	user, err := s.userRepository.GetByEmail(ctx, nil, userInfo.Email)
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return dto_response.LoginWithGoogleResponse{}, err
-	} else if errors.Is(err, gorm.ErrRecordNotFound) {
-		if !userInfo.VerifiedEmail {
-			return dto_response.LoginWithGoogleResponse{}, myerror.New("user with this email not verified", myerror.Error_Unauthorized)
-		} else {
-			needRegistration = true
-			registerToken, err = myjwt.GenerateToken(map[string]string{
-				"user_id": id.String(),
-				"email":   userInfo.Email,
-				"state":   state,
-			}, 10*time.Minute)
+	user, err := s.userRepository.GetByEmail(ctx, nil, userRecord.Email)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			phoneNumber, err := myfirebase.GetGooglePhoneNumber(idToken)
 			if err != nil {
-				return dto_response.LoginWithGoogleResponse{}, err
+				return dto_response.LoginResponse{}, myerror.ProcessingError(err)
 			}
+
+			user, err = s.userRepository.Create(ctx, nil, entity.User{
+				Fullname:    userRecord.DisplayName,
+				Email:       userRecord.Email,
+				PhoneNumber: phoneNumber,
+				Password:    uuid.New().String(),
+				IsVerified:  true,
+				Role:        entity.RoleUser,
+			})
+			if err != nil {
+				return dto_response.LoginResponse{}, myerror.DatabaseError(err)
+			}
+		} else {
+			return dto_response.LoginResponse{}, myerror.DatabaseError(err)
 		}
 	}
 
-	if !needRegistration {
-		id = user.ID
-	}
-
-	token, err := myjwt.GenerateToken(map[string]string{
-		"user_id": id.String(),
+	accessToken, err := myjwt.GenerateToken(map[string]string{
+		"user_id": user.ID.String(),
 		"email":   user.Email,
+		"role":    string(user.Role),
 	}, 24*time.Hour)
 	if err != nil {
-		return dto_response.LoginWithGoogleResponse{}, err
+		return dto_response.LoginResponse{}, err
 	}
 
-	return dto_response.LoginWithGoogleResponse{
-		Token:         token,
-		Role:          string(user.Role),
-		RegisterToken: registerToken,
+	// create refresh token
+	token, err := utils.RandomData(32)
+	if err != nil {
+		return dto_response.LoginResponse{}, myerror.ProcessingError(err)
+	}
+
+	refreshToken, err := s.sessionRepository.Create(ctx, nil, entity.SessionToken{
+		UserID:       user.ID.String(),
+		Token:        token,
+		ExpiresAt:    time.Now().Add(30 * 24 * time.Hour),
+		IsActive:     true,
+		AuthProvider: authToken.Firebase.SignInProvider,
+		DeviceInfo:   nil,
+	})
+	if err != nil {
+		return dto_response.LoginResponse{}, myerror.DatabaseError(err)
+	}
+
+	return dto_response.LoginResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken.Token,
+		Role:         string(user.Role),
 	}, nil
+}
+
+func (s *authService) Logout(ctx context.Context, req dto_request.LogoutRequest) error {
+	session, err := s.sessionRepository.GetByToken(ctx, nil, req.RefreshToken)
+	if err != nil {
+		return myerror.DatabaseError(err)
+	}
+
+	if !session.IsActive {
+		return myerror.New("session already inactive", myerror.Error_InvalidRequest)
+	}
+
+	session.IsActive = false
+	_, err = s.sessionRepository.Update(ctx, nil, session)
+	if err != nil {
+		return myerror.DatabaseError(err)
+	}
+
+	if err := s.sessionRepository.Delete(ctx, nil, session); err != nil {
+		return myerror.DatabaseError(err)
+	}
+
+	return nil
 }

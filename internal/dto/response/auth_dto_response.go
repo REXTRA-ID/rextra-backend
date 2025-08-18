@@ -14,10 +14,4 @@ type (
 		RefreshToken string `json:"refresh_token"`
 		Role         string `json:"role"`
 	}
-
-	LoginWithGoogleResponse struct {
-		Token         string `json:"token"`
-		RegisterToken string `json:"register_token"`
-		Role          string `json:"role"`
-	}
 )

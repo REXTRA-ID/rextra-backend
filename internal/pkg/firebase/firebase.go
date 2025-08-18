@@ -3,8 +3,12 @@ package myfirebase
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"log"
+	"net/http"
 	"os"
+
+	"io"
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
@@ -15,6 +19,12 @@ type (
 	Firebase struct {
 		App   *firebase.App
 		Error error
+	}
+
+	GoogleProfile struct {
+		PhoneNumbers []struct {
+			Value string `json:"value"`
+		} `json:"phoneNumbers"`
 	}
 )
 
@@ -54,4 +64,26 @@ func (f Firebase) MustGetClient() *auth.Client {
 	}
 
 	return authClient
+}
+
+func GetGooglePhoneNumber(accessToken string) (string, error) {
+	url := "https://people.googleapis.com/v1/people/me?personFields=phoneNumbers"
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	var profile GoogleProfile
+	json.Unmarshal(body, &profile)
+
+	if len(profile.PhoneNumbers) > 0 {
+		return profile.PhoneNumbers[0].Value, nil
+	}
+	return "", nil
 }

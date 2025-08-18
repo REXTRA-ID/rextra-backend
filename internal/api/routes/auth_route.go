@@ -14,7 +14,8 @@ func ServeAuth(app *gin.Engine, authcontroller controller.AuthController, middle
 		routes.POST("/register", authcontroller.Register)
 		routes.GET("/verify", authcontroller.Verify)
 		routes.GET("/me", middleware.Authenticate(), authcontroller.Me)
+		routes.DELETE("/logout", middleware.Authenticate(), authcontroller.Logout)
 
-		routes.POST("/google", middleware.Authenticate(), authcontroller.LoginWithGoogle)
+		routes.POST("/google", authcontroller.LoginWithGoogle)
 	}
 }

@@ -11,7 +11,6 @@ import (
 	"rextra-backend/internal/middleware"
 	mailer "rextra-backend/internal/pkg/email"
 	myfirebase "rextra-backend/internal/pkg/firebase"
-	"rextra-backend/internal/pkg/google/oauth"
 
 	"log"
 	"os"
@@ -33,7 +32,6 @@ func NewRest() RestConfig {
 	var (
 		//=========== (PACKAGE) ===========//
 		mailerService mailer.Mailer = mailer.New()
-		oauthService  oauth.Oauth   = oauth.New()
 		// awsS3Service  storage.AwsS3 = storage.NewAwsS3()
 
 		//=========== (REPOSITORY) ===========//
@@ -42,7 +40,7 @@ func NewRest() RestConfig {
 		personaRepository repository.PersonaRepository = repository.NewPersona(db)
 
 		//=========== (SERVICE) ===========//
-		authService    service.AuthService    = service.NewAuth(userRepository, sessionRepository, mailerService, oauthService, db)
+		authService    service.AuthService    = service.NewAuth(userRepository, sessionRepository, mailerService, firebaseApp.MustGetClient(), db)
 		userService    service.UserService    = service.NewUser(userRepository, db)
 		personaService service.PersonaService = service.NewPersona(personaRepository, db)
 
