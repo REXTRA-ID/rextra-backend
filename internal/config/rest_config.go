@@ -35,22 +35,25 @@ func NewRest() RestConfig {
 		// awsS3Service  storage.AwsS3 = storage.NewAwsS3()
 
 		//=========== (REPOSITORY) ===========//
-		userRepository    repository.UserRepository    = repository.NewUser(db)
-		sessionRepository repository.SessionRepository = repository.NewSession(db)
-		personaRepository repository.PersonaRepository = repository.NewPersona(db)
-		riasecRepository  repository.RiasecRepository  = repository.NewRiasec(db)
+		userRepository                 repository.UserRepository                 = repository.NewUser(db)
+		sessionRepository              repository.SessionRepository              = repository.NewSession(db)
+		personaRepository              repository.PersonaRepository              = repository.NewPersona(db)
+		riasecRepository               repository.RiasecRepository               = repository.NewRiasec(db)
+		careerRecommendationRepository repository.CareerRecommendationRepository = repository.NewCareerRecommendation(db)
 
 		//=========== (SERVICE) ===========//
-		authService    service.AuthService    = service.NewAuth(userRepository, sessionRepository, mailerService, firebaseApp.MustGetClient(), db)
-		userService    service.UserService    = service.NewUser(userRepository, db)
-		personaService service.PersonaService = service.NewPersona(personaRepository, db)
-		riasecService  service.RiasecService  = service.NewRiasec(riasecRepository, db)
+		authService                 service.AuthService                 = service.NewAuth(userRepository, sessionRepository, mailerService, firebaseApp.MustGetClient(), db)
+		userService                 service.UserService                 = service.NewUser(userRepository, db)
+		personaService              service.PersonaService              = service.NewPersona(personaRepository, db)
+		riasecService               service.RiasecService               = service.NewRiasec(riasecRepository, db)
+		careerRecommendationService service.CareerRecommendationService = service.NewCareerRecommendation(careerRecommendationRepository, db)
 
 		//=========== (CONTROLLER) ===========//
-		authController    controller.AuthController    = controller.NewAuth(authService)
-		userController    controller.UserController    = controller.NewUser(userService)
-		personaController controller.PersonaController = controller.NewPersona(personaService)
-		riasecController  controller.RiasecController  = controller.NewRiasec(riasecService)
+		authController                 controller.AuthController                 = controller.NewAuth(authService)
+		userController                 controller.UserController                 = controller.NewUser(userService)
+		personaController              controller.PersonaController              = controller.NewPersona(personaService)
+		riasecController               controller.RiasecController               = controller.NewRiasec(riasecService)
+		careerRecommendationController controller.CareerRecommendationController = controller.NewCareerRecommendation(careerRecommendationService)
 	)
 
 	// Register all routes
@@ -58,6 +61,7 @@ func NewRest() RestConfig {
 	routes.ServeUser(server, userController, middleware)
 	routes.ServePersona(server, personaController, middleware)
 	routes.ServeRiasec(server, riasecController, middleware)
+	routes.ServeCareerRecommendation(server, careerRecommendationController, middleware)
 
 	return RestConfig{
 		server: server,
