@@ -63,10 +63,15 @@ func (s *authService) Register(ctx context.Context, req dto_request.RegisterRequ
 		return dto_response.RegisterResponse{}, myerror.New("user with this email already exist", myerror.Error_RecordAlreadyExist)
 	}
 
+	hashPassword, err := utils.HashPassword(req.Password)
+	if err != nil {
+		return dto_response.RegisterResponse{}, myerror.ProcessingError(err)
+	}
+
 	userCreation := entity.User{
 		Fullname:    req.Fullname,
 		Email:       req.Email,
-		Password:    req.Password,
+		Password:    hashPassword,
 		PhoneNumber: req.PhoneNumber,
 	}
 

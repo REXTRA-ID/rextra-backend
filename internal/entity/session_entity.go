@@ -14,7 +14,7 @@ type SessionToken struct {
 	ExpiresAt    time.Time      `json:"expires_at" gorm:"not null"`
 	IsActive     bool           `json:"is_active" gorm:"default:true;not null"`
 	AuthProvider string         `json:"auth_provider" gorm:"not null"`
-	DeviceInfo   datatypes.JSON `json:"device_info" gorm:"type:jsonb;not null"`
+	DeviceInfo   datatypes.JSON `json:"device_info" gorm:"type:jsonb"`
 
 	Timestamp
 }
