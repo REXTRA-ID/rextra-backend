@@ -21,11 +21,16 @@ type (
 		RefreshToken string `json:"refresh_token" binding:"required"`
 	}
 
-	ForgotPasswordRequest struct {
+	SendVerificationRequest struct {
+		Email string `json:"email" form:"email" binding:"required,email"`
+	}
+
+	ForgetPasswordRequest struct {
 		Email string `json:"email" binding:"required,email"`
 	}
 
 	ChangePasswordRequest struct {
+		Email       string
 		NewPassword string `json:"new_password"`
 	}
 )
