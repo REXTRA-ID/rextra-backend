@@ -4,6 +4,7 @@ import (
 	"rextra-backend/internal/api/service"
 	dto_request "rextra-backend/internal/dto/request"
 	myerror "rextra-backend/internal/pkg/error"
+	myjwt "rextra-backend/internal/pkg/jwt"
 	"rextra-backend/internal/pkg/response"
 	"rextra-backend/internal/utils"
 
@@ -15,7 +16,8 @@ type (
 		Register(ctx *gin.Context)
 		Login(ctx *gin.Context)
 		Verify(ctx *gin.Context)
-		ForgotPassword(ctx *gin.Context)
+		SendVerificationEmail(ctx *gin.Context)
+		ForgetPassword(ctx *gin.Context)
 		ChangePassword(ctx *gin.Context)
 		Me(ctx *gin.Context)
 		LoginWithGoogle(ctx *gin.Context)
@@ -75,12 +77,64 @@ func (c *authController) Verify(ctx *gin.Context) {
 	response.NewSuccess("success verify account", nil).Send(ctx)
 }
 
-func (c *authController) ForgotPassword(ctx *gin.Context) {
+func (h *authController) SendVerificationEmail(ctx *gin.Context) {
+	var req dto_request.SendVerificationRequest
 
+	if err := ctx.ShouldBind(&req); err != nil {
+		response.NewFailed("failed get data from body", err).Send(ctx)
+		return
+	}
+
+	if err := h.authService.SendVerificationEmail(ctx, req.Email); err != nil {
+		response.NewFailed("failed send verification email", err).Send(ctx)
+		return
+	}
+
+	response.NewSuccess("success send verification email", nil).Send(ctx)
+}
+
+func (c *authController) ForgetPassword(ctx *gin.Context) {
+	var req dto_request.ForgetPasswordRequest
+
+	if err := ctx.ShouldBind(&req); err != nil {
+		response.NewFailed("failed get data from body", err).Send(ctx)
+		return
+	}
+
+	if err := c.authService.ForgetPassword(ctx, req); err != nil {
+		response.NewFailed("failed forget password", err).Send(ctx)
+		return
+	}
+
+	response.NewSuccess("success forget password", nil).Send(ctx)
 }
 
 func (c *authController) ChangePassword(ctx *gin.Context) {
+	var req dto_request.ChangePasswordRequest
+	if err := ctx.ShouldBind(&req); err != nil {
+		response.NewFailed("failed get data from body", err).Send(ctx)
+		return
+	}
 
+	token := ctx.Query("token")
+	if token == "" {
+		response.NewFailed("failed change password", myerror.ErrBodyRequest).Send(ctx)
+		return
+	}
+
+	claims, err := myjwt.GetPayloadInsideToken(token)
+	if err != nil {
+		response.NewFailed("failed change password", err).Send(ctx)
+		return
+	}
+
+	req.Email = claims["email"]
+	if err := c.authService.ChangePassword(ctx, req); err != nil {
+		response.NewFailed("failed change password", err).Send(ctx)
+		return
+	}
+
+	response.NewSuccess("success change password", nil).Send(ctx)
 }
 
 func (c *authController) Me(ctx *gin.Context) {

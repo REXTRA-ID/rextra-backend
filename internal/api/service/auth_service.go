@@ -28,9 +28,10 @@ type (
 		Register(ctx context.Context, req dto_request.RegisterRequest) (dto_response.RegisterResponse, error)
 		Login(ctx context.Context, req dto_request.LoginRequest) (dto_response.LoginResponse, error)
 		Verify(ctx context.Context, authtoken string) error
-		// ForgotPassword(ctx context.Context, req authDto.ForgotPasswordRequest) error
-		// ChangePassword(ctx context.Context, req authDto.ChangePasswordRequest) error
+		ForgetPassword(ctx context.Context, req dto_request.ForgetPasswordRequest) error
+		ChangePassword(ctx context.Context, req dto_request.ChangePasswordRequest) error
 		GetMe(ctx context.Context, userId string) (dto_response.GetMe, error)
+		SendVerificationEmail(ctx context.Context, email string) error
 		LoginWithGoogle(ctx context.Context, idToken string) (dto_response.LoginResponse, error)
 		Logout(ctx context.Context, req dto_request.LogoutRequest) error
 	}
@@ -127,6 +128,57 @@ func (s *authService) Verify(ctx context.Context, token string) error {
 	return nil
 }
 
+func (s *authService) ForgetPassword(ctx context.Context, req dto_request.ForgetPasswordRequest) error {
+	user, err := s.userRepository.GetByEmail(ctx, nil, req.Email)
+	if err != nil {
+		return err
+	}
+
+	if !user.IsVerified {
+		return errors.New("user not verified")
+	}
+
+	token, err := myjwt.GenerateToken(map[string]string{
+		"user_id": user.ID.String(),
+		"email":   user.Email,
+	}, 24*time.Hour)
+	if err != nil {
+		return err
+	}
+
+	// generate token
+	token = fmt.Sprintf("%s/auth/forget?token=%s", os.Getenv("APP_URL"), token)
+	if err := s.mailService.MakeMail("./internal/pkg/email/template/forget_password_email.html", map[string]any{
+		"Fullname": user.Fullname,
+		"Link":     token,
+	}).Send(user.Email, "Forget Password").Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *authService) ChangePassword(ctx context.Context, req dto_request.ChangePasswordRequest) error {
+	user, err := s.userRepository.GetByEmail(ctx, nil, req.Email)
+	if err != nil {
+		return err
+	}
+
+	hashedPassword, err := utils.HashPassword(req.NewPassword)
+	if err != nil {
+		return err
+	}
+
+	user.Password = hashedPassword
+
+	_, err = s.userRepository.Update(ctx, nil, user)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *authService) Login(ctx context.Context, req dto_request.LoginRequest) (dto_response.LoginResponse, error) {
 	user, err := s.userRepository.GetByEmail(ctx, nil, req.Email)
 	if err != nil {
@@ -196,8 +248,33 @@ func (s *authService) GetMe(ctx context.Context, userId string) (dto_response.Ge
 	}, nil
 }
 
+func (s *authService) SendVerificationEmail(ctx context.Context, email string) error {
+	user, err := s.userRepository.GetByEmail(ctx, nil, email)
+	if err == gorm.ErrRecordNotFound || err != nil {
+		return err
+	}
+
+	token, err := myjwt.GenerateToken(map[string]string{
+		"user_id": user.ID.String(),
+		"email":   user.Email,
+	}, 24*time.Hour)
+	if err != nil {
+		return err
+	}
+
+	// generate token
+	token = fmt.Sprintf("%s/auth/verify?token=%s", os.Getenv("APP_URL"), token)
+	if err := s.mailService.MakeMail("./internal/pkg/email/template/verification_email.html", map[string]any{
+		"Fullname": user.Fullname,
+		"Verify":   token,
+	}).Send(user.Email, "Verify Your Account").Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *authService) LoginWithGoogle(ctx context.Context, idToken string) (dto_response.LoginResponse, error) {
-	fmt.Println(idToken)
 	authToken, err := s.firebaseClient.VerifyIDToken(ctx, idToken)
 	if err != nil {
 		return dto_response.LoginResponse{}, myerror.InvalidToken()
