@@ -47,6 +47,7 @@ func NewRest() RestConfig {
 		personaService              service.PersonaService              = service.NewPersona(personaRepository, db)
 		riasecService               service.RiasecService               = service.NewRiasec(riasecRepository, db)
 		careerRecommendationService service.CareerRecommendationService = service.NewCareerRecommendation(careerRecommendationRepository, db)
+		assesmentService            service.AssesmentService            = service.NewAssesment(riasecRepository, db)
 
 		//=========== (CONTROLLER) ===========//
 		authController                 controller.AuthController                 = controller.NewAuth(authService)
@@ -54,6 +55,7 @@ func NewRest() RestConfig {
 		personaController              controller.PersonaController              = controller.NewPersona(personaService)
 		riasecController               controller.RiasecController               = controller.NewRiasec(riasecService)
 		careerRecommendationController controller.CareerRecommendationController = controller.NewCareerRecommendation(careerRecommendationService)
+		assesmentController            controller.AssesmentController            = controller.NewAssesment(assesmentService)
 	)
 
 	// Register all routes
@@ -62,6 +64,7 @@ func NewRest() RestConfig {
 	routes.ServePersona(server, personaController, middleware)
 	routes.ServeRiasec(server, riasecController, middleware)
 	routes.ServeCareerRecommendation(server, careerRecommendationController, middleware)
+	routes.ServeAssesment(server, assesmentController, middleware)
 
 	return RestConfig{
 		server: server,
