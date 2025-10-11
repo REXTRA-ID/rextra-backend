@@ -40,6 +40,7 @@ func NewRest() RestConfig {
 		personaRepository              repository.PersonaRepository              = repository.NewPersona(db)
 		riasecRepository               repository.RiasecRepository               = repository.NewRiasec(db)
 		careerRecommendationRepository repository.CareerRecommendationRepository = repository.NewCareerRecommendation(db)
+		membershipRepository           repository.MembershipRepository           = repository.MembershipRepository(db)
 
 		//=========== (SERVICE) ===========//
 		authService                 service.AuthService                 = service.NewAuth(userRepository, sessionRepository, mailerService, firebaseApp.MustGetClient(), db)
@@ -47,6 +48,7 @@ func NewRest() RestConfig {
 		personaService              service.PersonaService              = service.NewPersona(personaRepository, db)
 		riasecService               service.RiasecService               = service.NewRiasec(riasecRepository, db)
 		careerRecommendationService service.CareerRecommendationService = service.NewCareerRecommendation(careerRecommendationRepository, db)
+		membershipService           service.MembershipService           = service.NewMembership(membershipRepository, db)
 
 		//=========== (CONTROLLER) ===========//
 		authController                 controller.AuthController                 = controller.NewAuth(authService)
@@ -54,6 +56,7 @@ func NewRest() RestConfig {
 		personaController              controller.PersonaController              = controller.NewPersona(personaService)
 		riasecController               controller.RiasecController               = controller.NewRiasec(riasecService)
 		careerRecommendationController controller.CareerRecommendationController = controller.NewCareerRecommendation(careerRecommendationService)
+		membershipController           controller.MembershipController           = controller.NewMembership(membershipService)
 	)
 
 	// Register all routes
@@ -62,6 +65,7 @@ func NewRest() RestConfig {
 	routes.ServePersona(server, personaController, middleware)
 	routes.ServeRiasec(server, riasecController, middleware)
 	routes.ServeCareerRecommendation(server, careerRecommendationController, middleware)
+	routes.ServeMembership(server, membershipController, middleware)
 
 	return RestConfig{
 		server: server,
