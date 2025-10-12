@@ -25,3 +25,8 @@ type RiasecResultResponse struct {
 	NormalizedScores datatypes.JSON `json:"normalized_scores"`
 	CreatedAt    	time.Time `json:"created_at"`	
 }
+
+
+type IkigaiQuestionResponse struct {
+	IkigaiQuestions []datatypes.JSON `json:"ikigai_questions"`
+}

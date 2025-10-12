@@ -1,0 +1,15 @@
+meta {
+  name: Get ikigai question
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{host}}/api/v1/assesment/test/ikigai/question
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
