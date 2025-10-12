@@ -17,7 +17,7 @@ type (
 		SubmitRiasecAnswer(ctx *gin.Context)
 		GetRiasecResult(ctx *gin.Context)
 		GetIkigaiQuestion(ctx *gin.Context)
-		// SubmitIkigaiAnswer(ctx *gin.Context)
+		SubmitIkigaiAnswer(ctx *gin.Context)
 		// GetIkigaiResult(ctx *gin.Context)
 	}
 
@@ -34,6 +34,7 @@ func NewAssesment(assesmentService service.AssesmentService) AssesmentController
 
 func (c *assesmentcontroller) ValidateHash(ctx *gin.Context) {
 	var req dto_request.ValidateHashRequest
+	cookieHeader := ctx.Request.Header.Get("Cookie")
 	if err := ctx.ShouldBind(&req); err != nil {
 		response.NewFailed("failed get data from body", myerror.InvalidRequest(err)).Send(ctx)
 		return
@@ -44,9 +45,14 @@ func (c *assesmentcontroller) ValidateHash(ctx *gin.Context) {
 		return
 	}
 
-	if err := c.assesmentService.ValidateHash(ctx.Request.Context(), req); err != nil {
+	setCookies, err := c.assesmentService.ValidateHash(ctx.Request.Context(), req, cookieHeader)
+	if err != nil {
 		response.NewFailed("failed validate hash", err).Send(ctx)
 		return
+	}
+
+	for _, cookie := range setCookies {
+		ctx.Writer.Header().Add("Set-Cookie", cookie)
 	}
 
 	response.NewSuccess("success validate hash", nil).Send(ctx)
@@ -64,6 +70,7 @@ func (c *assesmentcontroller) GetRiasecQuestion(ctx *gin.Context) {
 
 func (c *assesmentcontroller) SubmitRiasecAnswer(ctx *gin.Context) {
 	userId, err := utils.GetUserIdFromCtx(ctx)
+	cookieHeader := ctx.Request.Header.Get("Cookie")
 	if err != nil {
 		response.NewFailed("failed get user id from context", myerror.InvalidRequest(err)).Send(ctx)
 		return
@@ -80,7 +87,7 @@ func (c *assesmentcontroller) SubmitRiasecAnswer(ctx *gin.Context) {
 	}
 
 
-	res, setCookies,err := c.assesmentService.SubmitRiasecAnswer(ctx.Request.Context(), req, userId)
+	res, setCookies,err := c.assesmentService.SubmitRiasecAnswer(ctx.Request.Context(), req, userId, cookieHeader)
 	
 	if err != nil {
 		response.NewFailed("failed submit riasec answer", err).Send(ctx)
@@ -88,7 +95,7 @@ func (c *assesmentcontroller) SubmitRiasecAnswer(ctx *gin.Context) {
 	}
 
 	for _, cookie := range setCookies {
-		ctx.Header("Set-Cookie", cookie)
+		ctx.Writer.Header().Add("Set-Cookie", cookie)
 	}
 
 	response.NewSuccess("success submit riasec answer", res).Send(ctx)
@@ -111,12 +118,51 @@ func (c *assesmentcontroller) GetRiasecResult(ctx *gin.Context) {
 
 func (c *assesmentcontroller) GetIkigaiQuestion(ctx *gin.Context) {
 	cookieHeader := ctx.Request.Header.Get("Cookie")
-	res, err := c.assesmentService.GetIkigaiQuestion(ctx.Request.Context(), cookieHeader)
+	res, setCookies, err := c.assesmentService.GetIkigaiQuestion(ctx.Request.Context(), cookieHeader)
 	
 	if err != nil {
 		response.NewFailed("failed get ikigai question", err).Send(ctx)
 		return
 	}
 
+
+	for _, cookie := range setCookies {
+		ctx.Writer.Header().Add("Set-Cookie", cookie)
+	}
+
+
 	response.NewSuccess("success get ikigai question", res).Send(ctx)
 }
+
+func (c *assesmentcontroller) SubmitIkigaiAnswer(ctx *gin.Context) {
+	userId, err := utils.GetUserIdFromCtx(ctx)
+	cookieHeader := ctx.Request.Header.Get("Cookie")
+	if err != nil {
+		response.NewFailed("failed get user id from context", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
+	var req dto_request.IkigaiQuestionSubmitRequest
+	if err := ctx.ShouldBind(&req); err != nil {
+		response.NewFailed("failed get data from body", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
+
+	if req.Answer == nil {
+		response.NewFailed("failed submit ikigai answer", myerror.ErrBodyRequest).Send(ctx)
+		return
+	}
+
+	res, setCookies, err := c.assesmentService.SubmitIkigaiAnswer(ctx.Request.Context(), userId, cookieHeader, req)
+	if err != nil {
+		response.NewFailed("failed submit ikigai answer", err).Send(ctx)
+		return
+	}
+
+	for _, cookie := range setCookies {
+		ctx.Writer.Header().Add("Set-Cookie", cookie)
+	}
+
+	response.NewSuccess("success submit ikigai answer", res).Send(ctx)
+}
+
+	

@@ -18,7 +18,7 @@ func ServeAssesment(app *gin.Engine, assesmentcontroller controller.AssesmentCon
 		routes.GET("/test/riasec/result", middleware.Authenticate(), assesmentcontroller.GetRiasecResult)
 
 		routes.GET("/test/ikigai/question", middleware.Authenticate(), assesmentcontroller.GetIkigaiQuestion)
-		// routes.POST("/test/ikigai/submit", middleware.Authenticate(), assesmentcontroller.SubmitIkigaiAnswer)
+		routes.POST("/test/ikigai/submit", middleware.Authenticate(), assesmentcontroller.SubmitIkigaiAnswer)
 		// routes.GET("/test/ikigai/result", middleware.Authenticate(), assesmentcontroller.GetIkigaiResult)
 	}
 }

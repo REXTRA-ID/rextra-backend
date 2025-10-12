@@ -26,7 +26,15 @@ type RiasecResultResponse struct {
 	CreatedAt    	time.Time `json:"created_at"`	
 }
 
-
 type IkigaiQuestionResponse struct {
 	IkigaiQuestions []datatypes.JSON `json:"ikigai_questions"`
+}
+
+type IkigaiQuestionSubmitResponse struct {
+	ChartData datatypes.JSON `json:"chart_data"`
+    Hash string `json:"hash"`
+    Profile string `json:"profile"`
+    Results datatypes.JSON `json:"results"`
+    RiasecExplanations datatypes.JSON `json:"riasec_explanations"`
+    RiasecMapFull datatypes.JSON `json:"riasec_map_full"`
 }
