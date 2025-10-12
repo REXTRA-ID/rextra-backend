@@ -23,6 +23,8 @@ func Migrate(db *gorm.DB) error {
 		&entity.Persona{},
 		&entity.Riasec{},
 		&entity.CareerRecommendation{},
+		&entity.UserIkigai{},
+		&entity.UserRiasec{},
 	); err != nil {
 		return err
 	}
