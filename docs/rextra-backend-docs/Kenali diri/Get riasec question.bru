@@ -5,5 +5,11 @@ meta {
 }
 
 get {
-  url: 
+  url: {{host}}/api/v1/assesment/test/riasec/question
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
 }

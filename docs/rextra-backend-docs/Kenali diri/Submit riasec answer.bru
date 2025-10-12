@@ -4,6 +4,25 @@ meta {
   seq: 1
 }
 
-get {
-  url: 
+post {
+  url: {{host}}/api/v1/assesment/test/riasec/submit
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "answers": [
+      4, 5, 3, 4, 2, 5, 3, 4, 5, 2, 4, 3,   
+      3, 4, 5, 2, 4, 5, 3, 5, 4, 3, 2, 4,   
+      5, 4, 3, 4, 5, 3, 4, 5, 3, 4, 5, 2,   
+      4, 5, 3, 4, 5, 4, 3, 4, 5, 3, 4, 5,   
+      5, 4, 4, 3, 4, 5, 3, 4, 5, 4, 3, 5,   
+      4, 3, 5, 4, 3, 5, 4, 4, 5, 3, 4, 5    
+    ]
+  }
 }
