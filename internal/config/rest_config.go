@@ -40,6 +40,7 @@ func NewRest() RestConfig {
 		personaRepository              repository.PersonaRepository              = repository.NewPersona(db)
 		riasecRepository               repository.RiasecRepository               = repository.NewRiasec(db)
 		careerRecommendationRepository repository.CareerRecommendationRepository = repository.NewCareerRecommendation(db)
+		assesmentRepository            repository.AssesmentRepository            = repository.NewAssesment(db)
 
 		//=========== (SERVICE) ===========//
 		authService                 service.AuthService                 = service.NewAuth(userRepository, sessionRepository, mailerService, firebaseApp.MustGetClient(), db)
@@ -47,7 +48,7 @@ func NewRest() RestConfig {
 		personaService              service.PersonaService              = service.NewPersona(personaRepository, db)
 		riasecService               service.RiasecService               = service.NewRiasec(riasecRepository, db)
 		careerRecommendationService service.CareerRecommendationService = service.NewCareerRecommendation(careerRecommendationRepository, db)
-		assesmentService            service.AssesmentService            = service.NewAssesment(riasecRepository, db)
+		assesmentService            service.AssesmentService            = service.NewAssesment(assesmentRepository, db)
 
 		//=========== (CONTROLLER) ===========//
 		authController                 controller.AuthController                 = controller.NewAuth(authService)

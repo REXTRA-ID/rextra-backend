@@ -21,7 +21,7 @@ type (
 	}
 )
 
-func NewAssesmentRepository(db *gorm.DB) AssesmentRepository {
+func NewAssesment(db *gorm.DB) AssesmentRepository {
 	return &assesmentRepository{db: db}
 }
 

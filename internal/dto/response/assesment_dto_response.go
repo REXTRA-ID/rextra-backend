@@ -1,5 +1,11 @@
 package dto_response
 
+import (
+	"time"
+
+	"gorm.io/datatypes"
+)
+
 type RiasecQuestionResponse struct {
 	ID             string   `json:"id"`
 	Pertanyaan     string   `json:"pertanyaan"`
@@ -8,16 +14,14 @@ type RiasecQuestionResponse struct {
 	Type           string   `json:"type"`
 }
 
-type normalizedScores struct {
-	Artistic      float64 `json:"Artistic"`
-	Conventional  float64 `json:"Conventional"`
-	Enterprising  float64 `json:"Enterprising"`
-	Investigative float64 `json:"Investigative"`
-	Realistic     float64 `json:"Realistic"`
-	Social        float64 `json:"Social"`
+type RiasecQuestionSubmitResponse struct {
+	NormalizedScores datatypes.JSON `json:"normalized_scores"`
+	Profile          string           `json:"profile"`
 }
 
-type RiasecQuestionSubmitResponse struct {
-	NormalizedScores normalizedScores `json:"normalized_scores"`
+type RiasecResultResponse struct {
+	ID            	 string   `json:"id"`
 	Profile          string           `json:"profile"`
+	NormalizedScores datatypes.JSON `json:"normalized_scores"`
+	CreatedAt    	time.Time `json:"created_at"`	
 }

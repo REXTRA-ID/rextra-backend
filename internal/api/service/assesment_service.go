@@ -11,8 +11,10 @@ import (
 	"rextra-backend/internal/api/repository"
 	dto_request "rextra-backend/internal/dto/request"
 	dto_response "rextra-backend/internal/dto/response"
+	"rextra-backend/internal/entity"
 	myerror "rextra-backend/internal/pkg/error"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -20,22 +22,22 @@ type (
 	AssesmentService interface {
 		ValidateHash(ctx context.Context, req dto_request.ValidateHashRequest) error
 		GetRiasecQuestion(ctx context.Context) ([]dto_response.RiasecQuestionResponse, error)
-		SubmitRiasecAnswer(ctx context.Context, req dto_request.RiasecQuestionSubmitRequest) (dto_response.RiasecQuestionSubmitResponse, error)
-		// GetRiasecResult(ctx *gin.Context)
+		SubmitRiasecAnswer(ctx context.Context, req dto_request.RiasecQuestionSubmitRequest, userID string) (dto_response.RiasecQuestionSubmitResponse, error)
+		GetRiasecResult(ctx context.Context, userID string) ([]dto_response.RiasecResultResponse, error)
 		// GetIkigaiQuestion(ctx *gin.Context)
 		// SubmitIkigaiAnswer(ctx *gin.Context)
 		// GetIkigaiResult(ctx *gin.Context)
 	}
 
 	assesmentService struct {
-		riasecRepository repository.RiasecRepository
+		assesmentRepository repository.AssesmentRepository
 		db                *gorm.DB
 	}
 )
 
-func NewAssesment(riasecRepository repository.RiasecRepository, db *gorm.DB) AssesmentService {
+func NewAssesment(assesmentRepository repository.AssesmentRepository, db *gorm.DB) AssesmentService {
 	return &assesmentService{
-		riasecRepository: riasecRepository,
+		assesmentRepository: assesmentRepository,
 		db:                db,
 	}
 }
@@ -111,7 +113,7 @@ func (s *assesmentService) GetRiasecQuestion(ctx context.Context) ([]dto_respons
 	return result, nil
 }
 
-func (s *assesmentService) SubmitRiasecAnswer(ctx context.Context, req dto_request.RiasecQuestionSubmitRequest) (dto_response.RiasecQuestionSubmitResponse, error) {
+func (s *assesmentService) SubmitRiasecAnswer(ctx context.Context, req dto_request.RiasecQuestionSubmitRequest, userID string) (dto_response.RiasecQuestionSubmitResponse, error) {
 	base := os.Getenv("MONGODB_BACKEND")
 	if base == "" {
 		return dto_response.RiasecQuestionSubmitResponse{}, myerror.ProcessingError(myerror.New("MONGODB_BACKEND not set", myerror.SystemError))
@@ -150,5 +152,33 @@ func (s *assesmentService) SubmitRiasecAnswer(ctx context.Context, req dto_reque
 		return dto_response.RiasecQuestionSubmitResponse{}, myerror.ProcessingError(err)
 	}
 
+	if _, err := s.assesmentRepository.CreateUserRiasec(ctx, s.db, entity.UserRiasec{
+		UserID: uuid.MustParse(userID),
+		Profile: result.Profile,
+		NormalizedScores: result.NormalizedScores,
+	}); err != nil {
+		return dto_response.RiasecQuestionSubmitResponse{}, myerror.ProcessingError(err)
+	}
+
 	return result, nil
 }
+
+func (s *assesmentService) GetRiasecResult(ctx context.Context, userID string) ([]dto_response.RiasecResultResponse, error) {
+	userRiasec, err := s.assesmentRepository.GetUserRiasec(ctx, s.db, userID)
+	if err != nil {
+		return nil, myerror.ProcessingError(err)
+	}
+
+	var result []dto_response.RiasecResultResponse
+	for _, v := range userRiasec {
+		result = append(result, dto_response.RiasecResultResponse{
+			ID:             v.ID.String(),
+			Profile:          v.Profile,
+			NormalizedScores: v.NormalizedScores,
+			CreatedAt:        v.CreatedAt,
+		})
+	}
+
+	return result, nil	
+}
+

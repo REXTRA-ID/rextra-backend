@@ -7,6 +7,7 @@ import (
 	dto_request "rextra-backend/internal/dto/request"
 	myerror "rextra-backend/internal/pkg/error"
 	"rextra-backend/internal/pkg/response"
+	"rextra-backend/internal/utils"
 )
 
 type (
@@ -14,7 +15,7 @@ type (
 		ValidateHash(ctx *gin.Context)
 		GetRiasecQuestion(ctx *gin.Context)
 		SubmitRiasecAnswer(ctx *gin.Context)
-		// GetRiasecResult(ctx *gin.Context)
+		GetRiasecResult(ctx *gin.Context)
 		// GetIkigaiQuestion(ctx *gin.Context)
 		// SubmitIkigaiAnswer(ctx *gin.Context)
 		// GetIkigaiResult(ctx *gin.Context)
@@ -62,6 +63,11 @@ func (c *assesmentcontroller) GetRiasecQuestion(ctx *gin.Context) {
 }
 
 func (c *assesmentcontroller) SubmitRiasecAnswer(ctx *gin.Context) {
+	userId, err := utils.GetUserIdFromCtx(ctx)
+	if err != nil {
+		response.NewFailed("failed get user id from context", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
 	var req dto_request.RiasecQuestionSubmitRequest
 	if err := ctx.ShouldBind(&req); err != nil {
 		response.NewFailed("failed get data from body", myerror.InvalidRequest(err)).Send(ctx)
@@ -73,7 +79,7 @@ func (c *assesmentcontroller) SubmitRiasecAnswer(ctx *gin.Context) {
 		return
 	}
 
-	res, err := c.assesmentService.SubmitRiasecAnswer(ctx.Request.Context(), req)
+	res, err := c.assesmentService.SubmitRiasecAnswer(ctx.Request.Context(), req, userId)
 	
 	if err != nil {
 		response.NewFailed("failed submit riasec answer", err).Send(ctx)
@@ -81,4 +87,19 @@ func (c *assesmentcontroller) SubmitRiasecAnswer(ctx *gin.Context) {
 	}
 
 	response.NewSuccess("success submit riasec answer", res).Send(ctx)
+}
+
+func (c *assesmentcontroller) GetRiasecResult(ctx *gin.Context) {
+	userId, err := utils.GetUserIdFromCtx(ctx)
+	if err != nil {
+		response.NewFailed("failed get user id from context", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
+	res, err := c.assesmentService.GetRiasecResult(ctx.Request.Context(), userId)
+	if err != nil {
+		response.NewFailed("failed get riasec result", err).Send(ctx)
+		return
+	}
+
+	response.NewSuccess("success get riasec result", res).Send(ctx)
 }
