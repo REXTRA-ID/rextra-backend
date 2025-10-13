@@ -38,3 +38,14 @@ type IkigaiQuestionSubmitResponse struct {
     RiasecExplanations datatypes.JSON `json:"riasec_explanations"`
     RiasecMapFull datatypes.JSON `json:"riasec_map_full"`
 }
+
+type IkigaiResultResponse struct {
+	ID             string   `json:"id"`
+	Profile          string           `json:"profile"`
+	ChartData datatypes.JSON `json:"chart_data"`
+    Hash string `json:"hash"`
+    Results datatypes.JSON `json:"results"`
+    RiasecExplanations datatypes.JSON `json:"riasec_explanations"`
+    RiasecMapFull datatypes.JSON `json:"riasec_map_full"`
+	CreatedAt time.Time `json:"created_at"`
+}

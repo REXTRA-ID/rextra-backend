@@ -18,7 +18,7 @@ type (
 		GetRiasecResult(ctx *gin.Context)
 		GetIkigaiQuestion(ctx *gin.Context)
 		SubmitIkigaiAnswer(ctx *gin.Context)
-		// GetIkigaiResult(ctx *gin.Context)
+		GetIkigaiResult(ctx *gin.Context)
 	}
 
 	assesmentcontroller struct {
@@ -165,4 +165,18 @@ func (c *assesmentcontroller) SubmitIkigaiAnswer(ctx *gin.Context) {
 	response.NewSuccess("success submit ikigai answer", res).Send(ctx)
 }
 
+func (c *assesmentcontroller) GetIkigaiResult(ctx *gin.Context) {
+	userId, err := utils.GetUserIdFromCtx(ctx)
+	if err != nil {
+		response.NewFailed("failed get user id from context", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
+	res, err := c.assesmentService.GetIkigaiResult(ctx.Request.Context(), userId)
+	if err != nil {
+		response.NewFailed("failed get ikigai result", err).Send(ctx)
+		return
+	}
+
+	response.NewSuccess("success get ikigai result", res).Send(ctx)
+}
 	

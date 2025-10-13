@@ -28,7 +28,7 @@ type (
 		GetRiasecResult(ctx context.Context, userID string) ([]dto_response.RiasecResultResponse, error)
 		GetIkigaiQuestion(ctx context.Context, cookieHeader string) (dto_response.IkigaiQuestionResponse, []string, error)
 		SubmitIkigaiAnswer(ctx context.Context, userID string, cookieHeader string, req dto_request.IkigaiQuestionSubmitRequest) (dto_response.IkigaiQuestionSubmitResponse, []string, error)
-		// GetIkigaiResult(ctx *gin.Context)
+		GetIkigaiResult(ctx context.Context, userID string) ([]dto_response.IkigaiResultResponse, error)
 	}
 
 	assesmentService struct {
@@ -364,4 +364,27 @@ func (s *assesmentService) SubmitIkigaiAnswer(ctx context.Context, userID string
 	}
 
 	return result, setCookies, nil
+}
+
+func (s *assesmentService) GetIkigaiResult(ctx context.Context, userID string) ([]dto_response.IkigaiResultResponse, error) {
+	userIkigai, err := s.assesmentRepository.GetUserIkigai(ctx, s.db, userID)
+	if err != nil {
+		return nil, myerror.ProcessingError(err)
+	}
+
+	var result []dto_response.IkigaiResultResponse
+	for _, v := range userIkigai {
+		result = append(result, dto_response.IkigaiResultResponse{
+			ID:             v.ID.String(),
+			Profile:          v.Profile,
+			ChartData: v.ChartData,
+			Hash: v.Hash,
+			Results: v.Results,
+			RiasecExplanations: v.RiasecExplanations,
+			RiasecMapFull: v.RiasecMapFull,
+			CreatedAt:        v.CreatedAt,
+		})
+	}
+
+	return result, nil	
 }
