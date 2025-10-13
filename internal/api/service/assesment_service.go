@@ -76,8 +76,22 @@ func (s *assesmentService) ValidateHash(ctx context.Context, req dto_request.Val
 	}
 	defer resp.Body.Close()
 	
+	
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, myerror.ProcessingError(err)
+	}
+
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, myerror.ProcessingError(myerror.New("external api returned non-2xx status", myerror.SystemError))
+		var errorResp struct {
+			Error string `json:"error"`
+		}
+		_ = json.Unmarshal(body, &errorResp)
+		msg := strings.TrimSpace(errorResp.Error)
+		if msg == "" {
+			msg = string(body)
+		}
+		return nil, myerror.InvalidRequest(myerror.New(msg, myerror.Error_InvalidRequest))
 	}
 
 	setCookies := resp.Header["Set-Cookie"]
@@ -108,12 +122,25 @@ func (s *assesmentService) GetRiasecQuestion(ctx context.Context) ([]dto_respons
 	}
 	defer resp.Body.Close()
 
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, myerror.ProcessingError(err)
+	}
+
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, myerror.ProcessingError(myerror.New("external api returned non-2xx status", myerror.SystemError))
+		var errorResp struct {
+			Error string `json:"error"`
+		}
+		_ = json.Unmarshal(body, &errorResp)
+		msg := strings.TrimSpace(errorResp.Error)
+		if msg == "" {
+			msg = string(body)
+		}
+		return nil, myerror.InvalidRequest(myerror.New(msg, myerror.Error_InvalidRequest))
 	}
 
 	var result []dto_response.RiasecQuestionResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.Unmarshal(body, &result); err != nil {
 		return nil, myerror.ProcessingError(err)
 	}
 
@@ -152,16 +179,28 @@ func (s *assesmentService) SubmitRiasecAnswer(ctx context.Context, req dto_reque
 		return dto_response.RiasecQuestionSubmitResponse{}, nil,myerror.ProcessingError(err)
 	}
 	defer resp.Body.Close()
-	
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return dto_response.RiasecQuestionSubmitResponse{}, nil, myerror.ProcessingError(err)
+	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return dto_response.RiasecQuestionSubmitResponse{}, nil, myerror.ProcessingError(myerror.New("external api returned non-2xx status", myerror.SystemError))
+		var errorResp struct {
+			Error string `json:"error"`
+		}
+		_ = json.Unmarshal(body, &errorResp)
+		msg := strings.TrimSpace(errorResp.Error)
+		if msg == "" {
+			msg = string(body)
+		}
+		return dto_response.RiasecQuestionSubmitResponse{}, nil, myerror.InvalidRequest(myerror.New(msg, myerror.Error_InvalidRequest))
 	}
 
 	setCookies := resp.Header["Set-Cookie"]
 
 	var result dto_response.RiasecQuestionSubmitResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.Unmarshal(body, &result); err != nil {
 		return dto_response.RiasecQuestionSubmitResponse{}, nil, myerror.ProcessingError(err)
 	}
 
@@ -225,8 +264,21 @@ func (s *assesmentService) GetIkigaiQuestion(ctx context.Context, cookieHeader s
 	
 	defer resp.Body.Close()
 
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return dto_response.IkigaiQuestionResponse{}, nil, myerror.ProcessingError(err)
+	}
+
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return dto_response.IkigaiQuestionResponse{}, nil, myerror.ProcessingError(myerror.New("external api returned non-2xx status", myerror.SystemError))
+		var errorResp struct {
+			Error string `json:"error"`
+		}
+		_ = json.Unmarshal(body, &errorResp)
+		msg := strings.TrimSpace(errorResp.Error)
+		if msg == "" {
+			msg = string(body)
+		}
+		return dto_response.IkigaiQuestionResponse{}, nil, myerror.InvalidRequest(myerror.New(msg, myerror.Error_InvalidRequest))
 	}
 
 	setCookies := resp.Header["Set-Cookie"]
@@ -234,7 +286,7 @@ func (s *assesmentService) GetIkigaiQuestion(ctx context.Context, cookieHeader s
 	fmt.Println(setCookies)
 
 	var result dto_response.IkigaiQuestionResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.Unmarshal(body, &result); err != nil {
 		return dto_response.IkigaiQuestionResponse{}, nil,myerror.ProcessingError(err)
 	}
 
