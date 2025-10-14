@@ -25,6 +25,8 @@ func Migrate(db *gorm.DB) error {
 		&entity.CareerRecommendation{},
 		&entity.UserIkigai{},
 		&entity.UserRiasec{},
+		&entity.Education{},
+		&entity.EducationPlan{},
 	); err != nil {
 		return err
 	}
