@@ -55,7 +55,7 @@ func (r *assesmentRepository) GetUserRiasec(ctx context.Context, tx *gorm.DB, us
 	}
 
 	var userRiasec []entity.UserRiasec
-	if err := tx.WithContext(ctx).Take(&userRiasec, "user_id = ?", userID).Error; err != nil {
+	if err := tx.WithContext(ctx).Where("user_id = ?", userID).Order("created_at DESC").Find(&userRiasec).Error; err != nil {
 		return []entity.UserRiasec{}, err
 	}
 
