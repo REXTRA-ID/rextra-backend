@@ -15,6 +15,7 @@ type (
 		Create(ctx *gin.Context)
 		GetAll(ctx *gin.Context)
 		GetEducationById(ctx *gin.Context)
+		Update(ctx *gin.Context)
 	}
 	educationController struct {
 		educationService service.EducationService
@@ -88,4 +89,34 @@ func (c *educationController) GetEducationById(ctx *gin.Context) {
 
 	response.NewSuccess("success get education by id", res).Send(ctx)
 }
+
+func (c *educationController) Update(ctx *gin.Context) {
+	userId, err := utils.GetUserIdFromCtx(ctx)
+	if err != nil {
+		response.NewFailed("failed get user id from context", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
+
+	educationID := ctx.Param("id")
+	if educationID == "" {
+		response.NewFailed("failed get education id from context", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
+
+	var req dto_request.UpdateEducationRequest
+	req.ID = educationID
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		response.NewFailed("failed get data from body", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
+
+	res, err := c.educationService.UpdateEducation(ctx.Request.Context(), userId, req)
+	if err != nil {
+		response.NewFailed("failed update education", err).Send(ctx)
+		return
+	}
+
+	response.NewSuccess("success update education", res).Send(ctx)
+}
+
 

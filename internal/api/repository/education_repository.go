@@ -14,6 +14,7 @@ type (
 		GetActiveEducationByUserId(ctx context.Context, tx *gorm.DB, userId string) (entity.Education, bool,error)
 		GetAllEducationByUserId(ctx context.Context, tx *gorm.DB, userID string) ([]entity.Education, error)
 		GetByUserIdAndEducationById(ctx context.Context, tx *gorm.DB, userID string, educationID string) (entity.Education, bool,error)
+		Update(ctx context.Context, tx *gorm.DB, userEducation entity.Education) (entity.Education, error)
 	}
 
 	educationRepository struct {

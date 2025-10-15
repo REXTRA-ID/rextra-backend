@@ -20,6 +20,7 @@ type (
 		CreateEducation(ctx context.Context, education dto_request.CreateEducationRequest) (dto_response.EducationResponse, error)
 		GetAllEducation(ctx context.Context, userID string) ([]dto_response.EducationResponse, error)
 		GetEducationById(ctx context.Context, userID string, educationID string) (dto_response.EducationResponse, error)
+		UpdateEducation(ctx context.Context, userID string, education dto_request.UpdateEducationRequest) (dto_response.EducationResponse, error)
 	}
 	educationService struct {
 		educationRepository repository.EducationRepository
@@ -161,6 +162,90 @@ func (s *educationService) GetEducationById(ctx context.Context, userID string, 
 		EducationLevel:         string(education.EducationLevel),
 		Status:                 string(education.Status),
 		IsActive:               education.IsActive,
+	}, nil
+}
+
+func (s *educationService) UpdateEducation(ctx context.Context, userID string, education dto_request.UpdateEducationRequest) (dto_response.EducationResponse, error) {
+	userId, err := uuid.Parse(userID)
+	if err != nil {
+		return dto_response.EducationResponse{}, err
+	}
+
+	_, flag, err := s.educationRepository.GetByUserIdAndEducationById(ctx, s.db, userID, education.ID)
+	if err != nil {
+		return dto_response.EducationResponse{}, err
+	}
+
+	if !flag {
+		return dto_response.EducationResponse{}, myerror.RecordNotFound("education")
+	}
+
+	if err := EducationLevelValidation(education.EducationLevel); err != nil {
+		return dto_response.EducationResponse{}, err
+	}
+	if err := EducationStatusValidation(education.Status); err != nil {
+		return dto_response.EducationResponse{}, err
+	}
+
+	if education.ActualGraduationYear != nil {
+		if *education.ActualGraduationYear < education.EntryYear {
+			return dto_response.EducationResponse{}, errors.New("actual graduation year cannot be less than entry year")
+		}
+	}
+
+	var actualGraduationYear int
+	if education.ActualGraduationYear != nil {
+		actualGraduationYear = *education.ActualGraduationYear
+	}
+	
+	var isActive bool
+	if strings.ToUpper(education.Status) == "ACTIVE" {
+		exitsEducation, flag , err := s.educationRepository.GetActiveEducationByUserId(ctx, s.db, userID)
+		if err != nil {
+			return dto_response.EducationResponse{}, err
+		}
+		if flag && exitsEducation.ID.String() != education.ID {
+			return dto_response.EducationResponse{}, errors.New("user already has active education")
+		}
+		isActive = true
+	}
+
+	updateRequest := entity.Education{
+		ID:                     uuid.MustParse(education.ID),
+		UserID:                 userId,
+		InstitutionName:        education.InstitutionName,
+		Major:                  education.Major,
+		Faculty:                education.Faculty,
+		EntryYear:              education.EntryYear,
+		ExpectedGraduationYear: education.ExpectedGraduationYear,
+		ActualGraduationYear:   actualGraduationYear,
+		CurrentSemester:        education.CurrentSemester,
+		TotalSemester:          education.TotalSemester,
+		EducationLevel:         entity.EducationLevel(education.EducationLevel),
+		Status:                 entity.EducationStatus(education.Status),
+		IsActive:               isActive,
+	}
+
+	UpdateEducation, err := s.educationRepository.Update(ctx, s.db, updateRequest)
+
+	if err != nil {
+		return dto_response.EducationResponse{}, err
+	}
+
+	return dto_response.EducationResponse{
+		ID:                     UpdateEducation.ID.String(),
+		UserID:                 UpdateEducation.UserID.String(),
+		InstitutionName:        UpdateEducation.InstitutionName,
+		Major:                  UpdateEducation.Major,
+		Faculty:                UpdateEducation.Faculty,
+		EntryYear:              UpdateEducation.EntryYear,
+		ExpectedGraduationYear: UpdateEducation.ExpectedGraduationYear,
+		ActualGraduationYear:   &UpdateEducation.ActualGraduationYear,
+		CurrentSemester:        UpdateEducation.CurrentSemester,
+		TotalSemester:          UpdateEducation.TotalSemester,
+		EducationLevel:         string(UpdateEducation.EducationLevel),
+		Status:                 string(UpdateEducation.Status),
+		IsActive:               UpdateEducation.IsActive,
 	}, nil
 }
 
