@@ -16,6 +16,7 @@ type (
 		GetAll(ctx *gin.Context)
 		GetEducationById(ctx *gin.Context)
 		Update(ctx *gin.Context)
+		Delete(ctx *gin.Context)
 	}
 	educationController struct {
 		educationService service.EducationService
@@ -117,6 +118,27 @@ func (c *educationController) Update(ctx *gin.Context) {
 	}
 
 	response.NewSuccess("success update education", res).Send(ctx)
+}
+
+func (c *educationController) Delete(ctx *gin.Context) {
+	userId, err := utils.GetUserIdFromCtx(ctx)
+	if err != nil {
+		response.NewFailed("failed get user id from context", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
+
+	educationID := ctx.Param("id")
+	if educationID == "" {
+		response.NewFailed("failed get education id from context", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
+
+	if err := c.educationService.DeleteEducation(ctx.Request.Context(), userId, educationID); err != nil {
+		response.NewFailed("failed delete education", err).Send(ctx)
+		return
+	}
+
+	response.NewSuccess("success delete education", nil).Send(ctx)
 }
 
 

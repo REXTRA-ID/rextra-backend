@@ -1,0 +1,19 @@
+meta {
+  name: Delete
+  type: http
+  seq: 1
+}
+
+delete {
+  url: {{host}}/api/v1/education/:id
+  body: none
+  auth: bearer
+}
+
+params:path {
+  id: 1aeda044-c06b-422b-a3f6-ece24215b74b
+}
+
+auth:bearer {
+  token: {{token}}
+}

@@ -21,6 +21,7 @@ type (
 		GetAllEducation(ctx context.Context, userID string) ([]dto_response.EducationResponse, error)
 		GetEducationById(ctx context.Context, userID string, educationID string) (dto_response.EducationResponse, error)
 		UpdateEducation(ctx context.Context, userID string, education dto_request.UpdateEducationRequest) (dto_response.EducationResponse, error)
+		DeleteEducation(ctx context.Context, userID string, educationID string) error
 	}
 	educationService struct {
 		educationRepository repository.EducationRepository
@@ -247,6 +248,28 @@ func (s *educationService) UpdateEducation(ctx context.Context, userID string, e
 		Status:                 string(UpdateEducation.Status),
 		IsActive:               UpdateEducation.IsActive,
 	}, nil
+}
+
+func (s *educationService) DeleteEducation(ctx context.Context, userID string, educationID string) error {
+	userId, err := uuid.Parse(userID)
+	if err != nil {
+		return err
+	}
+
+	_, flag, err := s.educationRepository.GetByUserIdAndEducationById(ctx, s.db, userId.String(), educationID)
+	if err != nil {
+		return err
+	}
+
+	if !flag {
+		return myerror.RecordNotFound("education")
+	}
+
+	if err := s.educationRepository.Delete(ctx, s.db, userId.String(), educationID); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func EducationLevelValidation(educationLevel string) error {

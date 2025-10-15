@@ -15,6 +15,7 @@ type (
 		GetAllEducationByUserId(ctx context.Context, tx *gorm.DB, userID string) ([]entity.Education, error)
 		GetByUserIdAndEducationById(ctx context.Context, tx *gorm.DB, userID string, educationID string) (entity.Education, bool,error)
 		Update(ctx context.Context, tx *gorm.DB, userEducation entity.Education) (entity.Education, error)
+		Delete(ctx context.Context, tx *gorm.DB, userID string, educationID string) error
 	}
 
 	educationRepository struct {
@@ -51,16 +52,16 @@ func (r *educationRepository) Update(ctx context.Context, tx *gorm.DB, userEduca
 }
 
 
-func (r *educationRepository) Delete(ctx context.Context, tx *gorm.DB, userEducation entity.Education) (entity.Education, error) {
+func (r *educationRepository) Delete(ctx context.Context, tx *gorm.DB, userID string, educationID string) error {
 	if tx == nil {
 		tx = r.db
 	}
 
-	if err := tx.WithContext(ctx).Delete(&userEducation).Error; err != nil {
-		return userEducation, err
+	if err := tx.WithContext(ctx).Delete(&entity.Education{}, "user_id = ? AND id = ?", userID, educationID).Error; err != nil {
+		return err
 	}
 
-	return userEducation, nil
+	return nil
 }
 
 func (r *educationRepository) GetAllByUserId(ctx context.Context, tx *gorm.DB, userId uint) ([]entity.Education, error) {

@@ -14,5 +14,6 @@ func ServeEducation(app *gin.Engine, educationController controller.EducationCon
 		routes.GET("", middleware.Authenticate(), educationController.GetAll)
 		routes.GET("/:id", middleware.Authenticate(), educationController.GetEducationById)
 		routes.PUT("/:id", middleware.Authenticate(), educationController.Update)
+		routes.DELETE("/:id", middleware.Authenticate(), educationController.Delete)
 	}
 }
