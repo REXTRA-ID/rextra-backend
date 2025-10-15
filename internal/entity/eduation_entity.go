@@ -42,7 +42,7 @@ type Education struct {
 
 	EducationLevel EducationLevel `json:"education_level" gorm:"not null"`
 	Status EducationStatus `json:"status" gorm:"not null"`
-	IsActive bool `json:"is_active" gorm:"default:true;not null"`
+	IsActive bool `json:"is_active" gorm:"default:false;not null"`
 
 	Timestamp
 }
