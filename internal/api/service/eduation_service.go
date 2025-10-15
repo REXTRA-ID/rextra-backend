@@ -9,6 +9,7 @@ import (
 	dto_request "rextra-backend/internal/dto/request"
 	dto_response "rextra-backend/internal/dto/response"
 	"rextra-backend/internal/entity"
+	myerror "rextra-backend/internal/pkg/error"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -18,6 +19,7 @@ type (
 	EducationService interface {
 		CreateEducation(ctx context.Context, education dto_request.CreateEducationRequest) (dto_response.EducationResponse, error)
 		GetAllEducation(ctx context.Context, userID string) ([]dto_response.EducationResponse, error)
+		GetEducationById(ctx context.Context, userID string, educationID string) (dto_response.EducationResponse, error)
 	}
 	educationService struct {
 		educationRepository repository.EducationRepository
@@ -133,6 +135,33 @@ func (s *educationService) GetAllEducation(ctx context.Context, userID string) (
 	}
 
 	return educationResponse, nil
+}
+
+func (s *educationService) GetEducationById(ctx context.Context, userID string, educationID string) (dto_response.EducationResponse, error) {
+	education, flag, err := s.educationRepository.GetByUserIdAndEducationById(ctx, s.db, userID, educationID)
+	if err != nil {
+		return dto_response.EducationResponse{}, err
+	}
+
+	if !flag {
+		return dto_response.EducationResponse{}, myerror.RecordNotFound("education")
+	}
+
+	return dto_response.EducationResponse{
+		ID:                     education.ID.String(),
+		UserID:                 education.UserID.String(),
+		InstitutionName:        education.InstitutionName,
+		Major:                  education.Major,
+		Faculty:                education.Faculty,
+		EntryYear:              education.EntryYear,
+		ExpectedGraduationYear: education.ExpectedGraduationYear,
+		ActualGraduationYear:   &education.ActualGraduationYear,
+		CurrentSemester:        education.CurrentSemester,
+		TotalSemester:          education.TotalSemester,
+		EducationLevel:         string(education.EducationLevel),
+		Status:                 string(education.Status),
+		IsActive:               education.IsActive,
+	}, nil
 }
 
 func EducationLevelValidation(educationLevel string) error {

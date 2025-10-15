@@ -12,5 +12,6 @@ func ServeEducation(app *gin.Engine, educationController controller.EducationCon
 	{
 		routes.POST("", middleware.Authenticate(), educationController.Create)
 		routes.GET("", middleware.Authenticate(), educationController.GetAll)
+		routes.GET("/:id", middleware.Authenticate(), educationController.GetEducationById)
 	}
 }

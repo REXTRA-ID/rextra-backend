@@ -14,6 +14,7 @@ type (
 	EducationController interface {
 		Create(ctx *gin.Context)
 		GetAll(ctx *gin.Context)
+		GetEducationById(ctx *gin.Context)
 	}
 	educationController struct {
 		educationService service.EducationService
@@ -65,3 +66,26 @@ func (c *educationController) GetAll(ctx *gin.Context) {
 
 	response.NewSuccess("success get all education", res).Send(ctx)
 }
+
+func (c *educationController) GetEducationById(ctx *gin.Context) {
+	userId, err := utils.GetUserIdFromCtx(ctx)
+	if err != nil {
+		response.NewFailed("failed get user id from context", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
+
+	educationID := ctx.Param("id")
+	if educationID == "" {
+		response.NewFailed("failed get education id from context", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
+
+	res, err := c.educationService.GetEducationById(ctx.Request.Context(), userId, educationID)
+	if err != nil {
+		response.NewFailed("failed get education by id", err).Send(ctx)
+		return
+	}
+
+	response.NewSuccess("success get education by id", res).Send(ctx)
+}
+

@@ -13,6 +13,7 @@ type (
 		Create(ctx context.Context, tx *gorm.DB, userEducation entity.Education) (entity.Education, error)
 		GetActiveEducationByUserId(ctx context.Context, tx *gorm.DB, userId string) (entity.Education, bool,error)
 		GetAllEducationByUserId(ctx context.Context, tx *gorm.DB, userID string) ([]entity.Education, error)
+		GetByUserIdAndEducationById(ctx context.Context, tx *gorm.DB, userID string, educationID string) (entity.Education, bool,error)
 	}
 
 	educationRepository struct {
@@ -74,17 +75,20 @@ func (r *educationRepository) GetAllByUserId(ctx context.Context, tx *gorm.DB, u
 	return userEducation, nil
 }
 
-func (r *educationRepository) GetUserIdAndEducationById(ctx context.Context, tx *gorm.DB, userId int, educationId int) (entity.Education, error) {
+func (r *educationRepository) GetByUserIdAndEducationById(ctx context.Context, tx *gorm.DB, userID string, educationID string) (entity.Education, bool, error) {
 	if tx == nil {
 		tx = r.db
 	}
 
 	var userEducation entity.Education
-	if err := tx.WithContext(ctx).Where("user_id = ? AND id = ?", userId, educationId).Order("created_at DESC").First(&userEducation).Error; err != nil {
-		return userEducation, err
+	if err := tx.WithContext(ctx).Take(&userEducation, "user_id = ? AND id = ?", userID, educationID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return userEducation, false, nil
+		}
+		return userEducation, false, err
 	}
 
-	return userEducation, nil
+	return userEducation, true, nil
 }
 
 func (r *educationRepository) GetActiveEducationByUserId(ctx context.Context, tx *gorm.DB, userId string) (entity.Education, bool, error) {
