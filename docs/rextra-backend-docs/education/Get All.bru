@@ -1,0 +1,15 @@
+meta {
+  name: Get All
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{host}}/api/v1/education
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

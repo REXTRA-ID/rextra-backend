@@ -17,6 +17,7 @@ import (
 type (
 	EducationService interface {
 		CreateEducation(ctx context.Context, education dto_request.CreateEducationRequest) (dto_response.EducationResponse, error)
+		GetAllEducation(ctx context.Context, userID string) ([]dto_response.EducationResponse, error)
 	}
 	educationService struct {
 		educationRepository repository.EducationRepository
@@ -104,6 +105,34 @@ func (s *educationService) CreateEducation(ctx context.Context, education dto_re
 		Status:                 string(CreateEducation.Status),
 		IsActive:               CreateEducation.IsActive,
 	}, nil
+}
+
+func (s *educationService) GetAllEducation(ctx context.Context, userID string) ([]dto_response.EducationResponse, error) {
+	allEducation, err := s.educationRepository.GetAllEducationByUserId(ctx, s.db, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	var educationResponse []dto_response.EducationResponse = []dto_response.EducationResponse{}
+	for _, education := range allEducation {
+		educationResponse = append(educationResponse, dto_response.EducationResponse{
+			ID:                     education.ID.String(),
+			UserID:                 education.UserID.String(),
+			InstitutionName:        education.InstitutionName,
+			Major:                  education.Major,
+			Faculty:                education.Faculty,
+			EntryYear:              education.EntryYear,
+			ExpectedGraduationYear: education.ExpectedGraduationYear,
+			ActualGraduationYear:   &education.ActualGraduationYear,
+			CurrentSemester:        education.CurrentSemester,
+			TotalSemester:          education.TotalSemester,
+			EducationLevel:         string(education.EducationLevel),
+			Status:                 string(education.Status),
+			IsActive:               education.IsActive,
+		})
+	}
+
+	return educationResponse, nil
 }
 
 func EducationLevelValidation(educationLevel string) error {

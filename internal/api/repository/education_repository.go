@@ -12,6 +12,7 @@ type (
 	EducationRepository interface {
 		Create(ctx context.Context, tx *gorm.DB, userEducation entity.Education) (entity.Education, error)
 		GetActiveEducationByUserId(ctx context.Context, tx *gorm.DB, userId string) (entity.Education, bool,error)
+		GetAllEducationByUserId(ctx context.Context, tx *gorm.DB, userID string) ([]entity.Education, error)
 	}
 
 	educationRepository struct {
@@ -102,3 +103,15 @@ func (r *educationRepository) GetActiveEducationByUserId(ctx context.Context, tx
 	return userEducation, true, nil
 }
 
+func (r *educationRepository) GetAllEducationByUserId(ctx context.Context, tx *gorm.DB, userID string) ([]entity.Education, error) {
+	if tx == nil {
+		tx = r.db
+	}
+
+	var userEducation []entity.Education
+	if err := tx.WithContext(ctx).Where("user_id = ?", userID).Order("created_at DESC").Find(&userEducation).Error; err != nil {
+		return userEducation, err
+	}
+
+	return userEducation, nil
+}

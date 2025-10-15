@@ -13,6 +13,7 @@ import (
 type (
 	EducationController interface {
 		Create(ctx *gin.Context)
+		GetAll(ctx *gin.Context)
 	}
 	educationController struct {
 		educationService service.EducationService
@@ -47,4 +48,20 @@ func (c *educationController) Create(ctx *gin.Context) {
 	}
 
 	response.NewSuccess("success create education", res).Send(ctx)
+}
+
+func (c *educationController) GetAll(ctx *gin.Context) {
+	userId, err := utils.GetUserIdFromCtx(ctx)
+	if err != nil {
+		response.NewFailed("failed get user id from context", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
+
+	res, err := c.educationService.GetAllEducation(ctx.Request.Context(), userId)
+	if err != nil {
+		response.NewFailed("failed get all education", err).Send(ctx)
+		return
+	}
+
+	response.NewSuccess("success get all education", res).Send(ctx)
 }
