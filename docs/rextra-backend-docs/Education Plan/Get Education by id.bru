@@ -1,0 +1,19 @@
+meta {
+  name: Get Education by id
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{host}}/api/v1/education-plan/:id
+  body: none
+  auth: bearer
+}
+
+params:path {
+  id: b6637f73-50e9-47de-8493-d964fa02c76e
+}
+
+auth:bearer {
+  token: {{token}}
+}

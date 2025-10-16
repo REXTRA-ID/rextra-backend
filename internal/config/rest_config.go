@@ -42,6 +42,7 @@ func NewRest() RestConfig {
 		careerRecommendationRepository repository.CareerRecommendationRepository = repository.NewCareerRecommendation(db)
 		assesmentRepository            repository.AssesmentRepository            = repository.NewAssesment(db)
 		educationRepository            repository.EducationRepository            = repository.NewEducation(db)
+		educationPlanRepository        repository.EducationPlanRepository        = repository.NewEducationPlan(db)
 
 		//=========== (SERVICE) ===========//
 		authService                 service.AuthService                 = service.NewAuth(userRepository, sessionRepository, mailerService, firebaseApp.MustGetClient(), db)
@@ -51,6 +52,7 @@ func NewRest() RestConfig {
 		careerRecommendationService service.CareerRecommendationService = service.NewCareerRecommendation(careerRecommendationRepository, db)
 		assesmentService            service.AssesmentService            = service.NewAssesment(assesmentRepository, db)
 		educationService            service.EducationService            = service.NewEducation(educationRepository, db)
+		educationPlanService          service.EducationPlanService          = service.NewEducationPlan(educationPlanRepository, db)
 
 		//=========== (CONTROLLER) ===========//
 		authController                 controller.AuthController                 = controller.NewAuth(authService)
@@ -60,6 +62,7 @@ func NewRest() RestConfig {
 		careerRecommendationController controller.CareerRecommendationController = controller.NewCareerRecommendation(careerRecommendationService)
 		assesmentController            controller.AssesmentController            = controller.NewAssesment(assesmentService)
 		educationController            controller.EducationController            = controller.NewEducation(educationService)
+		educationPlanController          controller.EducationPlanController          = controller.NewEducationPlan(educationPlanService)
 	)
 
 	// Register all routes
@@ -70,6 +73,7 @@ func NewRest() RestConfig {
 	routes.ServeCareerRecommendation(server, careerRecommendationController, middleware)
 	routes.ServeAssesment(server, assesmentController, middleware)
 	routes.ServeEducation(server, educationController, middleware)
+	routes.ServeEducationPlan(server, educationPlanController, middleware)
 
 	return RestConfig{
 		server: server,

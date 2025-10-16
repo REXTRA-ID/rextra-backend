@@ -1,0 +1,25 @@
+meta {
+  name: Create
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{host}}/api/v1/education-plan
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "institution_name": "Universitas Gadjah Mada",
+    "major": "Ilmu Komputer",
+    "faculty": "Fakultas Matematika dan Ilmu Pengetahuan Alam",
+    "education_level": "S1",
+    "expected_entry_year": 2020
+  }
+}
