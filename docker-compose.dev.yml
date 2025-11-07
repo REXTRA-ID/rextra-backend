@@ -8,14 +8,21 @@ services:
       - .:/app
     ports:
       - ${APP_PORT:-8001}:8001
+    depends_on:
+      - db
     environment:
       - APP_MODE=development
-      - APP_PORT=${APP_PORT:-8001}
+      - APP_PORT=${APP_PORT}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_NAME=${DB_NAME}
     networks:
       - app-dev-network
 
   db:
-    image: postgres:latest
+    image: postgres:16
     container_name: ${APP_NAME:-rextra-backend}-db-dev
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}

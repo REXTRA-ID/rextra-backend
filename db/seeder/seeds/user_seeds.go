@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"rextra-backend/internal/entity"
 	mylog "rextra-backend/internal/pkg/logger"
+	"rextra-backend/internal/utils"
 
 	"os"
 
@@ -25,6 +26,8 @@ func SeederUser(db *gorm.DB) error {
 	}
 
 	for _, entity := range listEntity {
+		hashedPwd, _ := utils.HashPassword(entity.Password)
+		entity.Password = hashedPwd
 		if err := db.Save(&entity).Error; err != nil {
 			return err
 		}

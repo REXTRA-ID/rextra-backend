@@ -1,9 +1,9 @@
 OS := $(shell uname -s 2>/dev/null || echo Windows)
 
-dep: 
+dep:
 	go mod tidy
 
-run: 
+run:
 	go run main.go
 
 watch:
@@ -43,10 +43,10 @@ docker-migrate:
 	docker exec -it $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --migrate"
 
 docker-seeder:
-	docker exec -it $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --seed"
+	docker exec -it $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --seeder"
 
 docker-both:
-	docker exec -it $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --migrate --seed"
+	docker exec -it $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --migrate --seeder"
 
 # Help
 help:

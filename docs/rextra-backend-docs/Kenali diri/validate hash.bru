@@ -6,10 +6,16 @@ meta {
 
 post {
   url: {{host}}/api/v1/assesment/validate_hash
-  body: none
+  body: json
   auth: bearer
 }
 
 auth:bearer {
   token: {{token}}
+}
+
+body:json {
+  {
+    "hash": ""
+  }
 }
