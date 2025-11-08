@@ -1,0 +1,56 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: ./docker/prod/Dockerfile
+    container_name: ${APP_NAME:-rextra-backend}-prod
+    depends_on:
+      - db
+    environment:
+      - APP_MODE=production
+      - APP_PORT=8080
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_NAME=${DB_NAME}
+    networks:
+      - app-prod-network
+    restart: always
+
+  db:
+    image: postgres:16
+    container_name: ${APP_NAME:-rextra-backend}-db-prod
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASS:-password}
+      POSTGRES_DB: ${DB_NAME:-rextra}
+    volumes:
+      - db-data-prod:/var/lib/postgresql/data
+    networks:
+      - app-prod-network
+    restart: always
+
+  nginx:
+    image: nginx:latest
+    container_name: ${APP_NAME:-rextra-backend}-nginx-prod
+    volumes:
+      - ./docker/prod/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    ports:
+      - ${NGINX_HTTP_PORT:-80}:80
+      - ${NGINX_HTTPS_PORT:-443}:443
+    depends_on:
+      - app
+    networks:
+      - app-prod-network
+    restart: always
+
+volumes:
+  db-data-prod:
+
+networks:
+  app-prod-network:
+    driver: bridge
