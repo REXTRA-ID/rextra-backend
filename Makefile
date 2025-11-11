@@ -40,7 +40,7 @@ down:
 	docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) --env-file $(ENV_FILE) down
 
 reset:
-	docker compose -p $(PROJECT_NAME) -f $(COMFİLE) --env-file $(ENV_FILE) down -v
+	docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) --env-file $(ENV_FILE) down -v
 
 build-docker:
 	docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) --env-file $(ENV_FILE) up -d --build
@@ -54,6 +54,9 @@ docker-seeder:
 
 docker-both:
 	docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) --env-file $(ENV_FILE) exec app $(DOCKER_RUN_CMD) --migrate --seeder
+
+deploy-prod:
+	docker compose -f docker-compose.prod.yml up -d --build app
 
 # Help
 help:
@@ -75,3 +78,6 @@ help:
 	@echo "  docker-migrate Run migrations inside Docker container"
 	@echo "  docker-seeder  Run seeder inside Docker container"
 	@echo "  docker-both    Run migrate and seeder inside Docker container"
+	@echo ""
+	@echo "Targets Deployment:"
+	@echo "  deploy-prod Deploy to production"

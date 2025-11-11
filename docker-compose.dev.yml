@@ -10,14 +10,7 @@ services:
       - ${APP_PORT:-8081}:8080
     depends_on:
       - db
-    environment:
-      - APP_MODE=development
-      - APP_PORT=8080
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=${DB_USER}
-      - DB_PASS=${DB_PASS}
-      - DB_NAME=${DB_NAME}
+    env_file: .env.dev
     networks:
       - app-dev-network
 
@@ -42,7 +35,7 @@ services:
       - .:/var/www/html
       - ./docker/dev/nginx/default.conf:/etc/nginx/conf.d/default.conf
     ports:
-      - ${NGINX_PORT:-81}:81
+      - ${NGINX_PORT:-81}:80
     depends_on:
       - app
     networks:
