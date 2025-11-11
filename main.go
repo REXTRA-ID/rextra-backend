@@ -1,8 +1,6 @@
 package main
 
 import (
-	"os"
-
 	"rextra-backend/cmd"
 	"rextra-backend/internal/config"
 
@@ -10,9 +8,7 @@ import (
 )
 
 func main() {
-	if err := godotenv.Load(); err != nil {
-		panic("Failed to loading env file")
-	}
+	godotenv.Load()
 
 	if err := cmd.Commands(); err != nil {
 		panic("Failed Get Commands: " + err.Error())
