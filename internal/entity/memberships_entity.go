@@ -31,7 +31,7 @@ func (m *Memberships) TableName() string {
 	return "memberships"
 }
 
-func NewMembership(userId uuid.UUID, plan MembershipPlans, duration MembershipDuration) Memberships {
+func NewMembership(userId uuid.UUID, plan *MembershipPlans, duration *MembershipDuration) Memberships {
 	return Memberships{
 		UserID:           userId,
 		MembershipStatus: PLANSTARTER,
