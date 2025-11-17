@@ -22,9 +22,10 @@ type (
 )
 
 const (
-	PLANBASIC EnumPlanName = "Basic"
-	PLANPRO   EnumPlanName = "Pro"
-	PLANMAX   EnumPlanName = "Max"
+	PLANSTARTER EnumPlanName = "Starter"
+	PLANBASIC   EnumPlanName = "Basic"
+	PLANPRO     EnumPlanName = "Pro"
+	PLANMAX     EnumPlanName = "Max"
 )
 
 type MembershipPlans struct {
