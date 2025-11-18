@@ -6,22 +6,14 @@ import (
 	"github.com/google/uuid"
 )
 
-type (
-	TokenTransactionType string
-
-	ReferenceType string
-)
+type TokenTransactionType string
 
 const (
 	TOKENPURCHASEMEMBERSHIP TokenTransactionType = "purchase_membership"
 	TOKENPURCHASESTANDALONE TokenTransactionType = "purchase_standalone"
+	TOKENUSAGE              TokenTransactionType = "usage"
 	TOKENREFUND             TokenTransactionType = "refund"
 	TOKENMONTHLYREFILL      TokenTransactionType = "monthly_refill"
-
-	REFPAYMENT            ReferenceType = "payment"
-	REFFEATURE_USAHE      ReferenceType = "feature_usage"
-	REFMEMBERSHIP_RENEWAL ReferenceType = "membership_renewal"
-	REFMONTHLYREFILL      ReferenceType = "monthly_refill"
 )
 
 type TokenTransaction struct {
@@ -31,7 +23,7 @@ type TokenTransaction struct {
 	TokenAmount        int                  `json:"token_amount"`
 	TokenBalanceBefore int                  `json:"token_balance_before"`
 	TokenBalanceAfter  int                  `json:"token_balance_after"`
-	ReferenceType      ReferenceType        `json:"reference_type"`
+	ReferenceType      string               `json:"reference_type" gorm:"type:varchar(50)"`
 	ReferenceID        uuid.UUID            `json:"reference_id"` //masih ambigu
 	Description        string               `json:"description"`
 
@@ -40,4 +32,24 @@ type TokenTransaction struct {
 
 func (t *TokenTransaction) TableName() string {
 	return "token_transactions"
+}
+
+func NewTokenTransaction(userId uuid.UUID, userMembership *Memberships, transactionType string, tokenAmount int, description string) TokenTransaction {
+	currentToken := userMembership.CurrentTokenBalance
+
+	if transactionType == string(TOKENUSAGE) {
+		userMembership.UseMembershipToken(tokenAmount)
+	} else {
+		userMembership.AddMembershipToken(tokenAmount)
+	}
+
+	return TokenTransaction{
+		UserID:             userId,
+		TransactionType:    TokenTransactionType(transactionType),
+		TokenAmount:        tokenAmount,
+		TokenBalanceBefore: currentToken,
+		TokenBalanceAfter:  userMembership.CurrentTokenBalance,
+		Description:        description,
+		CreatedAt:          time.Now().UTC(),
+	}
 }

@@ -34,7 +34,7 @@ func (m *Memberships) TableName() string {
 func NewMembership(userId uuid.UUID, plan *MembershipPlans, duration *MembershipDuration) Memberships {
 	return Memberships{
 		UserID:           userId,
-		MembershipStatus: PLANSTARTER,
+		MembershipStatus: plan.PlanName,
 		PlanID:           plan.ID,
 		DurationID:       duration.ID,
 		StartedAt:        time.Now().UTC(),
@@ -42,6 +42,38 @@ func NewMembership(userId uuid.UUID, plan *MembershipPlans, duration *Membership
 	}
 }
 
+func (m *Memberships) UpdateMembership(plan *MembershipPlans, duration *MembershipDuration) {
+	m.PlanID = plan.ID
+	m.DurationID = duration.ID
+}
+
+func (m *Memberships) UseMembershipToken(token int) {
+	m.CurrentTokenBalance -= token
+}
+
+func (m *Memberships) UseMembershipPoin(poin int) {
+	m.CurrentPoinBalance -= poin
+}
+
+func (m *Memberships) AddMembershipToken(token int) {
+	m.CurrentTokenBalance += token
+}
+
+func (m *Memberships) AddMembershipBalance(poin int) {
+	m.CurrentPoinBalance += poin
+}
+
 func (m *Memberships) IsUserMembershipExpired() bool {
 	return time.Now().After(m.ExpiredAt)
+}
+func (m *Memberships) CalculateTotalToken() {
+	baseToken := m.Plan.MonthlyToken * m.Duration.DurationMonth
+	bonusToken := float64(baseToken) * (m.Duration.TokenBonusPercentage / 100)
+	m.CurrentTokenBalance += baseToken + int(bonusToken)
+}
+
+func (m *Memberships) CalculateRextraPoin() {
+	basePoin := m.Plan.MonthlyToken * m.Duration.DurationMonth
+	bonusPoin := basePoin * m.Duration.RextraPoinMultiplier
+	m.CurrentPoinBalance += basePoin + bonusPoin
 }

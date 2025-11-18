@@ -40,7 +40,7 @@ func NewRest() RestConfig {
 		personaRepository              repository.PersonaRepository              = repository.NewPersona(db)
 		riasecRepository               repository.RiasecRepository               = repository.NewRiasec(db)
 		careerRecommendationRepository repository.CareerRecommendationRepository = repository.NewCareerRecommendation(db)
-		membershipRepository           repository.MembershipRepository           = repository.MembershipRepository(db)
+		membershipRepository           repository.MembershipRepository           = repository.NewMembershipRepository(db)
 
 		//=========== (SERVICE) ===========//
 		authService                 service.AuthService                 = service.NewAuth(userRepository, sessionRepository, mailerService, firebaseApp.MustGetClient(), db)
