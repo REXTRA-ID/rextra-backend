@@ -25,7 +25,12 @@ func Migrate(db *gorm.DB) error {
 		&entity.CareerRecommendation{},
 		&entity.Memberships{},
 		&entity.RedemptionCode{},
+		&entity.MembershipPlans{},
+		&entity.MembershipDuration{},
+		&entity.PaymentTransactions{},
+		&entity.PoinTransactions{},
 		&entity.TokenTransaction{},
+		&entity.TokenUsageHistory{},
 	); err != nil {
 		return err
 	}

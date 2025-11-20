@@ -27,8 +27,8 @@ const (
 	XENDITFAILED    XenditPaymentStatus = "FAILED"
 	XENDITEXPIRED   XenditPaymentStatus = "EXPIRED"
 
-	MEMBERSHIP     PaymentType   = "membership"
-	TOKENSTNDALONE PaymentStatus = "token_standalone"
+	MEMBERSHIP     PaymentType = "membership"
+	TOKENSTNDALONE PaymentType = "token_standalone"
 )
 
 type PaymentTransactions struct {

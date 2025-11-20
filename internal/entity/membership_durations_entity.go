@@ -11,7 +11,7 @@ type MembershipDuration struct {
 	ID                   uuid.UUID `json:"id" gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
 	DurationMonth        int       `json:"duration_months"`
 	TokenBonusPercentage float64   `json:"token_bonus_percentage" gorm:"default:0"`
-	RextraPoinMultiplier int       `json:"rextra_point_multiplier" gorm:"default:1"`
+	RextraPoinMultiplier int       `json:"rextra_poin_multiplier" gorm:"default:1"`
 	IsActive             bool      `json:"is_active" gorm:"type:boolean;default:true"`
 
 	Timestamp

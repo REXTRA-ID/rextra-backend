@@ -1,0 +1,38 @@
+[
+    {
+        "plan_name": "Starter",
+        "monthly_token": 0,
+        "base_monthly_price": 0,
+        "description": "Paket dasar untuk mahasiswa yang baru saja registrasi",
+        "benefits": ["Akses CRUD System unlimited (Persona, Rencana Karier, Kamus Karier, Eksplorasi, Portofolio tanpa AI, Event REXTRA)", "Akses terbatas ke fitur berbasis AI (tidak dapat token bulanan, harus beli token standalone)", 
+        "Dapat mendaftar & akses recording event REXTRA", "Akses katalog event REXTRA selamanya (bahkan setelah expired)"]
+    },
+    {
+        "plan_name": "Basic",
+        "monthly_token": 10,
+        "base_monthly_price": 15000.00,
+        "description": "Paket dasar untuk mahasiswa yang baru memulai persiapan karier",
+        "benefits": ["Akses CRUD System unlimited", "10 token/bulan", "Akses REXTRA Academy kategori Basic", "Portofolio AI Check 5x/bulan"]
+    },
+    {
+        "plan_name": "Pro",
+        "monthly_token": 20,
+        "base_monthly_price": 20000.00,
+        "description": "Paket untuk mahasiswa aktif dengan kebutuhan AI moderat",
+        "benefits": ["Semua benefit Basic", "20 token/bulan", "Akses 6 modul pembelajaran karier", "Prioritas Rencana Karier AI", "Portofolio AI Check 15x/bulan"]
+    },
+    {
+        "plan_name": "Max",
+        "monthly_token": 40,
+        "base_monthly_price": 30000.00,
+        "description": "Paket premium untuk mahasiswa intensif persiapan karier",
+        "benefits": ["Semua benefit Pro", "40 token/bulan", "Akses penuh semua modul & fitur", "Unlimited Portofolio AI Check", "Priority support"]
+    },
+    {
+        "plan_name": "Non-Member",
+        "monthly_token": 0,
+        "base_monthly_price": 0,
+        "description": "Paket dasar untuk mahasiswa yang baru memulai persiapan karier",
+        "benefits": ["Hanya dapat mengakses Katalog Event REXTRA (lihat event, detail, benefit)", "Tidak dapat mengakses fitur CRUD System dan fitur AI", "Dapat mendaftar event REXTRA yang dibuka untuk umum"]
+    }
+]

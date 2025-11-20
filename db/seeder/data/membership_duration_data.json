@@ -1,0 +1,22 @@
+[
+    {
+        "duration_months": 1,
+        "token_bonus_percentage": 0,
+        "rextra_poin_multiplier": 1
+    },
+    {
+        "duration_months": 3,
+        "token_bonus_percentage": 10,
+        "rextra_poin_multiplier": 3
+    },
+    {
+        "duration_months": 6,
+        "token_bonus_percentage": 20,
+        "rextra_poin_multiplier": 6
+    },
+    {
+        "duration_months": 12,
+        "token_bonus_percentage": 40,
+        "rextra_poin_multiplier": 12
+    }
+]

@@ -2,6 +2,7 @@ package seeders
 
 import (
 	"fmt"
+	"rextra-backend/db/seeder/seeds"
 	mylog "rextra-backend/internal/pkg/logger"
 
 	"gorm.io/gorm"
@@ -9,7 +10,9 @@ import (
 
 func Seeding(db *gorm.DB) error {
 	seeders := []func(*gorm.DB) error{
-		//seeds.SeederUser,
+		seeds.SeederUser,
+		seeds.SeederMembershipPlan,
+		seeds.SeederMembershipDuration,
 	}
 
 	fmt.Println(mylog.ColorizeInfo("\n=========== Start Seeding ==========="))

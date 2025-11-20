@@ -11,17 +11,18 @@ import (
 type EnumPlanName string
 
 const (
-	PLANSTARTER EnumPlanName = "Starter"
-	PLANBASIC   EnumPlanName = "Basic"
-	PLANPRO     EnumPlanName = "Pro"
-	PLANMAX     EnumPlanName = "Max"
+	PLANSTARTER   EnumPlanName = "Starter"
+	PLANBASIC     EnumPlanName = "Basic"
+	PLANPRO       EnumPlanName = "Pro"
+	PLANMAX       EnumPlanName = "Max"
+	PLANNONMEMBER EnumPlanName = "Non-Member"
 )
 
 type MembershipPlans struct {
 	ID               uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
 	PlanName         EnumPlanName   `json:"plan_name" gorm:"type:varchar(20)"`
 	MonthlyToken     int            `json:"monthly_token"`
-	BaseMonthlyPrice float64        `json:"base_monthly_token" gorm:"type:decimal(10, 2)"`
+	BaseMonthlyPrice float64        `json:"base_monthly_price" gorm:"type:decimal(10, 2)"`
 	Description      string         `json:"description"`
 	Benefits         datatypes.JSON `json:"benefits" gorm:"type:jsonb"`
 	IsActive         bool           `json:"is_active" gorm:"type:boolean;default:true"`

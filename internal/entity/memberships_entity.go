@@ -8,13 +8,13 @@ import (
 
 type Memberships struct {
 	ID               uuid.UUID    `json:"id" gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
-	UserID           uuid.UUID    `json:"user_id" gorm:"not null"`
+	UserID           uuid.UUID    `json:"user_id" gorm:"not null;unique"`
 	MembershipStatus EnumPlanName `json:"membership_status" gorm:"type:varchar(20)"`
 
-	Plan   MembershipPlans `gorm:"foreignKey:ID;references:PlanID"`
+	Plan   MembershipPlans `gorm:"foreignKey:PlanID;references:ID"`
 	PlanID uuid.UUID       `json:"plan_id"`
 
-	Duration   MembershipDuration `gorm:"foreignKey:ID;references:DurationID"`
+	Duration   MembershipDuration `gorm:"foreignKey:DurationID;references:ID"`
 	DurationID uuid.UUID          `json:"duration_id"`
 
 	CurrentTokenBalance int       `json:"current_token_balance" gorm:"default:0"`
@@ -53,6 +53,14 @@ func (m *Memberships) UseMembershipToken(token int) {
 
 func (m *Memberships) UseMembershipPoin(poin int) {
 	m.CurrentPoinBalance -= poin
+}
+
+func (m *Memberships) GetTokenBalance() int {
+	return m.CurrentTokenBalance
+}
+
+func (m *Memberships) GetPoinBalance() int {
+	return m.CurrentPoinBalance
 }
 
 func (m *Memberships) AddMembershipToken(token int) {
