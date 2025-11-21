@@ -12,6 +12,7 @@ type (
 	MembershipPlanRepository interface {
 		Create(ctx context.Context, tx *gorm.DB, membershipPlan entity.MembershipPlans) (entity.MembershipPlans, error)
 		GetByID(ctx context.Context, tx *gorm.DB, membershipPlanId uuid.UUID) (entity.MembershipPlans, error)
+		GetByPlanName(ctx context.Context, tx *gorm.DB, planName string) (entity.MembershipPlans, error)
 		GetAll(ctx context.Context, tx *gorm.DB) ([]entity.MembershipPlans, error)
 		Update(ctx context.Context, tx *gorm.DB, membershipPlan entity.MembershipPlans) (entity.MembershipPlans, error)
 		Delete(ctx context.Context, tx *gorm.DB, membershipPlanId uuid.UUID) (entity.MembershipPlans, error)
@@ -47,6 +48,19 @@ func (r *membershipPlanRepository) GetByID(ctx context.Context, tx *gorm.DB, mem
 
 	var membershipPlan entity.MembershipPlans
 	if err := tx.WithContext(ctx).First(&membershipPlan, "id = ?", membershipPlanId).Error; err != nil {
+		return entity.MembershipPlans{}, err
+	}
+
+	return membershipPlan, nil
+}
+
+func (r *membershipPlanRepository) GetByPlanName(ctx context.Context, tx *gorm.DB, planName string) (entity.MembershipPlans, error) {
+	if tx == nil {
+		tx = r.db
+	}
+
+	var membershipPlan entity.MembershipPlans
+	if err := tx.WithContext(ctx).First(&membershipPlan, "plan_name = ?", entity.PLANSTARTER).Error; err != nil {
 		return entity.MembershipPlans{}, err
 	}
 

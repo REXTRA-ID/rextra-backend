@@ -27,8 +27,8 @@ const (
 	XENDITFAILED    XenditPaymentStatus = "FAILED"
 	XENDITEXPIRED   XenditPaymentStatus = "EXPIRED"
 
-	MEMBERSHIP     PaymentType = "membership"
-	TOKENSTNDALONE PaymentType = "token_standalone"
+	MEMBERSHIP      PaymentType = "membership"
+	TOKENSTANDALONE PaymentType = "token_standalone"
 )
 
 type PaymentTransactions struct {
@@ -66,7 +66,7 @@ func NewPaymenTransaction(userId uuid.UUID,
 	paymentType, PaymentMethod string,
 	planId, durationId *uuid.UUID,
 	grossAmount float64,
-	xenditInvoiceId string,
+	paymentInvoiceId string,
 	tokenQuantity int) PaymentTransactions {
 
 	xenditExternalId := utils.MakeXenditExternalID(paymentType, userId.String())
@@ -81,7 +81,7 @@ func NewPaymenTransaction(userId uuid.UUID,
 		PaymentMethod:    PaymentMethod,
 		GrossAmount:      grossAmount,
 		FinalAmount:      grossAmount,
-		XenditInvoiceID:  xenditInvoiceId,
+		XenditInvoiceID:  paymentInvoiceId,
 		XenditExternalID: xenditExternalId,
 	}
 }

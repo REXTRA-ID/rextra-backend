@@ -22,7 +22,7 @@ type Memberships struct {
 	StartedAt           time.Time `json:"started_at"`
 	ExpiredAt           time.Time `json:"expired_at"`
 	IsActive            bool      `json:"is_active"`
-	AutoRenew           bool      `json:"auto_renew"`
+	AutoRenew           bool      `json:"auto_renew" gorm:"default:false"`
 
 	Timestamp
 }
@@ -32,6 +32,7 @@ func (m *Memberships) TableName() string {
 }
 
 func NewMembership(userId uuid.UUID, plan *MembershipPlans, duration *MembershipDuration) Memberships {
+
 	return Memberships{
 		UserID:           userId,
 		MembershipStatus: plan.PlanName,

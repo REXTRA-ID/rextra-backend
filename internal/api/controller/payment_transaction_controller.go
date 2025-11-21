@@ -37,13 +37,35 @@ func (c *paymentTransactionController) MakeNewTransactionMembership(ctx *gin.Con
 		return
 	}
 
-	var req dto_request.MakeNewTransactionRequest
+	var req dto_request.MakeNewTransactionMembershipRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		response.NewFailed("failed get data from body", myerror.InvalidRequest(err)).Send(ctx)
 		return
 	}
 
-	result, err := c.paymentTransactionService.MakeNewTransaction(ctx, req, userId)
+	result, err := c.paymentTransactionService.MakeNewTransactionMembership(ctx, req, userId)
+	if err != nil {
+		response.NewFailed("failed to make new transaction", myerror.ProcessingError(err)).Send(ctx)
+		return
+	}
+
+	response.NewSuccess("successfully made transaction", result).Send(ctx)
+}
+
+func (c *paymentTransactionController) MakeNewTransactionTokenStandAlone(ctx *gin.Context) {
+	userId, err := utils.GetUserIdFromCtx(ctx)
+	if err != nil {
+		response.NewFailed("failed get user id from context", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
+
+	var req dto_request.MakeNewTransactionTokenRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		response.NewFailed("failed get data from body", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
+
+	result, err := c.paymentTransactionService.MakeNewTransactionToken(ctx, req, userId)
 	if err != nil {
 		response.NewFailed("failed to make new transaction", myerror.ProcessingError(err)).Send(ctx)
 		return
@@ -53,9 +75,5 @@ func (c *paymentTransactionController) MakeNewTransactionMembership(ctx *gin.Con
 }
 
 func (c *paymentTransactionController) UpdateTransactionFromWebhook(ctx *gin.Context) {
-
-}
-
-func (c *paymentTransactionController) MakeNewTransactionTokenStandAlone(ctx *gin.Context) {
 
 }

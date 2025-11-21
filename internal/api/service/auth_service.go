@@ -37,25 +37,34 @@ type (
 	}
 
 	authService struct {
-		userRepository    repository.UserRepository
-		sessionRepository repository.SessionRepository
-		mailService       mailer.Mailer
-		firebaseClient    *auth.Client
-		db                *gorm.DB
+		userRepository               repository.UserRepository
+		membershipRepository         repository.MembershipRepository
+		membershipDurationRepository repository.MembershipDurationRepository
+		membershipPlanRepository     repository.MembershipPlanRepository
+		sessionRepository            repository.SessionRepository
+		mailService                  mailer.Mailer
+		firebaseClient               *auth.Client
+		db                           *gorm.DB
 	}
 )
 
 func NewAuth(userRepository repository.UserRepository,
+	membershipRepository repository.MembershipRepository,
+	membershipDurationRepository repository.MembershipDurationRepository,
+	membershipPlanRepository repository.MembershipPlanRepository,
 	sessionRepository repository.SessionRepository,
 	mailService mailer.Mailer,
 	firebaseClient *auth.Client,
 	db *gorm.DB) AuthService {
 	return &authService{
-		userRepository:    userRepository,
-		sessionRepository: sessionRepository,
-		mailService:       mailService,
-		firebaseClient:    firebaseClient,
-		db:                db,
+		userRepository:               userRepository,
+		membershipRepository:         membershipRepository,
+		membershipDurationRepository: membershipDurationRepository,
+		membershipPlanRepository:     membershipPlanRepository,
+		sessionRepository:            sessionRepository,
+		mailService:                  mailService,
+		firebaseClient:               firebaseClient,
+		db:                           db,
 	}
 }
 
@@ -118,7 +127,27 @@ func (s *authService) Verify(ctx context.Context, token string) error {
 		return err
 	}
 
+	starterPlan, err := s.membershipPlanRepository.GetByPlanName(ctx, nil, string(entity.PLANSTARTER))
+	if err != nil {
+		return err
+	}
+
+	const DURATION_STARTER = 30
+
+	membershipDuration, err := s.membershipDurationRepository.GetByDurationMonth(ctx, nil, DURATION_STARTER)
+	if err != nil {
+		return err
+	}
+
+	userMembership := entity.NewMembership(user.ID, &starterPlan, &membershipDuration)
+
+	_, err = s.membershipRepository.Create(ctx, nil, userMembership)
+	if err != nil {
+		return err
+	}
+
 	user.IsVerified = true
+	user.Membership = userMembership
 
 	_, err = s.userRepository.Update(ctx, nil, user)
 	if err != nil {

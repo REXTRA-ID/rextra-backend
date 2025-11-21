@@ -11,7 +11,7 @@ import (
 	"rextra-backend/internal/middleware"
 	mailer "rextra-backend/internal/pkg/email"
 	myfirebase "rextra-backend/internal/pkg/firebase"
-	xnd "rextra-backend/payment_handler/xendit"
+	"rextra-backend/payment_handler/midtrans"
 
 	"log"
 	"os"
@@ -29,11 +29,12 @@ func NewRest() RestConfig {
 	server := NewRouter(app)
 	firebaseApp := myfirebase.New()
 	middleware := middleware.New(db, firebaseApp.MustGetClient())
+	// xenditService                 := xnd.NewXenditService() xendit service
+	midtransService := midtrans.NewMidtransClient()
 
 	var (
 		//=========== (PACKAGE) ===========//
 		mailerService mailer.Mailer = mailer.New()
-		xenditService               = xnd.NewXenditService()
 		// awsS3Service  storage.AwsS3 = storage.NewAwsS3()
 
 		//=========== (REPOSITORY) ===========//
@@ -44,16 +45,19 @@ func NewRest() RestConfig {
 		careerRecommendationRepository repository.CareerRecommendationRepository = repository.NewCareerRecommendation(db)
 		membershipRepository           repository.MembershipRepository           = repository.NewMembershipRepository(db)
 		membershipPlanRepository       repository.MembershipPlanRepository       = repository.NewMembershipPlanRepository(db)
+		membershipDurationRepository   repository.MembershipDurationRepository   = repository.NewMembershipDurationRepository(db)
 		paymentTransactionRepository   repository.PaymentTransactionsRepository  = repository.NewPaymentTransactionRepository(db)
+		tokenUsageHistoryRepository    repository.TokenUsageHistoryRepository    = repository.NewTokenUsageHistoryRepository(db)
+		tokenTransactionRepository     repository.TokenTransactionRepository     = repository.NewTokenTransactionRepository(db)
 
 		//=========== (SERVICE) ===========//
-		authService                 service.AuthService                 = service.NewAuth(userRepository, sessionRepository, mailerService, firebaseApp.MustGetClient(), db)
+		authService                 service.AuthService                 = service.NewAuth(userRepository, membershipRepository, membershipDurationRepository, membershipPlanRepository, sessionRepository, mailerService, firebaseApp.MustGetClient(), db)
 		userService                 service.UserService                 = service.NewUser(userRepository, db)
 		personaService              service.PersonaService              = service.NewPersona(personaRepository, db)
 		riasecService               service.RiasecService               = service.NewRiasec(riasecRepository, db)
 		careerRecommendationService service.CareerRecommendationService = service.NewCareerRecommendation(careerRecommendationRepository, db)
 		membershipPlanService       service.MembershipPlanService       = service.NewMembershipPlanService(membershipPlanRepository, db)
-		paymentTransactionService   service.PaymentTransactionService   = service.NewPaymentTransactionService(xenditService, paymentTransactionRepository, membershipRepository, db)
+		paymentTransactionService   service.PaymentTransactionService   = service.NewPaymentTransactionService(tokenUsageHistoryRepository, tokenTransactionRepository, midtransService, paymentTransactionRepository, membershipPlanRepository, membershipRepository, db)
 
 		//=========== (CONTROLLER) ===========//
 		authController                 controller.AuthController                 = controller.NewAuth(authService)

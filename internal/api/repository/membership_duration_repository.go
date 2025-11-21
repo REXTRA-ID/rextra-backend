@@ -11,6 +11,7 @@ import (
 type (
 	MembershipDurationRepository interface {
 		Create(ctx context.Context, tx *gorm.DB, membershipDuration entity.MembershipDuration) (entity.MembershipDuration, error)
+		GetByDurationMonth(ctx context.Context, tx *gorm.DB, duration int) (entity.MembershipDuration, error)
 		GetByID(ctx context.Context, tx *gorm.DB, membershipDurationId uuid.UUID) (entity.MembershipDuration, error)
 		GetAll(ctx context.Context, tx *gorm.DB) ([]entity.MembershipDuration, error)
 		Update(ctx context.Context, tx *gorm.DB, membershipDuration entity.MembershipDuration) (entity.MembershipDuration, error)
@@ -34,6 +35,19 @@ func (r *membershipDurationRepository) Create(ctx context.Context, tx *gorm.DB, 
 	}
 
 	if err := tx.WithContext(ctx).Create(&membershipDuration).Error; err != nil {
+		return entity.MembershipDuration{}, err
+	}
+
+	return membershipDuration, nil
+}
+
+func (r *membershipDurationRepository) GetByDurationMonth(ctx context.Context, tx *gorm.DB, duration int) (entity.MembershipDuration, error) {
+	if tx == nil {
+		tx = r.db
+	}
+
+	var membershipDuration entity.MembershipDuration
+	if err := tx.WithContext(ctx).First(&membershipDuration, "duration_months = ?", duration).Error; err != nil {
 		return entity.MembershipDuration{}, err
 	}
 
