@@ -23,22 +23,16 @@ type AiInterviewerUsageMetaData struct {
 	AverageScore  int    `json:"average_score"`
 }
 
-type UseTokenAssessmentRequest struct {
-	FeatureName   entity.EnumFeature      `json:"feature_name"`
-	TokenRequired int                     `json:"token_required"`
-	UsageMetaData AssessmentUsageMetaData `json:"usage_metadata"`
+type MetaData struct {
+	AssessmentMetadata *AssessmentUsageMetaData    `json:"assessment"`
+	CVGenerator        *CVGeneratorUsageMetaData   `json:"cv_generator"`
+	AiInterviewer      *AiInterviewerUsageMetaData `json:"ai_interviewer"`
 }
 
-type UseTokenCVGeneratorRequest struct {
-	FeatureName   entity.EnumFeature       `json:"feature_name"`
-	TokenRequired int                      `json:"token_required"`
-	UsageMetaData CVGeneratorUsageMetaData `json:"usage_metadata"`
-}
-
-type UseTokenAiInteweviewerRequest struct {
-	FeatureName   entity.EnumFeature         `json:"feature_name"`
-	TokenRequired int                        `json:"token_required"`
-	UsageMetaData AiInterviewerUsageMetaData `json:"usage_metadata"`
+type UseTokenRequest struct {
+	FeatureName   entity.EnumFeature `json:"feature_name"`
+	TokenRequired int                `json:"token_required"`
+	UsageMetaData MetaData           `json:"usage_metadata"`
 }
 
 func ConvertAssessmentToBytes(a *AssessmentUsageMetaData) ([]byte, error) {
