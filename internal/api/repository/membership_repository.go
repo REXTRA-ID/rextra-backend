@@ -15,6 +15,8 @@ type (
 		GetByUserID(ctx context.Context, tx *gorm.DB, userId uuid.UUID) (entity.Memberships, error)
 		GetAll(ctx context.Context, tx *gorm.DB) ([]entity.Memberships, error)
 		GetAllPaginated(ctx context.Context, tx *gorm.DB, page, totalPage int) ([]entity.Memberships, int, error)
+		GetExpiredMemberships(ctx context.Context, tx *gorm.DB) ([]entity.Memberships, error)
+		GetActiveMemberships(ctx context.Context, tx *gorm.DB) ([]entity.Memberships, error)
 		Update(ctx context.Context, tx *gorm.DB, membership entity.Memberships) (entity.Memberships, error)
 	}
 	membershipRepository struct {
@@ -97,6 +99,32 @@ func (r *membershipRepository) GetAllPaginated(ctx context.Context, tx *gorm.DB,
 	}
 
 	return memberships, int(total), nil
+}
+
+func (r *membershipRepository) GetExpiredMemberships(ctx context.Context, tx *gorm.DB) ([]entity.Memberships, error) {
+	if tx == nil {
+		tx = r.db
+	}
+
+	var expiredMemberships []entity.Memberships
+	if err := tx.WithContext(ctx).Where("expired_at < (NOW() AT TIME ZONE 'UTC')").Find(&expiredMemberships).Error; err != nil {
+		return []entity.Memberships{}, err
+	}
+
+	return expiredMemberships, nil
+}
+
+func (r *membershipRepository) GetActiveMemberships(ctx context.Context, tx *gorm.DB) ([]entity.Memberships, error) {
+	if tx == nil {
+		tx = r.db
+	}
+
+	var expiredMemberships []entity.Memberships
+	if err := tx.WithContext(ctx).Preload("Plan").Where("is_active = ?", true).Find(&expiredMemberships).Error; err != nil {
+		return []entity.Memberships{}, err
+	}
+
+	return expiredMemberships, nil
 }
 
 func (r *membershipRepository) Update(ctx context.Context, tx *gorm.DB, membership entity.Memberships) (entity.Memberships, error) {

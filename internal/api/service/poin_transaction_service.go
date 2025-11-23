@@ -21,4 +21,26 @@ type (
 	}
 )
 
-func NewPoinTransactionService()
+func NewPoinTransactionService(
+	membershipRepository repository.MembershipRepository,
+	poinTransactionRepository repository.PoinTransactionsRepository,
+	db *gorm.DB,
+) PoinTransactionService {
+	return &poinTransactionService{
+		poinTransactionRepository: poinTransactionRepository,
+		membershipRepository:      membershipRepository,
+		db:                        db,
+	}
+}
+
+func (s *poinTransactionService) UsePoin(ctx context.Context) {
+
+}
+
+func (s *poinTransactionService) EarnPoin(ctx context.Context) {
+
+}
+
+func (s *poinTransactionService) RedeemPoin(ctx context.Context) {
+
+}

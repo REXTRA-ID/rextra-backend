@@ -138,7 +138,7 @@ func (s *paymentTransactionService) UpdateTransaction(ctx context.Context, req d
 			return dto_response.GetPaymentTransactionsResponse{}, err
 		}
 
-		if err := s.updateMembershipTransaction(ctx, &transaction, &userMembership, transaction.PlanID, transaction.DurationID); err != nil {
+		if err := s.updateMembershipTransaction(ctx, &transaction, &userMembership, transaction.Plan, transaction.Duration); err != nil {
 			return dto_response.GetPaymentTransactionsResponse{}, err
 		}
 	} else if transaction.PaymentType == entity.TOKENSTANDALONE && transaction.TokenQuantity != 0 {
@@ -164,8 +164,8 @@ func (s *paymentTransactionService) UpdateTransaction(ctx context.Context, req d
 	}, nil
 }
 
-func (s *paymentTransactionService) updateMembershipTransaction(ctx context.Context, transaction *entity.PaymentTransactions, userMembership *entity.Memberships, planId, durationId *uuid.UUID) error {
-	userMembership.UpdateMembership(*planId, *durationId)
+func (s *paymentTransactionService) updateMembershipTransaction(ctx context.Context, transaction *entity.PaymentTransactions, userMembership *entity.Memberships, plan *entity.MembershipPlans, duration *entity.MembershipDuration) error {
+	userMembership.UpdateMembership(plan, duration)
 	tokenAmount := userMembership.CalculateTotalToken()
 	poinAmount := userMembership.CalculateRextraPoin()
 
@@ -209,7 +209,7 @@ func (s *paymentTransactionService) updateTokenTransaction(ctx context.Context, 
 			return err
 		}
 
-		userMembership.UpdateMembership(plan.ID, duration.ID)
+		userMembership.UpdateMembership(&plan, &duration)
 	}
 
 	userMembership.AddMembershipToken(tokenQuntity)

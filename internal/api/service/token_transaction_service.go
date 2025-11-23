@@ -16,7 +16,7 @@ import (
 type (
 	TokenTransactionService interface {
 		UseToken(ctx context.Context, req dto_request.UseTokenRequest, userId string) (dto_response.UseTokenResponse, error)
-		RefillToken(ctx context.Context, userId uuid.UUID) (dto_response.UseTokenResponse, error)
+		RefillToken() error
 	}
 
 	tokenTransactionService struct {
@@ -57,7 +57,7 @@ func (s *tokenTransactionService) UseToken(
 			return err
 		}
 
-		if req.TokenRequired > userMembership.GetTokenBalance() {
+		if req.TokenRequired > userMembership.CurrentTokenBalance {
 			return myerror.New("not enough token", myerror.Error_InvalidRequest)
 		}
 
@@ -112,8 +112,35 @@ func (s *tokenTransactionService) UseToken(
 	return returnValue, nil
 }
 
-func (s *tokenTransactionService) RefillToken(ctx context.Context, userId uuid.UUID) (dto_response.UseTokenResponse, error) {
-	return dto_response.UseTokenResponse{}, nil
+func (s *tokenTransactionService) RefillToken() error {
+
+	ctx := context.Background()
+
+	activeMemberships, err := s.membershipRepository.GetActiveMemberships(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	for _, membership := range activeMemberships {
+
+		currentTokenBalance := membership.CurrentTokenBalance
+
+		tokenAmount := membership.RefillToken()
+
+		newTokenTransaction := entity.NewTokenTransaction(membership.UserID, membership.ID, string(entity.TOKENMONTHLYREFILL), currentTokenBalance, tokenAmount, "")
+
+		_, err = s.membershipRepository.Update(ctx, nil, membership)
+		if err != nil {
+			return err
+		}
+
+		_, err = s.tokenTransactionRepository.Create(ctx, nil, newTokenTransaction)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func collectMetaData(req dto_request.UseTokenRequest) ([]byte, error) {

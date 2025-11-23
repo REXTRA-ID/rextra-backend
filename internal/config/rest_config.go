@@ -8,6 +8,7 @@ import (
 	"rextra-backend/internal/api/repository"
 	"rextra-backend/internal/api/routes"
 	"rextra-backend/internal/api/service"
+	"rextra-backend/internal/job"
 	"rextra-backend/internal/middleware"
 	mailer "rextra-backend/internal/pkg/email"
 	"rextra-backend/payment_handler/midtrans"
@@ -16,6 +17,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/robfig/cron/v3"
 )
 
 type RestConfig struct {
@@ -31,7 +33,6 @@ func NewRest() RestConfig {
 	middleware := middleware.New(db)
 	// xenditService                 := xnd.NewXenditService() xendit service
 	midtransService := midtrans.NewMidtransClient()
-
 	var (
 		//=========== (PACKAGE) ===========//
 		mailerService mailer.Mailer = mailer.New()
@@ -57,8 +58,10 @@ func NewRest() RestConfig {
 		personaService              service.PersonaService              = service.NewPersona(personaRepository, db)
 		riasecService               service.RiasecService               = service.NewRiasec(riasecRepository, db)
 		careerRecommendationService service.CareerRecommendationService = service.NewCareerRecommendation(careerRecommendationRepository, db)
+		membershipService           service.MembershipService           = service.NewMembershipService(membershipRepository, membershipPlanRepository)
 		membershipPlanService       service.MembershipPlanService       = service.NewMembershipPlanService(membershipPlanRepository, db)
 		tokenTransactionService     service.TokenTransactionService     = service.NewTokenTransactionService(membershipRepository, tokenTransactionRepository, tokenUsageHistoryRepository, db)
+		poinTransactionService      service.PoinTransactionService      = service.NewPoinTransactionService(membershipRepository, poinTransactionRepository, db)
 		paymentTransactionService   service.PaymentTransactionService   = service.NewPaymentTransactionService(tokenTransactionRepository, poinTransactionRepository, midtransService, paymentTransactionRepository, membershipPlanRepository, membershipDurationRepository, membershipRepository, db)
 
 		//=========== (CONTROLLER) ===========//
@@ -70,7 +73,24 @@ func NewRest() RestConfig {
 		membershipPlanController       controller.MembershipPlanController       = controller.NewMembership(membershipPlanService)
 		paymentTransactionController   controller.PaymentTransactionController   = controller.NewPaymentTransactionController(paymentTransactionService)
 		tokenTransactionController     controller.TokenTransactionController     = controller.NewTokenTransactionController(tokenTransactionService)
+		poinTransactionController      controller.PoinTransactionController      = controller.NewPoinTransactionController(poinTransactionService)
 	)
+
+	// Cronjobs
+	c := cron.New(cron.WithLogger(cron.DefaultLogger))
+
+	expireMembershipjob := &job.ExpireMembershipJob{
+		MembershipService: membershipService,
+	}
+
+	refillTokenJob := &job.RefillTokenJob{
+		TokenTransactionService: tokenTransactionService,
+	}
+
+	c.AddJob("0 0 1 * *", refillTokenJob)
+	c.AddJob("@daily", expireMembershipjob)
+
+	c.Start()
 
 	// Register all routes
 	routes.ServeAuth(server, authController, middleware)
@@ -81,6 +101,7 @@ func NewRest() RestConfig {
 	routes.ServeMembershipPlan(server, membershipPlanController, middleware)
 	routes.ServePaymentTransaction(server, paymentTransactionController, middleware)
 	routes.ServeTokenTransaction(server, tokenTransactionController, middleware)
+	routes.ServePoinTransaction(server, poinTransactionController, middleware)
 
 	return RestConfig{
 		server: server,
