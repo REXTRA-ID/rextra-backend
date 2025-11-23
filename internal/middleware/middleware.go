@@ -1,18 +1,18 @@
 package middleware
 
 import (
-	"firebase.google.com/go/v4/auth"
 	"gorm.io/gorm"
 )
 
+/* untuk sementara */
 type Middleware struct {
-	firebaseAuthClient *auth.Client
-	db                 *gorm.DB
+	// firebaseAuthClient *auth.Client
+	db *gorm.DB
 }
 
-func New(db *gorm.DB, firebaseAuthClient *auth.Client) Middleware {
+func New(db *gorm.DB) Middleware {
 	return Middleware{
-		firebaseAuthClient: firebaseAuthClient,
-		db:                 db,
+		// firebaseAuthClient: firebaseAuthClient,
+		db: db,
 	}
 }

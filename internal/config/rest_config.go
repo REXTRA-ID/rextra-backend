@@ -10,7 +10,6 @@ import (
 	"rextra-backend/internal/api/service"
 	"rextra-backend/internal/middleware"
 	mailer "rextra-backend/internal/pkg/email"
-	myfirebase "rextra-backend/internal/pkg/firebase"
 	"rextra-backend/payment_handler/midtrans"
 
 	"log"
@@ -27,8 +26,9 @@ func NewRest() RestConfig {
 	db := db.New()
 	app := gin.Default()
 	server := NewRouter(app)
-	firebaseApp := myfirebase.New()
-	middleware := middleware.New(db, firebaseApp.MustGetClient())
+	/* untuk sementara */
+	// firebaseApp := myfirebase.New()
+	middleware := middleware.New(db)
 	// xenditService                 := xnd.NewXenditService() xendit service
 	midtransService := midtrans.NewMidtransClient()
 
@@ -49,15 +49,17 @@ func NewRest() RestConfig {
 		paymentTransactionRepository   repository.PaymentTransactionsRepository  = repository.NewPaymentTransactionRepository(db)
 		tokenUsageHistoryRepository    repository.TokenUsageHistoryRepository    = repository.NewTokenUsageHistoryRepository(db)
 		tokenTransactionRepository     repository.TokenTransactionRepository     = repository.NewTokenTransactionRepository(db)
+		poinTransactionRepository      repository.PoinTransactionsRepository     = repository.NewPoinTransactionsRepository(db)
 
 		//=========== (SERVICE) ===========//
-		authService                 service.AuthService                 = service.NewAuth(userRepository, membershipRepository, membershipDurationRepository, membershipPlanRepository, sessionRepository, mailerService, firebaseApp.MustGetClient(), db)
+		authService                 service.AuthService                 = service.NewAuth(userRepository, membershipRepository, membershipDurationRepository, membershipPlanRepository, sessionRepository, mailerService, nil, db)
 		userService                 service.UserService                 = service.NewUser(userRepository, db)
 		personaService              service.PersonaService              = service.NewPersona(personaRepository, db)
 		riasecService               service.RiasecService               = service.NewRiasec(riasecRepository, db)
 		careerRecommendationService service.CareerRecommendationService = service.NewCareerRecommendation(careerRecommendationRepository, db)
 		membershipPlanService       service.MembershipPlanService       = service.NewMembershipPlanService(membershipPlanRepository, db)
-		paymentTransactionService   service.PaymentTransactionService   = service.NewPaymentTransactionService(tokenUsageHistoryRepository, tokenTransactionRepository, midtransService, paymentTransactionRepository, membershipPlanRepository, membershipRepository, db)
+		tokenTransactionService     service.TokenTransactionService     = service.NewTokenTransactionService(membershipRepository, tokenTransactionRepository, tokenUsageHistoryRepository, db)
+		paymentTransactionService   service.PaymentTransactionService   = service.NewPaymentTransactionService(tokenTransactionRepository, poinTransactionRepository, midtransService, paymentTransactionRepository, membershipPlanRepository, membershipDurationRepository, membershipRepository, db)
 
 		//=========== (CONTROLLER) ===========//
 		authController                 controller.AuthController                 = controller.NewAuth(authService)
@@ -67,6 +69,7 @@ func NewRest() RestConfig {
 		careerRecommendationController controller.CareerRecommendationController = controller.NewCareerRecommendation(careerRecommendationService)
 		membershipPlanController       controller.MembershipPlanController       = controller.NewMembership(membershipPlanService)
 		paymentTransactionController   controller.PaymentTransactionController   = controller.NewPaymentTransactionController(paymentTransactionService)
+		tokenTransactionController     controller.TokenTransactionController     = controller.NewTokenTransactionController(tokenTransactionService)
 	)
 
 	// Register all routes
@@ -77,6 +80,7 @@ func NewRest() RestConfig {
 	routes.ServeCareerRecommendation(server, careerRecommendationController, middleware)
 	routes.ServeMembershipPlan(server, membershipPlanController, middleware)
 	routes.ServePaymentTransaction(server, paymentTransactionController, middleware)
+	routes.ServeTokenTransaction(server, tokenTransactionController, middleware)
 
 	return RestConfig{
 		server: server,

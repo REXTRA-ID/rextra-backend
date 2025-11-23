@@ -1,12 +1,10 @@
 package xendit
 
 import (
-	"context"
 	"os"
 	dto_request "rextra-backend/internal/dto/request"
 	payment_handler "rextra-backend/payment_handler"
 
-	"github.com/google/uuid"
 	"github.com/xendit/xendit-go/v7"
 )
 
@@ -19,7 +17,10 @@ func NewXenditService() payment_handler.PaymentService {
 	return &XenditService{xnd: xnd}
 }
 
-func (c *XenditService) CreatePaymentRequest(req dto_request.MakeNewTransactionRequest) (any, error) {
-	request := c.xnd.PaymentRequestApi.GetPaymentRequestByID(context.Background(), uuid.New().String())
-	return request, nil
+func (c *XenditService) CreateMembershipPaymentRequest(grossAmount float64, planName string, email string) (string, string, error) {
+	return "", "", nil
+}
+
+func (c *XenditService) CreateTokenPaymentRequest(req dto_request.MakeNewTransactionTokenRequest, email string) (string, string, error) {
+	return "", "", nil
 }

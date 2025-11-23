@@ -13,7 +13,7 @@ type (
 		Create(ctx context.Context, tx *gorm.DB, paymentTransaction entity.PaymentTransactions) (entity.PaymentTransactions, error)
 		GetByID(ctx context.Context, tx *gorm.DB, paymentId uuid.UUID) (entity.PaymentTransactions, error)
 		GetByUserID(ctx context.Context, tx *gorm.DB, userId uuid.UUID) ([]entity.PaymentTransactions, error)
-		GetByXenditID(ctx context.Context, tx *gorm.DB, xenditId string) (entity.PaymentTransactions, error)
+		GetByPaymentInvoiceID(ctx context.Context, tx *gorm.DB, paymentInvoiceId string) (entity.PaymentTransactions, error)
 		GetAll(ctx context.Context, tx *gorm.DB) ([]entity.PaymentTransactions, error)
 		GetAllPaginated(ctx context.Context, tx *gorm.DB, page, totalPage int) ([]entity.PaymentTransactions, error)
 		Update(ctx context.Context, tx *gorm.DB, paymentTransaction entity.PaymentTransactions) (entity.PaymentTransactions, error)
@@ -68,13 +68,13 @@ func (r *paymentTransactionRepository) GetByUserID(ctx context.Context, tx *gorm
 	return userPayment, nil
 }
 
-func (r *paymentTransactionRepository) GetByXenditID(ctx context.Context, tx *gorm.DB, xenditId string) (entity.PaymentTransactions, error) {
+func (r *paymentTransactionRepository) GetByPaymentInvoiceID(ctx context.Context, tx *gorm.DB, paymentInvoiceId string) (entity.PaymentTransactions, error) {
 	if tx == nil {
 		tx = r.db
 	}
 
 	var payment entity.PaymentTransactions
-	if err := tx.WithContext(ctx).First(&payment, "xendit_invoice_id = ?", xenditId).Error; err != nil {
+	if err := tx.WithContext(ctx).First(&payment, "payment_invoice_id = ?", paymentInvoiceId).Error; err != nil {
 		return entity.PaymentTransactions{}, err
 	}
 

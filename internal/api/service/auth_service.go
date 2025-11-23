@@ -11,7 +11,6 @@ import (
 	"rextra-backend/internal/entity"
 	mailer "rextra-backend/internal/pkg/email"
 	myerror "rextra-backend/internal/pkg/error"
-	myfirebase "rextra-backend/internal/pkg/firebase"
 	myjwt "rextra-backend/internal/pkg/jwt"
 	"rextra-backend/internal/utils"
 
@@ -19,7 +18,6 @@ import (
 	"time"
 
 	"firebase.google.com/go/v4/auth"
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -32,7 +30,7 @@ type (
 		ChangePassword(ctx context.Context, req dto_request.ChangePasswordRequest) error
 		GetMe(ctx context.Context, userId string) (dto_response.GetMe, error)
 		SendVerificationEmail(ctx context.Context, email string) error
-		LoginWithGoogle(ctx context.Context, idToken string) (dto_response.LoginResponse, error)
+		// LoginWithGoogle(ctx context.Context, idToken string) (dto_response.LoginResponse, error)
 		Logout(ctx context.Context, req dto_request.LogoutRequest) error
 	}
 
@@ -43,8 +41,8 @@ type (
 		membershipPlanRepository     repository.MembershipPlanRepository
 		sessionRepository            repository.SessionRepository
 		mailService                  mailer.Mailer
-		firebaseClient               *auth.Client
-		db                           *gorm.DB
+		// firebaseClient               *auth.Client
+		db *gorm.DB
 	}
 )
 
@@ -63,7 +61,6 @@ func NewAuth(userRepository repository.UserRepository,
 		membershipPlanRepository:     membershipPlanRepository,
 		sessionRepository:            sessionRepository,
 		mailService:                  mailService,
-		firebaseClient:               firebaseClient,
 		db:                           db,
 	}
 }
@@ -303,76 +300,76 @@ func (s *authService) SendVerificationEmail(ctx context.Context, email string) e
 	return nil
 }
 
-func (s *authService) LoginWithGoogle(ctx context.Context, idToken string) (dto_response.LoginResponse, error) {
-	authToken, err := s.firebaseClient.VerifyIDToken(ctx, idToken)
-	if err != nil {
-		return dto_response.LoginResponse{}, myerror.InvalidToken()
-	}
+// func (s *authService) LoginWithGoogle(ctx context.Context, idToken string) (dto_response.LoginResponse, error) {
+// 	authToken, err := s.firebaseClient.VerifyIDToken(ctx, idToken)
+// 	if err != nil {
+// 		return dto_response.LoginResponse{}, myerror.InvalidToken()
+// 	}
 
-	uid := authToken.UID
+// 	uid := authToken.UID
 
-	userRecord, err := s.firebaseClient.GetUser(ctx, uid)
-	if err != nil {
-		return dto_response.LoginResponse{}, myerror.ProcessingError(err)
-	}
+// 	userRecord, err := s.firebaseClient.GetUser(ctx, uid)
+// 	if err != nil {
+// 		return dto_response.LoginResponse{}, myerror.ProcessingError(err)
+// 	}
 
-	user, err := s.userRepository.GetByEmail(ctx, nil, userRecord.Email)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			phoneNumber, err := myfirebase.GetGooglePhoneNumber(idToken)
-			if err != nil {
-				return dto_response.LoginResponse{}, myerror.ProcessingError(err)
-			}
+// 	user, err := s.userRepository.GetByEmail(ctx, nil, userRecord.Email)
+// 	if err != nil {
+// 		if errors.Is(err, gorm.ErrRecordNotFound) {
+// 			phoneNumber, err := myfirebase.GetGooglePhoneNumber(idToken)
+// 			if err != nil {
+// 				return dto_response.LoginResponse{}, myerror.ProcessingError(err)
+// 			}
 
-			user, err = s.userRepository.Create(ctx, nil, entity.User{
-				Fullname:    userRecord.DisplayName,
-				Email:       userRecord.Email,
-				PhoneNumber: phoneNumber,
-				Password:    uuid.New().String(),
-				IsVerified:  true,
-				Role:        entity.RoleUser,
-			})
-			if err != nil {
-				return dto_response.LoginResponse{}, myerror.DatabaseError(err)
-			}
-		} else {
-			return dto_response.LoginResponse{}, myerror.DatabaseError(err)
-		}
-	}
+// 			user, err = s.userRepository.Create(ctx, nil, entity.User{
+// 				Fullname:    userRecord.DisplayName,
+// 				Email:       userRecord.Email,
+// 				PhoneNumber: phoneNumber,
+// 				Password:    uuid.New().String(),
+// 				IsVerified:  true,
+// 				Role:        entity.RoleUser,
+// 			})
+// 			if err != nil {
+// 				return dto_response.LoginResponse{}, myerror.DatabaseError(err)
+// 			}
+// 		} else {
+// 			return dto_response.LoginResponse{}, myerror.DatabaseError(err)
+// 		}
+// 	}
 
-	accessToken, err := myjwt.GenerateToken(map[string]string{
-		"user_id": user.ID.String(),
-		"email":   user.Email,
-		"role":    string(user.Role),
-	}, 24*time.Hour)
-	if err != nil {
-		return dto_response.LoginResponse{}, err
-	}
+// 	accessToken, err := myjwt.GenerateToken(map[string]string{
+// 		"user_id": user.ID.String(),
+// 		"email":   user.Email,
+// 		"role":    string(user.Role),
+// 	}, 24*time.Hour)
+// 	if err != nil {
+// 		return dto_response.LoginResponse{}, err
+// 	}
 
-	// create refresh token
-	token, err := utils.RandomData(32)
-	if err != nil {
-		return dto_response.LoginResponse{}, myerror.ProcessingError(err)
-	}
+// 	// create refresh token
+// 	token, err := utils.RandomData(32)
+// 	if err != nil {
+// 		return dto_response.LoginResponse{}, myerror.ProcessingError(err)
+// 	}
 
-	refreshToken, err := s.sessionRepository.Create(ctx, nil, entity.SessionToken{
-		UserID:       user.ID.String(),
-		Token:        token,
-		ExpiresAt:    time.Now().Add(30 * 24 * time.Hour),
-		IsActive:     true,
-		AuthProvider: authToken.Firebase.SignInProvider,
-		DeviceInfo:   nil,
-	})
-	if err != nil {
-		return dto_response.LoginResponse{}, myerror.DatabaseError(err)
-	}
+// 	refreshToken, err := s.sessionRepository.Create(ctx, nil, entity.SessionToken{
+// 		UserID:       user.ID.String(),
+// 		Token:        token,
+// 		ExpiresAt:    time.Now().Add(30 * 24 * time.Hour),
+// 		IsActive:     true,
+// 		AuthProvider: authToken.Firebase.SignInProvider,
+// 		DeviceInfo:   nil,
+// 	})
+// 	if err != nil {
+// 		return dto_response.LoginResponse{}, myerror.DatabaseError(err)
+// 	}
 
-	return dto_response.LoginResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken.Token,
-		Role:         string(user.Role),
-	}, nil
-}
+// 	return dto_response.LoginResponse{
+// 		AccessToken:  accessToken,
+// 		RefreshToken: refreshToken.Token,
+// 		Role:         string(user.Role),
+// 	}, nil
+// }
 
 func (s *authService) Logout(ctx context.Context, req dto_request.LogoutRequest) error {
 	session, err := s.sessionRepository.GetByToken(ctx, nil, req.RefreshToken)

@@ -34,21 +34,21 @@ func (t *TokenTransaction) TableName() string {
 	return "token_transactions"
 }
 
-func NewTokenTransaction(userId uuid.UUID, userMembership *Memberships, transactionType string, tokenAmount int, description string) TokenTransaction {
-	currentToken := userMembership.CurrentTokenBalance
+func NewTokenTransaction(userId uuid.UUID, membershipId uuid.UUID, transactionType string, currentTokenBalance, tokenAmount int, description string) TokenTransaction {
 
+	var tokenBalanceAfter int
 	if transactionType == string(TOKENUSAGE) {
-		userMembership.UseMembershipToken(tokenAmount)
+		tokenBalanceAfter = currentTokenBalance - tokenAmount
 	} else {
-		userMembership.AddMembershipToken(tokenAmount)
+		tokenBalanceAfter = currentTokenBalance + tokenAmount
 	}
 
 	return TokenTransaction{
 		UserID:             userId,
 		TransactionType:    TokenTransactionType(transactionType),
 		TokenAmount:        tokenAmount,
-		TokenBalanceBefore: currentToken,
-		TokenBalanceAfter:  userMembership.CurrentTokenBalance,
+		TokenBalanceBefore: currentTokenBalance,
+		TokenBalanceAfter:  tokenBalanceAfter,
 		Description:        description,
 		CreatedAt:          time.Now().UTC(),
 	}

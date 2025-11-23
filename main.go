@@ -7,8 +7,10 @@ import (
 	"github.com/joho/godotenv"
 )
 
+const ENV_FILE = ".env.dev"
+
 func main() {
-	if err := godotenv.Load(); err != nil {
+	if err := godotenv.Load(ENV_FILE); err != nil {
 		panic("Failed to loading env file")
 	}
 

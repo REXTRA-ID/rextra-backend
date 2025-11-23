@@ -68,10 +68,13 @@ func (s *tokenTransactionService) UseToken(
 
 		totalTokenLeft := userMembership.CurrentTokenBalance - req.TokenRequired
 
+		userMembership.UseMembershipToken(req.TokenRequired)
+
 		newTokenTransaction := entity.NewTokenTransaction(
 			uuidUserID,
-			&userMembership,
+			userMembership.ID,
 			string(entity.TOKENUSAGE),
+			userMembership.CurrentTokenBalance,
 			req.TokenRequired,
 			"",
 		)

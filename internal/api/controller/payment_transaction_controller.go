@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"rextra-backend/internal/api/service"
 	dto_request "rextra-backend/internal/dto/request"
 	myerror "rextra-backend/internal/pkg/error"
@@ -14,7 +15,7 @@ type (
 	PaymentTransactionController interface {
 		MakeNewTransactionMembership(ctx *gin.Context)
 		MakeNewTransactionTokenStandAlone(ctx *gin.Context)
-		UpdateTransactionFromWebhook(ctx *gin.Context)
+		UpdateTransaction(ctx *gin.Context)
 	}
 
 	paymentTransactionController struct {
@@ -37,13 +38,19 @@ func (c *paymentTransactionController) MakeNewTransactionMembership(ctx *gin.Con
 		return
 	}
 
+	email, err := utils.GetUserIdFromCtx(ctx)
+	if err != nil {
+		response.NewFailed("failed get user email from context", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
+
 	var req dto_request.MakeNewTransactionMembershipRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		response.NewFailed("failed get data from body", myerror.InvalidRequest(err)).Send(ctx)
 		return
 	}
 
-	result, err := c.paymentTransactionService.MakeNewTransactionMembership(ctx, req, userId)
+	result, err := c.paymentTransactionService.MakeNewTransactionMembership(ctx, req, userId, email)
 	if err != nil {
 		response.NewFailed("failed to make new transaction", myerror.ProcessingError(err)).Send(ctx)
 		return
@@ -59,13 +66,19 @@ func (c *paymentTransactionController) MakeNewTransactionTokenStandAlone(ctx *gi
 		return
 	}
 
+	email, err := utils.GetUserIdFromCtx(ctx)
+	if err != nil {
+		response.NewFailed("failed get user email from context", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
+
 	var req dto_request.MakeNewTransactionTokenRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		response.NewFailed("failed get data from body", myerror.InvalidRequest(err)).Send(ctx)
 		return
 	}
 
-	result, err := c.paymentTransactionService.MakeNewTransactionToken(ctx, req, userId)
+	result, err := c.paymentTransactionService.MakeNewTransactionToken(ctx, req, userId, email)
 	if err != nil {
 		response.NewFailed("failed to make new transaction", myerror.ProcessingError(err)).Send(ctx)
 		return
@@ -74,6 +87,28 @@ func (c *paymentTransactionController) MakeNewTransactionTokenStandAlone(ctx *gi
 	response.NewSuccess("successfully made transaction", result).Send(ctx)
 }
 
-func (c *paymentTransactionController) UpdateTransactionFromWebhook(ctx *gin.Context) {
+func (c *paymentTransactionController) UpdateTransaction(ctx *gin.Context) {
+	metadata := c.HandleWebook(ctx)
 
+	var req dto_request.PaymentWebhookRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		response.NewFailed("failed to get data from body", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
+
+	result, err := c.paymentTransactionService.UpdateTransaction(ctx, req, metadata)
+	if err != nil {
+		response.NewFailed("failed to update transaction", err).Send(ctx)
+		return
+	}
+
+	response.NewSuccess("transaction successfully updated", result).Send(ctx)
+}
+
+func (c *paymentTransactionController) HandleWebook(ctx *gin.Context) []byte {
+	var payload dto_request.MidtransCallback
+
+	metadata, _ := json.Marshal(payload)
+
+	return metadata
 }

@@ -1,9 +1,9 @@
 package entity
 
 import (
-	"time"
-
+	"errors"
 	"rextra-backend/internal/utils"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/datatypes"
@@ -14,7 +14,7 @@ type (
 
 	PaymentType string
 
-	XenditPaymentStatus string
+	PaymentServiceStatus string
 )
 
 const (
@@ -23,32 +23,43 @@ const (
 	FAILED  PaymentStatus = "failed"
 	EXPIRED PaymentStatus = "expired"
 
-	XENDITSUCCEEDED XenditPaymentStatus = "SUCCEEDED"
-	XENDITFAILED    XenditPaymentStatus = "FAILED"
-	XENDITEXPIRED   XenditPaymentStatus = "EXPIRED"
+	XENDITSUCCEEDED PaymentServiceStatus = "SUCCEEDED"
+	XENDITFAILED    PaymentServiceStatus = "FAILED"
+	XENDITEXPIRED   PaymentServiceStatus = "EXPIRED"
+
+	MIDTRANSSETTLEMENT PaymentServiceStatus = "settlement"
+	MIDTRANSCAPTURE    PaymentServiceStatus = "capture"
+	MIDTRANSFAILURE    PaymentServiceStatus = "failure"
+	MIDTRANSEXPIRE     PaymentServiceStatus = "failure"
 
 	MEMBERSHIP      PaymentType = "membership"
 	TOKENSTANDALONE PaymentType = "token_standalone"
 )
 
 type PaymentTransactions struct {
-	ID            uuid.UUID   `json:"id" gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
-	UserID        uuid.UUID   `json:"user_id"`
-	PaymentType   PaymentType `json:"payment_type"`
-	PlanID        *uuid.UUID  `json:"plan_id"`
-	DurationID    *uuid.UUID  `json:"duration_id"`
-	TokenQuantity int         `json:"token_quantity" gorm:"default:0"`
-	GrossAmount   float64     `json:"gross_amount"`
+	ID            uuid.UUID     `json:"id" gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
+	UserID        uuid.UUID     `json:"user_id"`
+	PaymentType   PaymentType   `json:"payment_type"`
+	PaymentMethod string        `json:"payment_method"`
+	PaymentStatus PaymentStatus `json:"payment_status"`
+
+	PlanID *uuid.UUID       `json:"plan_id"`
+	Plan   *MembershipPlans `gorm:"foreignKey:PlanID"`
+
+	DurationID *uuid.UUID          `json:"duration_id"`
+	Duration   *MembershipDuration `gorm:"foreignKey:DurationID"`
+
+	TokenQuantity int `json:"token_quantity" gorm:"default:0"`
+
+	GrossAmount float64 `json:"gross_amount"`
 	// DiscountAmount     float64 `json:"discount_amount"` discount untuk sekarang tidak dibutuhkan
-	FinalAmount        float64        `json:"final_amount"`
-	PromoCode          *string        `json:"promo_code"`
-	XenditInvoiceID    string         `json:"xendit_invoice_id"`
-	XenditExternalID   string         `json:"xendit_external_id"`
-	PaymentMethod      string         `json:"payment_method"`
-	PaymentStatus      PaymentStatus  `json:"payment_status"`
-	PaidAt             *time.Time     `json:"paid_at"`
-	ExpiredAt          *time.Time     `json:"expired_at"`
-	XenditCallbackData datatypes.JSON `json:"xendit_callback_data"`
+	FinalAmount         float64        `json:"final_amount"`
+	PromoCode           *string        `json:"promo_code"`
+	PaymentInvoiceID    string         `json:"payment_invoice_id"`
+	PaymentExternalID   string         `json:"payment_external_id"`
+	PaidAt              *time.Time     `json:"paid_at"`
+	ExpiredAt           *time.Time     `json:"expired_at"`
+	PaymentCallbackData datatypes.JSON `json:"xendit_callback_data"`
 
 	Timestamp
 }
@@ -63,31 +74,30 @@ func (p *PaymentTransactions) CalculatePrice(plan MembershipPlans, duration Memb
 }
 
 func NewPaymenTransaction(userId uuid.UUID,
-	paymentType, PaymentMethod string,
+	paymentType string,
 	planId, durationId *uuid.UUID,
 	grossAmount float64,
 	paymentInvoiceId string,
 	tokenQuantity int) PaymentTransactions {
 
-	xenditExternalId := utils.MakeXenditExternalID(paymentType, userId.String())
+	payemntExternalId := utils.PaymentExternalID(paymentType, userId.String())
 
 	return PaymentTransactions{
-		UserID:           userId,
-		PlanID:           planId,
-		DurationID:       durationId,
-		TokenQuantity:    tokenQuantity,
-		PaymentType:      PaymentType(paymentType),
-		PaymentStatus:    PENDING,
-		PaymentMethod:    PaymentMethod,
-		GrossAmount:      grossAmount,
-		FinalAmount:      grossAmount,
-		XenditInvoiceID:  paymentInvoiceId,
-		XenditExternalID: xenditExternalId,
+		UserID:            userId,
+		PlanID:            planId,
+		DurationID:        durationId,
+		TokenQuantity:     tokenQuantity,
+		PaymentType:       PaymentType(paymentType),
+		PaymentStatus:     PENDING,
+		GrossAmount:       grossAmount,
+		FinalAmount:       grossAmount,
+		PaymentInvoiceID:  paymentInvoiceId,
+		PaymentExternalID: payemntExternalId,
 	}
 }
 
-func (p *PaymentTransactions) UpdateTransaction(paymentStatus string, xenditCallback []byte) bool {
-	p.XenditCallbackData = datatypes.JSON(xenditCallback)
+func (p *PaymentTransactions) UpdateXenditTransaction(paymentStatus string, paymentCallback []byte) bool {
+	p.PaymentCallbackData = datatypes.JSON(paymentCallback)
 	now := time.Now().UTC()
 
 	if paymentStatus == string(XENDITEXPIRED) {
@@ -102,4 +112,33 @@ func (p *PaymentTransactions) UpdateTransaction(paymentStatus string, xenditCall
 	p.PaymentStatus = PAID
 	p.PaidAt = &now
 	return true
+}
+
+func (p *PaymentTransactions) UpdateMidtransTransaction(
+	paymentStatus, transactionTime, paymentMethod string,
+	paymentCallback []byte) error {
+
+	p.PaymentCallbackData = datatypes.JSON(paymentCallback)
+	t, err := time.Parse("2006-01-02 15:04:05", transactionTime)
+	if err != nil {
+		return err
+	}
+
+	if paymentStatus == string(MIDTRANSSETTLEMENT) || paymentStatus == string(MIDTRANSCAPTURE) {
+		p.PaidAt = &t
+		p.PaymentStatus = PAID
+		p.PaymentMethod = paymentMethod
+		return nil
+	} else if paymentStatus == string(MIDTRANSEXPIRE) {
+		p.ExpiredAt = &t
+		p.PaymentStatus = EXPIRED
+		p.PaymentMethod = ""
+		return nil
+	} else if paymentStatus == string(MIDTRANSFAILURE) {
+		p.PaymentStatus = FAILED
+		p.PaymentMethod = ""
+		return nil
+	} else {
+		return errors.New("invalid status")
+	}
 }

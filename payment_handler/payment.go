@@ -5,5 +5,6 @@ import (
 )
 
 type PaymentService interface {
-	CreatePaymentRequest(req dto_request.MakeNewTransactionRequest) (any, error)
+	CreateMembershipPaymentRequest(grossAmount float64, planName string, email string) (string, string, error)
+	CreateTokenPaymentRequest(req dto_request.MakeNewTransactionTokenRequest, email string) (string, string, error)
 }
