@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"rextra-backend/internal/entity"
 
 	"gorm.io/gorm"
@@ -10,8 +11,8 @@ import (
 type (
 	PersonaRepository interface {
 		Create(ctx context.Context, tx *gorm.DB, session entity.Persona) (entity.Persona, error)
-		GetByID(ctx context.Context, tx *gorm.DB, id string) (entity.Persona, error)
-		GetByUserID(ctx context.Context, tx *gorm.DB, userID string) (entity.Persona, error)
+		GetByID(ctx context.Context, tx *gorm.DB, id string) (entity.Persona, bool, error)
+		GetByUserID(ctx context.Context, tx *gorm.DB, userID string) (entity.Persona, bool, error)
 		Update(ctx context.Context, tx *gorm.DB, session entity.Persona) (entity.Persona, error)
 	}
 
@@ -36,29 +37,34 @@ func (r *personaRepository) Create(ctx context.Context, tx *gorm.DB, persona ent
 	return persona, nil
 }
 
-func (r *personaRepository) GetByID(ctx context.Context, tx *gorm.DB, id string) (entity.Persona, error) {
+func (r *personaRepository) GetByID(ctx context.Context, tx *gorm.DB, id string) (entity.Persona, bool, error) {
 	if tx == nil {
 		tx = r.db
 	}
 
 	var persona entity.Persona
 	if err := tx.WithContext(ctx).Take(&persona, "id = ?", id).Error; err != nil {
-		return entity.Persona{}, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return entity.Persona{}, false, nil
+		}
+		return entity.Persona{}, false, err
 	}
-
-	return persona, nil
+	return persona, true, nil
 }
 
-func (r *personaRepository) GetByUserID(ctx context.Context, tx *gorm.DB, userID string) (entity.Persona, error) {
+func (r *personaRepository) GetByUserID(ctx context.Context, tx *gorm.DB, userID string) (entity.Persona, bool, error) {
 	if tx == nil {
 		tx = r.db
 	}
 
 	var persona entity.Persona
 	if err := tx.WithContext(ctx).Take(&persona, "user_id = ?", userID).Error; err != nil {
-		return entity.Persona{}, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return entity.Persona{}, false, nil
+		}
+		return entity.Persona{}, false, err
 	}
-	return persona, nil
+	return persona, true, nil
 }
 
 func (r *personaRepository) Update(ctx context.Context, tx *gorm.DB, persona entity.Persona) (entity.Persona, error) {

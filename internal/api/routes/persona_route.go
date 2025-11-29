@@ -8,10 +8,9 @@ import (
 )
 
 func ServePersona(app *gin.Engine, personacontroller controller.PersonaController, middleware middleware.Middleware) {
-	routes := app.Group("/api/v1/user/:id/persona")
+	routes := app.Group("/api/v1/persona")
 	{
-		routes.POST("", middleware.Authenticate(), personacontroller.Create)
-		routes.GET("", middleware.Authenticate(), personacontroller.GetByUserID)
-		routes.PUT("", middleware.Authenticate(), personacontroller.Update)
+		routes.POST("/create", middleware.Authenticate(), personacontroller.Create)
+		routes.GET("", middleware.Authenticate(), personacontroller.Get)
 	}
 }
