@@ -27,6 +27,33 @@ type Persona struct {
 	Timestamp
 }
 
+func (p Persona) IsPathfinderComplete() bool {
+	return p.EducationSaved &&
+		p.CareerRecommendationTired &&
+		p.CareerDictionaryAccessed &&
+		p.CareerPlanCreated
+}
+
+func (p Persona) IsBuilderComplete() bool {
+	return p.IsPathfinderComplete() &&
+		p.PorfolioRecorded &&
+		p.ExplorationAIUsed &&
+		p.CVCreated
+}
+
+func (p *Persona) AttemptAutoUpgrade() {
+	switch p.PersonaType {
+	case Pathfinder:
+		if p.IsPathfinderComplete() {
+			p.PersonaType = Builder
+		}
+	case Builder:
+		if p.IsBuilderComplete() && p.IsPathfinderComplete() {
+			p.PersonaType = Achiever
+		}
+	}
+}
+
 func (p *Persona) TableName() string {
 	return "personas"
 }

@@ -12,5 +12,6 @@ func ServePersona(app *gin.Engine, personacontroller controller.PersonaControlle
 	{
 		routes.POST("/create", middleware.Authenticate(), personacontroller.Create)
 		routes.GET("", middleware.Authenticate(), personacontroller.Get)
+		routes.PUT("/mission/complete", middleware.Authenticate(), personacontroller.UpdateMission)
 	}
 }

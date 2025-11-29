@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"math"
 	"rextra-backend/internal/api/repository"
 	dto_request "rextra-backend/internal/dto/request"
@@ -35,6 +36,7 @@ type (
 	PersonaService interface {
 		Create(ctx context.Context, req dto_request.CreatePersonaRequest) (dto_response.CreatePersonaResponse, error)
 		Get(ctx context.Context, userID string) (*dto_response.GetPersonaResponse, error)
+		UpdateMission(ctx context.Context, req dto_request.MissionPersonaCompleteRequest) (dto_response.MissionPersonaCompleteResponse, error)
 	}
 
 	personaService struct {
@@ -99,6 +101,74 @@ func (s *personaService) Get(ctx context.Context, userID string) (*dto_response.
 		PersonaStartedAt: persona.CreatedAt.String(),
 		Progress:         progress,
 		Missions:         userMissions,
+	}, nil
+}
+
+func (s *personaService) UpdateMission(ctx context.Context, req dto_request.MissionPersonaCompleteRequest) (dto_response.MissionPersonaCompleteResponse, error) {
+	existingPersona, found, err := s.personaRepository.GetByUserID(ctx, nil, req.UserID)
+	if err != nil {
+		return dto_response.MissionPersonaCompleteResponse{}, err
+	}
+
+	if !found {
+		return dto_response.MissionPersonaCompleteResponse{}, myerror.RecordNotFound("persona")
+	}
+
+	isValidKey := true
+	switch req.MissionKey {
+	case "education_saved":
+		existingPersona.EducationSaved = true
+	case "career_recommendation_tried":
+		existingPersona.CareerRecommendationTired = true
+	case "career_dictionary_accessed":
+		existingPersona.CareerDictionaryAccessed = true
+	case "career_plan_created":
+		existingPersona.CareerPlanCreated = true
+	case "portfolio_recorded":
+		existingPersona.PorfolioRecorded = true
+	case "exploration_ai_used":
+		existingPersona.ExplorationAIUsed = true
+	case "cv_created":
+		existingPersona.CVCreated = true
+	case "interview_simulated":
+		existingPersona.InterviewSimulated = true
+	case "linkedin_optimize":
+		existingPersona.LinkedinOptimaze = true
+	case "internship_plan_reported":
+		existingPersona.IntershipPlanReported = true
+	default:
+		isValidKey = false
+	}
+
+	if !isValidKey {
+		return dto_response.MissionPersonaCompleteResponse{}, errors.New("Invalid mission key")
+	}
+
+	oldPersonaType := existingPersona.PersonaType
+	existingPersona.AttemptAutoUpgrade()
+
+	updatedPersona, err := s.personaRepository.Update(ctx, nil, existingPersona)
+	if err != nil {
+		return dto_response.MissionPersonaCompleteResponse{}, err
+	}
+
+	userMissions := getMissionsWithStatus(updatedPersona)
+	progress := calculateProgress(updatedPersona, len(userMissions))
+
+	var transition *dto_response.PersonaTransition
+	if updatedPersona.PersonaType != oldPersonaType {
+		transition = &dto_response.PersonaTransition{
+			From: string(oldPersonaType),
+			To:   string(updatedPersona.PersonaType),
+		}
+	}
+
+	return dto_response.MissionPersonaCompleteResponse{
+		UserID:      updatedPersona.UserID.String(),
+		MissionKey:  req.MissionKey,
+		IsCompleted: true,
+		Progress:    progress,
+		Transition:  transition,
 	}, nil
 }
 

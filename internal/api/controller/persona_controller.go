@@ -14,6 +14,7 @@ type (
 	PersonaController interface {
 		Create(ctx *gin.Context)
 		Get(ctx *gin.Context)
+		UpdateMission(ctx *gin.Context)
 	}
 
 	personaController struct {
@@ -65,4 +66,27 @@ func (c *personaController) Get(ctx *gin.Context) {
 	}
 
 	response.NewSuccess("success get persona", persona).Send(ctx)
+}
+
+func (c *personaController) UpdateMission(ctx *gin.Context) {
+	userId, err := utils.GetUserIdFromCtx(ctx)
+	if err != nil {
+		response.NewFailed("failed get user id from context", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
+	var req dto_request.MissionPersonaCompleteRequest
+	req.UserID = userId
+	if err := ctx.ShouldBind(&req); err != nil {
+		response.NewFailed("failed get data from body", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
+
+	persona, err := c.personaService.UpdateMission(ctx, req)
+
+	if err != nil {
+		response.NewFailed("failed update persona", err).Send(ctx)
+		return
+	}
+
+	response.NewSuccess("success update persona mission", persona).Send(ctx)
 }
