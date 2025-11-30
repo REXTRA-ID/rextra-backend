@@ -73,12 +73,13 @@ func (s *personaService) Create(ctx context.Context, req dto_request.CreatePerso
 	progress := calculateProgress(createdResult, len(userMissions))
 
 	return dto_response.CreatePersonaResponse{
-		ID:               createdResult.ID.String(),
-		UserID:           createdResult.UserID.String(),
-		PersonaType:      string(createdResult.PersonaType),
-		PersonaStartedAt: createdResult.CreatedAt.String(),
-		Progress:         progress,
-		Missions:         userMissions,
+		ID:                 createdResult.ID.String(),
+		UserID:             createdResult.UserID.String(),
+		PersonaType:        string(createdResult.PersonaType),
+		PersonaDescription: personaTypeDescription(createdResult.PersonaType),
+		PersonaStartedAt:   createdResult.CreatedAt.String(),
+		Progress:           progress,
+		Missions:           userMissions,
 	}, nil
 }
 
@@ -95,12 +96,13 @@ func (s *personaService) Get(ctx context.Context, userID string) (*dto_response.
 	progress := calculateProgress(persona, len(userMissions))
 
 	return &dto_response.GetPersonaResponse{
-		ID:               persona.ID.String(),
-		UserID:           persona.UserID.String(),
-		PersonaType:      string(persona.PersonaType),
-		PersonaStartedAt: persona.CreatedAt.String(),
-		Progress:         progress,
-		Missions:         userMissions,
+		ID:                 persona.ID.String(),
+		UserID:             persona.UserID.String(),
+		PersonaType:        string(persona.PersonaType),
+		PersonaDescription: personaTypeDescription(persona.PersonaType),
+		PersonaStartedAt:   persona.CreatedAt.String(),
+		Progress:           progress,
+		Missions:           userMissions,
 	}, nil
 }
 
@@ -157,9 +159,16 @@ func (s *personaService) UpdateMission(ctx context.Context, req dto_request.Miss
 
 	var transition *dto_response.PersonaTransition
 	if updatedPersona.PersonaType != oldPersonaType {
+
 		transition = &dto_response.PersonaTransition{
-			From: string(oldPersonaType),
-			To:   string(updatedPersona.PersonaType),
+			From:            string(oldPersonaType),
+			To:              string(updatedPersona.PersonaType),
+			NewMissionCount: len(userMissions),
+		}
+		if updatedPersona.PersonaType == entity.Builder {
+			transition.Message = "Selamat! Kamu sekarang adalah Builder. Saatnya membangun portofolio profesional!"
+		} else if updatedPersona.PersonaType == entity.Achiever {
+			transition.Message = "Selamat! Kamu sekarang adalah The Achiever. Yuk mulai persiapkan kebutuhan untuk melamar kerja dan menghadapi tahapan seleksi dengan maksimal."
 		}
 	}
 
@@ -172,11 +181,24 @@ func (s *personaService) UpdateMission(ctx context.Context, req dto_request.Miss
 	}, nil
 }
 
+func personaTypeDescription(personaType entity.PersonaType) string {
+	switch personaType {
+	case entity.Pathfinder:
+		return dto_request.DescriptionPathfinder
+	case entity.Builder:
+		return dto_request.DescriptionBuilder
+	case entity.Achiever:
+		return dto_request.DescriptionAchiever
+	default:
+		return "Unknown"
+	}
+}
+
 func determinePersonaType(req dto_request.CreatePersonaRequest) entity.PersonaType {
-	if req.HasCareerGoal && req.BuildingPortofolio && req.InRecruitmentProcess {
+	if *req.HasCareerGoal && *req.BuildingPortofolio && *req.InRecruitmentProcess {
 		return entity.Achiever
 	}
-	if !req.HasCareerGoal && !req.BuildingPortofolio && !req.InRecruitmentProcess {
+	if !*req.HasCareerGoal && !*req.BuildingPortofolio && !*req.InRecruitmentProcess {
 		return entity.Pathfinder
 	}
 	return entity.Builder

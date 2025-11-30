@@ -29,19 +29,18 @@ func NewPersona(personaService service.PersonaService) PersonaController {
 }
 
 func (c *personaController) Create(ctx *gin.Context) {
-	var req dto_request.CreatePersonaRequest
-	if err := ctx.ShouldBind(&req); err != nil {
-		response.NewFailed("failed get data from body", myerror.InvalidRequest(err)).Send(ctx)
-		return
-	}
-
 	userId, err := utils.GetUserIdFromCtx(ctx)
 	if err != nil {
 		response.NewFailed("failed get user id from context", myerror.InvalidRequest(err)).Send(ctx)
 		return
 	}
 
+	var req dto_request.CreatePersonaRequest
 	req.UserID = userId
+	if err := ctx.ShouldBind(&req); err != nil {
+		response.NewFailed("failed get data from body", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
 
 	createResult, err := c.personaService.Create(ctx, req)
 	if err != nil {
