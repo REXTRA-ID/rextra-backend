@@ -51,6 +51,8 @@ func NewRest() RestConfig {
 		tokenUsageHistoryRepository    repository.TokenUsageHistoryRepository    = repository.NewTokenUsageHistoryRepository(db)
 		tokenTransactionRepository     repository.TokenTransactionRepository     = repository.NewTokenTransactionRepository(db)
 		poinTransactionRepository      repository.PoinTransactionsRepository     = repository.NewPoinTransactionsRepository(db)
+		promoCodeRepository            repository.PromoCodeRepository            = repository.NewPromoCodesRepository(db)
+		promoCodeUsageRepository       repository.PromoCodeUsageRepository       = repository.NewPromoCodeUsageRepository(db)
 
 		//=========== (SERVICE) ===========//
 		authService                 service.AuthService                 = service.NewAuth(userRepository, membershipRepository, membershipDurationRepository, membershipPlanRepository, sessionRepository, mailerService, nil, db)
@@ -62,7 +64,7 @@ func NewRest() RestConfig {
 		membershipPlanService       service.MembershipPlanService       = service.NewMembershipPlanService(membershipPlanRepository, db)
 		tokenTransactionService     service.TokenTransactionService     = service.NewTokenTransactionService(membershipRepository, tokenTransactionRepository, tokenUsageHistoryRepository, db)
 		poinTransactionService      service.PoinTransactionService      = service.NewPoinTransactionService(membershipRepository, poinTransactionRepository, db)
-		paymentTransactionService   service.PaymentTransactionService   = service.NewPaymentTransactionService(tokenTransactionRepository, poinTransactionRepository, midtransService, paymentTransactionRepository, membershipPlanRepository, membershipDurationRepository, membershipRepository, db)
+		paymentTransactionService   service.PaymentTransactionService   = service.NewPaymentTransactionService(tokenTransactionRepository, poinTransactionRepository, midtransService, paymentTransactionRepository, promoCodeRepository, promoCodeUsageRepository, membershipPlanRepository, membershipDurationRepository, membershipRepository, db)
 
 		//=========== (CONTROLLER) ===========//
 		authController                 controller.AuthController                 = controller.NewAuth(authService)
@@ -88,7 +90,7 @@ func NewRest() RestConfig {
 	}
 
 	c.AddJob("0 0 1 * *", refillTokenJob)
-	c.AddJob("@daily", expireMembershipjob)
+	c.AddJob("0 0 * * *", expireMembershipjob)
 
 	c.Start()
 

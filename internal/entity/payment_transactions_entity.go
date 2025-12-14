@@ -51,8 +51,7 @@ type PaymentTransactions struct {
 
 	TokenQuantity int `json:"token_quantity" gorm:"default:0"`
 
-	GrossAmount float64 `json:"gross_amount"`
-	// DiscountAmount     float64 `json:"discount_amount"` discount untuk sekarang tidak dibutuhkan
+	GrossAmount         float64        `json:"gross_amount"`
 	FinalAmount         float64        `json:"final_amount"`
 	PromoCode           *string        `json:"promo_code"`
 	PaymentInvoiceID    string         `json:"payment_invoice_id"`
@@ -66,11 +65,6 @@ type PaymentTransactions struct {
 
 func (p *PaymentTransactions) TableName() string {
 	return "payment_transactions"
-}
-
-func (p *PaymentTransactions) CalculatePrice(plan MembershipPlans, duration MembershipDuration) float64 {
-	price := plan.BaseMonthlyPrice * float64(duration.DurationMonth)
-	return price
 }
 
 func NewPaymenTransaction(userId uuid.UUID,

@@ -29,6 +29,8 @@ type (
 		poinTransactionRepository    repository.PoinTransactionsRepository
 		paymentService               payment_handler.PaymentService
 		paymentTransactionRepository repository.PaymentTransactionsRepository
+		promoCodeRepository          repository.PromoCodeRepository
+		promoCodeUsageRepository     repository.PromoCodeUsageRepository
 		membershipPlanRepository     repository.MembershipPlanRepository
 		membershipDurationRepository repository.MembershipDurationRepository
 		membershipRepository         repository.MembershipRepository
@@ -41,6 +43,8 @@ func NewPaymentTransactionService(
 	poinTransactionRepository repository.PoinTransactionsRepository,
 	paymenService payment_handler.PaymentService,
 	paymentTransactionRepository repository.PaymentTransactionsRepository,
+	promoCodeRepsitory repository.PromoCodeRepository,
+	prmoCodeUsageRepsitory repository.PromoCodeUsageRepository,
 	membershipPlanRepository repository.MembershipPlanRepository,
 	membershipDuration repository.MembershipDurationRepository,
 	membershipRepository repository.MembershipRepository,
@@ -51,6 +55,8 @@ func NewPaymentTransactionService(
 		poinTransactionRepository:    poinTransactionRepository,
 		paymentService:               paymenService,
 		paymentTransactionRepository: paymentTransactionRepository,
+		promoCodeRepository:          promoCodeRepsitory,
+		promoCodeUsageRepository:     prmoCodeUsageRepsitory,
 		membershipPlanRepository:     membershipPlanRepository,
 		membershipDurationRepository: membershipDuration,
 		membershipRepository:         membershipRepository,
@@ -64,6 +70,28 @@ func (s *paymentTransactionService) MakeNewTransactionToken(ctx context.Context,
 	url, invoiceId, err := s.paymentService.CreateTokenPaymentRequest(req, email)
 	if err != nil {
 		return dto_response.MakeNewTransactionResponse{}, err
+	}
+
+	var promo *entity.PromoCodes
+	if req.PromoCode != nil {
+		promo, err = s.promoCodeRepository.GetPromoCodeByCodeName(ctx, nil, *req.PromoCode)
+		if err != nil {
+			return dto_response.MakeNewTransactionResponse{}, err
+		}
+		isApplicable := isDiscountApplicableToken(req.TokenQuantity, req.PaymentType, promo)
+		if !isApplicable {
+			return dto_response.MakeNewTransactionResponse{}, errors.New("discount is not applicable")
+		}
+
+		if promo.CurrentUsage > 0 {
+			used, err := s.promoCodeUsageRepository.IsPromoCodeUsedByUserID(ctx, nil, uuidUserID)
+			if err != nil {
+				return dto_response.MakeNewTransactionResponse{}, err
+			}
+			if used {
+				return dto_response.MakeNewTransactionResponse{}, errors.New("you already use this discount")
+			}
+		}
 	}
 
 	newTransaction := entity.NewPaymenTransaction(uuidUserID, string(entity.TOKENSTANDALONE), nil, nil, req.GrossAmount, invoiceId, req.TokenQuantity)
@@ -96,6 +124,36 @@ func (s *paymentTransactionService) MakeNewTransactionMembership(ctx context.Con
 	}
 
 	grossAmount := utils.CalculateMembershipPrice(plan.BaseMonthlyPrice, duration.DurationMonth)
+
+	var promo *entity.PromoCodes
+	if req.PromoCode != nil {
+		promo, err = s.promoCodeRepository.GetPromoCodeByCodeName(ctx, nil, *req.PromoCode)
+		if err != nil {
+			return dto_response.MakeNewTransactionResponse{}, err
+		}
+		isApplicable := isDiscountApplicableMembership(string(plan.PlanName), duration.DurationMonth, promo, string(entity.MEMBERSHIP))
+		if !isApplicable {
+			return dto_response.MakeNewTransactionResponse{}, errors.New("discount is not applicable")
+		}
+
+		if promo.CurrentUsage > 0 {
+			used, err := s.promoCodeUsageRepository.IsPromoCodeUsedByUserID(ctx, nil, uuidUserID)
+			if err != nil {
+				return dto_response.MakeNewTransactionResponse{}, err
+			}
+			if used {
+				return dto_response.MakeNewTransactionResponse{}, errors.New("you already use this discount")
+			}
+		}
+	}
+
+	if promo.DiscountType == entity.DiscountFixedAmount {
+		grossAmount = utils.ApplyDiscountFixed(grossAmount, int(promo.DiscountValue))
+	}
+
+	if promo.DiscountType == entity.DiscountPercentage {
+		grossAmount = utils.ApplyDiscountPercentage(grossAmount, int(promo.DiscountValue))
+	}
 
 	url, invoiceId, err := s.paymentService.CreateMembershipPaymentRequest(grossAmount, string(plan.PlanName), email)
 	if err != nil {
@@ -227,4 +285,47 @@ func (s *paymentTransactionService) updateTokenTransaction(ctx context.Context, 
 	}
 
 	return nil
+}
+
+func isDiscountApplicableMembership(planName string, durationMont int,
+	promo *entity.PromoCodes, transactionType string,
+) bool {
+
+	if string(promo.PromoType) != transactionType {
+		return false
+	}
+
+	if !promo.IsValid() {
+		return false
+	}
+
+	if promo.UsageExceed() {
+		return false
+	}
+
+	statePlan, _ := promo.ApplyPromoApplicablePlans(planName)
+	stateDuration, _ := promo.ApplyPromoApplicaleDuration(durationMont)
+
+	return statePlan && stateDuration
+
+}
+
+func isDiscountApplicableToken(tokenQuantity int, transactionType string, promo *entity.PromoCodes) bool {
+	if string(promo.PromoType) != transactionType {
+		return false
+	}
+
+	if !promo.IsValid() {
+		return false
+	}
+
+	if promo.UsageExceed() {
+		return false
+	}
+
+	if *promo.MinTokenPurchase > tokenQuantity {
+		return false
+	}
+
+	return true
 }
