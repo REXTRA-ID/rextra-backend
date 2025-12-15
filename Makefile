@@ -12,6 +12,9 @@ watch:
 seeder:
 	go run main.go --seeder
 
+reset-db:
+	go run main.go --reset-db
+
 migrate:
 	go run main.go --migrate
 

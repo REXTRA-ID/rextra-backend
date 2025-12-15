@@ -31,6 +31,8 @@ func Migrate(db *gorm.DB) error {
 		&entity.PoinTransactions{},
 		&entity.TokenTransaction{},
 		&entity.TokenUsageHistory{},
+		&entity.PromoCodes{},
+		&entity.PromoCodeUsage{},
 	); err != nil {
 		return err
 	}

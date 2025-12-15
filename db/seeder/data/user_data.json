@@ -1,9 +1,8 @@
 [
     {
-        "id":"a1a2b473-f398-4489-b7ef-6984b60e4f10",
         "username":"admin youngtive",
         "email":"admin@email.com",
-        "password":"Password.1",
+        "password":"Password",
         "is_verified": true,
         "phone_number": "0888888888",
         "role":"ADMIN"

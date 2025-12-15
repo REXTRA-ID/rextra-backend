@@ -28,7 +28,7 @@ type PromoCodes struct {
 	ID                  uuid.UUID      `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
 	Code                string         `gorm:"type:varchar(50);unique;not null" json:"code"`
 	Description         string         `gorm:"type:text" json:"description"`
-	PromoType           PromoType      `gorm:"type:varchar(20)"`
+	PromoType           PromoType      `gorm:"type:varchar(20)" json:"promo_type"`
 	DiscountType        DiscountType   `gorm:"type:varchar(20);not null" json:"discount_type"`
 	DiscountValue       float64        `gorm:"type:decimal(10,2)" json:"discount_value"`
 	ApplicablePlans     datatypes.JSON `gorm:"type:jsonb" json:"applicable_plans"`
