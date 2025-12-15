@@ -2,6 +2,7 @@ package dto_response
 
 type MakeNewTransactionResponse struct {
 	RedirectURL string `json:"payment_url"`
+	Message     string `json:"message"`
 }
 
 type GetPaymentTransactionsResponse struct {

@@ -91,10 +91,15 @@ func (m *Memberships) RefillToken() int {
 	return tokenAmount
 }
 
-func (m *Memberships) CalculateTotalToken() int {
+func (m *Memberships) CalculateTotalToken(promoBonusToken *int) int {
 	baseToken := m.Plan.MonthlyToken * m.Duration.DurationMonth
 	bonusToken := float64(baseToken) * (m.Duration.TokenBonusPercentage / 100)
 	totalToken := baseToken + int(bonusToken)
+
+	if promoBonusToken != nil {
+		totalToken += *promoBonusToken
+	}
+
 	m.CurrentTokenBalance += totalToken
 	return totalToken
 }

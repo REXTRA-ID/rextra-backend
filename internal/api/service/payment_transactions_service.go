@@ -72,6 +72,8 @@ func (s *paymentTransactionService) MakeNewTransactionToken(ctx context.Context,
 		return dto_response.MakeNewTransactionResponse{}, err
 	}
 
+	grossAmount := req.GrossAmount
+
 	var promo *entity.PromoCodes
 	if req.PromoCode != nil {
 		promo, err = s.promoCodeRepository.GetPromoCodeByCodeName(ctx, nil, *req.PromoCode)
@@ -91,6 +93,25 @@ func (s *paymentTransactionService) MakeNewTransactionToken(ctx context.Context,
 			if used {
 				return dto_response.MakeNewTransactionResponse{}, errors.New("you already use this discount")
 			}
+		}
+		tokenQuantity := req.TokenQuantity
+		if promo.BonusToken != nil {
+			tokenQuantity += *promo.BonusToken
+		}
+
+		if promo.DiscountType == entity.DiscountFixedAmount {
+			grossAmount = utils.ApplyDiscountFixed(grossAmount, int(promo.DiscountValue))
+		}
+
+		if promo.DiscountType == entity.DiscountPercentage {
+			grossAmount = utils.ApplyDiscountPercentage(grossAmount, int(promo.DiscountValue))
+		}
+
+		newTransaction := entity.NewPaymenTransaction(uuidUserID, string(entity.TOKENSTANDALONE), nil, nil, grossAmount, "", tokenQuantity)
+
+		_, err = s.paymentTransactionRepository.Create(ctx, nil, newTransaction)
+		if err != nil {
+			return dto_response.MakeNewTransactionResponse{}, myerror.ProcessingError(err)
 		}
 	}
 
@@ -145,14 +166,35 @@ func (s *paymentTransactionService) MakeNewTransactionMembership(ctx context.Con
 				return dto_response.MakeNewTransactionResponse{}, errors.New("you already use this discount")
 			}
 		}
+
+		if promo.DiscountType == entity.DiscountFixedAmount {
+			grossAmount = utils.ApplyDiscountFixed(grossAmount, int(promo.DiscountValue))
+		}
+
+		if promo.DiscountType == entity.DiscountPercentage {
+			grossAmount = utils.ApplyDiscountPercentage(grossAmount, int(promo.DiscountValue))
+		}
 	}
 
-	if promo.DiscountType == entity.DiscountFixedAmount {
-		grossAmount = utils.ApplyDiscountFixed(grossAmount, int(promo.DiscountValue))
-	}
+	if grossAmount == 0 {
+		newTransaction := entity.NewPaymenTransaction(uuidUserID, string(entity.MEMBERSHIP), &uuidPlanId, &uuidDurationId, grossAmount, "", *promo.BonusToken)
+		_, err = s.paymentTransactionRepository.Create(ctx, nil, newTransaction)
+		if err != nil {
+			return dto_response.MakeNewTransactionResponse{}, err
+		}
 
-	if promo.DiscountType == entity.DiscountPercentage {
-		grossAmount = utils.ApplyDiscountPercentage(grossAmount, int(promo.DiscountValue))
+		userMembership, err := s.membershipRepository.GetByUserID(ctx, nil, uuidUserID)
+		if err != nil {
+			return dto_response.MakeNewTransactionResponse{}, err
+		}
+
+		if err := s.updateMembershipTransaction(ctx, &newTransaction, &userMembership, newTransaction.Plan, newTransaction.Duration, promo.BonusToken); err != nil {
+			return dto_response.MakeNewTransactionResponse{}, err
+		}
+
+		return dto_response.MakeNewTransactionResponse{
+			Message: "Selamat! Anda mendapat membership GRATIS",
+		}, nil
 	}
 
 	url, invoiceId, err := s.paymentService.CreateMembershipPaymentRequest(grossAmount, string(plan.PlanName), email)
@@ -196,7 +238,7 @@ func (s *paymentTransactionService) UpdateTransaction(ctx context.Context, req d
 			return dto_response.GetPaymentTransactionsResponse{}, err
 		}
 
-		if err := s.updateMembershipTransaction(ctx, &transaction, &userMembership, transaction.Plan, transaction.Duration); err != nil {
+		if err := s.updateMembershipTransaction(ctx, &transaction, &userMembership, transaction.Plan, transaction.Duration, nil); err != nil {
 			return dto_response.GetPaymentTransactionsResponse{}, err
 		}
 	} else if transaction.PaymentType == entity.TOKENSTANDALONE && transaction.TokenQuantity != 0 {
@@ -222,9 +264,9 @@ func (s *paymentTransactionService) UpdateTransaction(ctx context.Context, req d
 	}, nil
 }
 
-func (s *paymentTransactionService) updateMembershipTransaction(ctx context.Context, transaction *entity.PaymentTransactions, userMembership *entity.Memberships, plan *entity.MembershipPlans, duration *entity.MembershipDuration) error {
+func (s *paymentTransactionService) updateMembershipTransaction(ctx context.Context, transaction *entity.PaymentTransactions, userMembership *entity.Memberships, plan *entity.MembershipPlans, duration *entity.MembershipDuration, bonusToken *int) error {
 	userMembership.UpdateMembership(plan, duration)
-	tokenAmount := userMembership.CalculateTotalToken()
+	tokenAmount := userMembership.CalculateTotalToken(bonusToken)
 	poinAmount := userMembership.CalculateRextraPoin()
 
 	curretnTokenBalance := userMembership.CurrentTokenBalance
