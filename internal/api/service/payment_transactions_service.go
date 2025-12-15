@@ -67,16 +67,12 @@ func NewPaymentTransactionService(
 func (s *paymentTransactionService) MakeNewTransactionToken(ctx context.Context, req dto_request.MakeNewTransactionTokenRequest, userId, email string) (dto_response.MakeNewTransactionResponse, error) {
 	uuidUserID := uuid.MustParse(userId)
 
-	url, invoiceId, err := s.paymentService.CreateTokenPaymentRequest(req, email)
-	if err != nil {
-		return dto_response.MakeNewTransactionResponse{}, err
-	}
-
 	grossAmount := req.GrossAmount
-
-	var promo *entity.PromoCodes
+	tokenQuantity := req.TokenQuantity
+	var promoCodeUsage entity.PromoCodeUsage
 	if req.PromoCode != nil {
-		promo, err = s.promoCodeRepository.GetPromoCodeByCodeName(ctx, nil, *req.PromoCode)
+		var promo *entity.PromoCodes
+		promo, err := s.promoCodeRepository.GetPromoCodeByCodeName(ctx, nil, *req.PromoCode)
 		if err != nil {
 			return dto_response.MakeNewTransactionResponse{}, err
 		}
@@ -94,7 +90,7 @@ func (s *paymentTransactionService) MakeNewTransactionToken(ctx context.Context,
 				return dto_response.MakeNewTransactionResponse{}, errors.New("you already use this discount")
 			}
 		}
-		tokenQuantity := req.TokenQuantity
+
 		if promo.BonusToken != nil {
 			tokenQuantity += *promo.BonusToken
 		}
@@ -107,15 +103,25 @@ func (s *paymentTransactionService) MakeNewTransactionToken(ctx context.Context,
 			grossAmount = utils.ApplyDiscountPercentage(grossAmount, int(promo.DiscountValue))
 		}
 
-		newTransaction := entity.NewPaymenTransaction(uuidUserID, string(entity.TOKENSTANDALONE), nil, nil, grossAmount, "", tokenQuantity)
+		promoCodeUsage = entity.NewPromoCodeUsage(promo.ID, uuidUserID)
+	}
 
-		_, err = s.paymentTransactionRepository.Create(ctx, nil, newTransaction)
+	newTransaction := entity.NewPaymenTransaction(uuidUserID, string(entity.TOKENSTANDALONE), nil, nil, grossAmount, tokenQuantity)
+	if req.PromoCode != nil {
+		promoCodeUsage.SetPaymentTransactionID(newTransaction.ID)
+
+		_, err := s.promoCodeUsageRepository.Create(ctx, nil, promoCodeUsage)
 		if err != nil {
-			return dto_response.MakeNewTransactionResponse{}, myerror.ProcessingError(err)
+			return dto_response.MakeNewTransactionResponse{}, err
 		}
 	}
 
-	newTransaction := entity.NewPaymenTransaction(uuidUserID, string(entity.TOKENSTANDALONE), nil, nil, req.GrossAmount, invoiceId, req.TokenQuantity)
+	url, invoiceId, err := s.paymentService.CreateTokenPaymentRequest(req, email, grossAmount)
+	if err != nil {
+		return dto_response.MakeNewTransactionResponse{}, err
+	}
+
+	newTransaction.SetInvoice(invoiceId)
 
 	_, err = s.paymentTransactionRepository.Create(ctx, nil, newTransaction)
 	if err != nil {
@@ -147,6 +153,7 @@ func (s *paymentTransactionService) MakeNewTransactionMembership(ctx context.Con
 	grossAmount := utils.CalculateMembershipPrice(plan.BaseMonthlyPrice, duration.DurationMonth)
 
 	var promo *entity.PromoCodes
+	var promoCodeUsage entity.PromoCodeUsage
 	if req.PromoCode != nil {
 		promo, err = s.promoCodeRepository.GetPromoCodeByCodeName(ctx, nil, *req.PromoCode)
 		if err != nil {
@@ -174,10 +181,12 @@ func (s *paymentTransactionService) MakeNewTransactionMembership(ctx context.Con
 		if promo.DiscountType == entity.DiscountPercentage {
 			grossAmount = utils.ApplyDiscountPercentage(grossAmount, int(promo.DiscountValue))
 		}
+
+		promoCodeUsage = entity.NewPromoCodeUsage(promo.ID, uuidUserID)
 	}
 
 	if grossAmount == 0 {
-		newTransaction := entity.NewPaymenTransaction(uuidUserID, string(entity.MEMBERSHIP), &uuidPlanId, &uuidDurationId, grossAmount, "", *promo.BonusToken)
+		newTransaction := entity.NewPaymenTransaction(uuidUserID, string(entity.MEMBERSHIP), &uuidPlanId, &uuidDurationId, grossAmount, *promo.BonusToken)
 		_, err = s.paymentTransactionRepository.Create(ctx, nil, newTransaction)
 		if err != nil {
 			return dto_response.MakeNewTransactionResponse{}, err
@@ -197,12 +206,22 @@ func (s *paymentTransactionService) MakeNewTransactionMembership(ctx context.Con
 		}, nil
 	}
 
+	newTransaction := entity.NewPaymenTransaction(uuidUserID, string(entity.MEMBERSHIP), &uuidPlanId, &uuidDurationId, grossAmount, 0)
+	if req.PromoCode != nil {
+		promoCodeUsage.SetPaymentTransactionID(newTransaction.ID)
+
+		_, err := s.promoCodeUsageRepository.Create(ctx, nil, promoCodeUsage)
+		if err != nil {
+			return dto_response.MakeNewTransactionResponse{}, err
+		}
+	}
+
 	url, invoiceId, err := s.paymentService.CreateMembershipPaymentRequest(grossAmount, string(plan.PlanName), email)
 	if err != nil {
 		return dto_response.MakeNewTransactionResponse{}, err
 	}
 
-	newTransaction := entity.NewPaymenTransaction(uuidUserID, string(entity.MEMBERSHIP), &uuidPlanId, &uuidDurationId, grossAmount, invoiceId, 0)
+	newTransaction.SetInvoice(invoiceId)
 
 	_, err = s.paymentTransactionRepository.Create(ctx, nil, newTransaction)
 	if err != nil {

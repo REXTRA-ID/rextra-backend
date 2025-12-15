@@ -48,11 +48,10 @@ func (m *MidtransClient) CreateMembershipPaymentRequest(grossAmount float64, pla
 	return url, transaction.TransactionDetails.OrderID, nil
 }
 
-func (m *MidtransClient) CreateTokenPaymentRequest(req dto_request.MakeNewTransactionTokenRequest, email string) (string, string, error) {
+func (m *MidtransClient) CreateTokenPaymentRequest(req dto_request.MakeNewTransactionTokenRequest, email string, grossAmount float64) (string, string, error) {
 	item := midtrans.ItemDetails{
 		Name:     "Token",
-		Qty:      int32(req.TokenQuantity),
-		Price:    int64(req.GrossAmount),
+		Price:    int64(grossAmount),
 		Category: "token",
 	}
 
@@ -65,7 +64,7 @@ func (m *MidtransClient) CreateTokenPaymentRequest(req dto_request.MakeNewTransa
 		CustomerDetail: &customer,
 		TransactionDetails: midtrans.TransactionDetails{
 			OrderID:  uuid.NewString(),
-			GrossAmt: int64(req.GrossAmount),
+			GrossAmt: int64(grossAmount),
 		},
 	}
 

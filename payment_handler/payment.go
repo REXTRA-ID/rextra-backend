@@ -6,5 +6,5 @@ import (
 
 type PaymentService interface {
 	CreateMembershipPaymentRequest(grossAmount float64, planName string, email string) (string, string, error)
-	CreateTokenPaymentRequest(req dto_request.MakeNewTransactionTokenRequest, email string) (string, string, error)
+	CreateTokenPaymentRequest(req dto_request.MakeNewTransactionTokenRequest, email string, grossmount float64) (string, string, error)
 }

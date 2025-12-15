@@ -71,7 +71,6 @@ func NewPaymenTransaction(userId uuid.UUID,
 	paymentType string,
 	planId, durationId *uuid.UUID,
 	grossAmount float64,
-	paymentInvoiceId string,
 	tokenQuantity int) PaymentTransactions {
 
 	payemntExternalId := utils.PaymentExternalID(paymentType, userId.String())
@@ -85,9 +84,12 @@ func NewPaymenTransaction(userId uuid.UUID,
 		PaymentStatus:     PENDING,
 		GrossAmount:       grossAmount,
 		FinalAmount:       grossAmount,
-		PaymentInvoiceID:  paymentInvoiceId,
 		PaymentExternalID: payemntExternalId,
 	}
+}
+
+func (p *PaymentTransactions) SetInvoice(invoiceId string) {
+	p.PaymentInvoiceID = invoiceId
 }
 
 func (p *PaymentTransactions) UpdateXenditTransaction(paymentStatus string, paymentCallback []byte) bool {

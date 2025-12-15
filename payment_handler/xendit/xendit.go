@@ -21,6 +21,6 @@ func (c *XenditService) CreateMembershipPaymentRequest(grossAmount float64, plan
 	return "", "", nil
 }
 
-func (c *XenditService) CreateTokenPaymentRequest(req dto_request.MakeNewTransactionTokenRequest, email string) (string, string, error) {
+func (c *XenditService) CreateTokenPaymentRequest(req dto_request.MakeNewTransactionTokenRequest, email string, grossAmount float64) (string, string, error) {
 	return "", "", nil
 }
