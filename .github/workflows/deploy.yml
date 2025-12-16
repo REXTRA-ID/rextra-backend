@@ -1,0 +1,32 @@
+name: Deploy dev to VPS
+
+on:
+  push:
+    branches: [dev]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /home/rextra/rextra-backend
+
+            git config --global --add safe.directory /home/rextra/rextra-backend
+
+            git fetch --all
+
+            git checkout dev
+
+            git reset --hard origin/dev
+
+            make build-docker ENV=dev
+
+            make docker-migrate ENV=dev
+
+            docker image prune -f
