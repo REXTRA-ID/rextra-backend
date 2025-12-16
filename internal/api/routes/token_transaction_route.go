@@ -10,6 +10,6 @@ import (
 func ServeTokenTransaction(app *gin.Engine, tokenTransactionController controller.TokenTransactionController, middleware middleware.Middleware) {
 	routes := app.Group("/api/v1/token-transactions")
 	{
-		routes.POST("")
+		routes.POST("", middleware.Authenticate(), tokenTransactionController.UseToken)
 	}
 }

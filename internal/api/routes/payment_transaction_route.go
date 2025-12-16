@@ -11,6 +11,7 @@ func ServePaymentTransaction(app *gin.Engine, membershipPlanController controlle
 
 	routes := app.Group("/api/v1/transaction")
 	{
-		routes.POST("/membership")
+		routes.POST("/membership", middleware.Authenticate(), membershipPlanController.MakeNewTransactionMembership)
+		routes.POST("/token", middleware.Authenticate(), membershipPlanController.MakeNewTransactionTokenStandAlone)
 	}
 }
