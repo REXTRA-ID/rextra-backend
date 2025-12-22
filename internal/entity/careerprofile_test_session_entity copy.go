@@ -18,7 +18,7 @@ type CareerProfileTestSession struct {
 	RiasecCompletedAt *time.Time `json:"riasec_completed_at" gorm:"type:timestamptz"`
 	IkigaiCompletedAt *time.Time `json:"ikigai_completed_at" gorm:"type:timestamptz"`
 
-	User User `json:"-" gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+	User User `json:"-" gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 func (CareerProfileTestSession) TableName() string {

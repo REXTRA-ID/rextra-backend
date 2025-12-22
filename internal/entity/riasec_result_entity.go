@@ -18,8 +18,8 @@ type RiasecResult struct {
 	IsInconsistentProfile bool      `json:"is_inconsistent_profile" gorm:"default:false;not null"`
 	CalculatedAt          time.Time `json:"calculated_at" gorm:"type:timestamptz;default:now();autoCreateTime"`
 
-	CareerProfileTestSession CareerProfileTestSession `json:"-" gorm:"foreignKey:TestSessionID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
-	RiasecCode               RiasecCode               `json:"-" gorm:"foreignKey:RiasecCodeID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+	CareerProfileTestSession CareerProfileTestSession `json:"-" gorm:"foreignKey:TestSessionID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	RiasecCode               RiasecCode               `json:"-" gorm:"foreignKey:RiasecCodeID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 func (RiasecResult) TableName() string {

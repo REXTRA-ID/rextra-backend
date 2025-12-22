@@ -17,8 +17,8 @@ type KenaliDiriHistory struct {
 	StartedAt       time.Time  `json:"started_at" gorm:"type:timestamptz;default:now();autoCreateTime"`
 	CompletedAt     *time.Time `json:"completed_at" gorm:"type:timestamptz"`
 
-	User         User               `json:"-" gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
-	TestCategory KenaliDiriCategory `json:"-" gorm:"foreignKey:TestCategoryID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+	User         User               `json:"-" gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	TestCategory KenaliDiriCategory `json:"-" gorm:"foreignKey:TestCategoryID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 func (KenaliDiriHistory) TableName() string {

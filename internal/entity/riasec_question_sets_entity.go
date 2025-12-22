@@ -12,7 +12,7 @@ type RiasecQuestionSet struct {
 	QuestionIDs   datatypes.JSON `json:"question_ids" gorm:"type:jsonb;not null"`
 	GeneratedAt   time.Time      `json:"generated_at" gorm:"type:timestamptz;default:now();autoCreateTime"`
 
-	CareerProfileTestSession CareerProfileTestSession `json:"-" gorm:"foreignKey:TestSessionID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+	CareerProfileTestSession CareerProfileTestSession `json:"-" gorm:"foreignKey:TestSessionID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 func (RiasecQuestionSet) TableName() string {

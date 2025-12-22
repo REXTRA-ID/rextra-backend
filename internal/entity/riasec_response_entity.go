@@ -12,7 +12,7 @@ type RiasecResponse struct {
 	ResponsesData datatypes.JSON `json:"responses_data" gorm:"type:jsonb;not null"`
 	CreatedAt     time.Time      `json:"created_at" gorm:"type:timestamptz;default:now();autoCreateTime"`
 
-	CareerProfileTestSession CareerProfileTestSession `json:"-" gorm:"foreignKey:TestSessionID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+	CareerProfileTestSession CareerProfileTestSession `json:"-" gorm:"foreignKey:TestSessionID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 func (RiasecResponse) TableName() string {
