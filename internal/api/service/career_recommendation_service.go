@@ -2,24 +2,22 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
+	"time"
 	"rextra-backend/internal/api/repository"
 	dto_request "rextra-backend/internal/dto/request"
 	dto_response "rextra-backend/internal/dto/response"
 	"rextra-backend/internal/entity"
 	myerror "rextra-backend/internal/pkg/error"
 
-	"github.com/google/uuid"
-	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
 type (
 	CareerRecommendationService interface {
 		Create(ctx context.Context, req dto_request.CreateCareerRecommendationRequest) (dto_response.CreateCareerRecommendationResponse, error)
-		GetByUserID(ctx context.Context, userId string) (dto_response.CreateCareerRecommendationResponse, error)
-		Update(ctx context.Context, id string, req dto_request.CreateCareerRecommendationRequest) (dto_response.CreateCareerRecommendationResponse, error)
+		GetByTestSessionID(ctx context.Context, testSessionID int64) (dto_response.CreateCareerRecommendationResponse, error)
+		Update(ctx context.Context, testSessionID int64, req dto_request.CreateCareerRecommendationRequest) (dto_response.CreateCareerRecommendationResponse, error)
 	}
 
 	careerRecommendationService struct {
@@ -36,92 +34,102 @@ func NewCareerRecommendation(careerRecommendationRepository repository.CareerRec
 }
 
 func (s *careerRecommendationService) Create(ctx context.Context, req dto_request.CreateCareerRecommendationRequest) (dto_response.CreateCareerRecommendationResponse, error) {
-	_, err := s.careerRecommendationRepository.GetByUserID(ctx, nil, req.UserID)
-	if err == nil {
+	if req.TestSessionID == 0 {
+		return dto_response.CreateCareerRecommendationResponse{}, myerror.InvalidRequest(errors.New("test_session_id is required"))
+	}
+
+	existing, err := s.careerRecommendationRepository.GetByTestSessionID(ctx, nil, req.TestSessionID)
+	if err == nil && existing.ID != 0 {
 		return dto_response.CreateCareerRecommendationResponse{}, myerror.RecordAlreadyExist("career recommendation")
 	}
-
-	if len(req.Analysis) != 3 {
-		return dto_response.CreateCareerRecommendationResponse{}, myerror.InvalidRequest(errors.New("analysis must contain exactly 3 items"))
-	}
-
-	if len(req.TopProfessions) != 2 {
-		return dto_response.CreateCareerRecommendationResponse{}, myerror.InvalidRequest(errors.New("top professions must contain exactly 2 items"))
-	}
-
-	analysisJSON, err := json.Marshal(req.Analysis)
-	if err != nil {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return dto_response.CreateCareerRecommendationResponse{}, err
 	}
 
+	if len(req.RecommendationsData) == 0 {
+		return dto_response.CreateCareerRecommendationResponse{}, myerror.InvalidRequest(errors.New("recommendations_data is required"))
+	}
+
+	aiModelUsed := req.AIModelUsed
+	if aiModelUsed == "" {
+		aiModelUsed = "gemini-1.5-flash"
+	}
+
 	createResult, err := s.careerRecommendationRepository.Create(ctx, nil, entity.CareerRecommendation{
-		UserID:         uuid.MustParse(req.UserID),
-		Analysis:       analysisJSON,
-		TopProfessions: pq.StringArray(req.TopProfessions),
+		TestSessionID:       req.TestSessionID,
+		RecommendationsData: req.RecommendationsData,
+		TopProfession1ID:    req.TopProfession1ID,
+		TopProfession2ID:    req.TopProfession2ID,
+		AIModelUsed:         aiModelUsed,
 	})
 	if err != nil {
 		return dto_response.CreateCareerRecommendationResponse{}, err
 	}
 
-	var analysis []dto_response.CareerRecommendationAnalysisResponse
-	if err := json.Unmarshal(createResult.Analysis, &analysis); err != nil {
+	return dto_response.CreateCareerRecommendationResponse{
+		ID:                  createResult.ID,
+		TestSessionID:       createResult.TestSessionID,
+		RecommendationsData: createResult.RecommendationsData,
+		TopProfession1ID:    createResult.TopProfession1ID,
+		TopProfession2ID:    createResult.TopProfession2ID,
+		GeneratedAt:         createResult.GeneratedAt,
+		AIModelUsed:         createResult.AIModelUsed,
+	}, nil
+}
+
+func (s *careerRecommendationService) GetByTestSessionID(ctx context.Context, testSessionID int64) (dto_response.CreateCareerRecommendationResponse, error) {
+	careerRecommendation, err := s.careerRecommendationRepository.GetByTestSessionID(ctx, nil, testSessionID)
+	if err != nil {
 		return dto_response.CreateCareerRecommendationResponse{}, err
 	}
 
 	return dto_response.CreateCareerRecommendationResponse{
-		ID:             createResult.ID.String(),
-		UserID:         createResult.UserID.String(),
-		Analysis:       analysis,
-		TopProfessions: createResult.TopProfessions,
+		ID:                  careerRecommendation.ID,
+		TestSessionID:       careerRecommendation.TestSessionID,
+		RecommendationsData: careerRecommendation.RecommendationsData,
+		TopProfession1ID:    careerRecommendation.TopProfession1ID,
+		TopProfession2ID:    careerRecommendation.TopProfession2ID,
+		GeneratedAt:         careerRecommendation.GeneratedAt,
+		AIModelUsed:         careerRecommendation.AIModelUsed,
 	}, nil
 }
 
-func (s *careerRecommendationService) GetByUserID(ctx context.Context, userId string) (dto_response.CreateCareerRecommendationResponse, error) {
-	careerRecommendation, err := s.careerRecommendationRepository.GetByUserID(ctx, nil, userId)
+func (s *careerRecommendationService) Update(ctx context.Context, testSessionID int64, req dto_request.CreateCareerRecommendationRequest) (dto_response.CreateCareerRecommendationResponse, error) {
+	if testSessionID == 0 {
+		return dto_response.CreateCareerRecommendationResponse{}, myerror.InvalidRequest(errors.New("test_session_id is required"))
+	}
+
+	careerRecommendation, err := s.careerRecommendationRepository.GetByTestSessionID(ctx, nil, testSessionID)
 	if err != nil {
 		return dto_response.CreateCareerRecommendationResponse{}, err
 	}
 
-	var analysis []dto_response.CareerRecommendationAnalysisResponse
-	if err := json.Unmarshal(careerRecommendation.Analysis, &analysis); err != nil {
-		return dto_response.CreateCareerRecommendationResponse{}, err
+	if len(req.RecommendationsData) == 0 {
+		return dto_response.CreateCareerRecommendationResponse{}, myerror.InvalidRequest(errors.New("recommendations_data is required"))
 	}
 
-	return dto_response.CreateCareerRecommendationResponse{
-		ID:             careerRecommendation.ID.String(),
-		UserID:         careerRecommendation.UserID.String(),
-		Analysis:       analysis,
-		TopProfessions: careerRecommendation.TopProfessions,
-	}, nil
-}
-
-func (s *careerRecommendationService) Update(ctx context.Context, id string, req dto_request.CreateCareerRecommendationRequest) (dto_response.CreateCareerRecommendationResponse, error) {
-	careerRecommendation, err := s.careerRecommendationRepository.GetByUserID(ctx, nil, id)
-	if err != nil {
-		return dto_response.CreateCareerRecommendationResponse{}, err
+	aiModelUsed := req.AIModelUsed
+	if aiModelUsed == "" {
+		aiModelUsed = careerRecommendation.AIModelUsed
 	}
 
-	analysisJSON, err := json.Marshal(req.Analysis)
-	if err != nil {
-		return dto_response.CreateCareerRecommendationResponse{}, err
-	}
-
-	careerRecommendation.Analysis = analysisJSON
-	careerRecommendation.TopProfessions = pq.StringArray(req.TopProfessions)
+	careerRecommendation.RecommendationsData = req.RecommendationsData
+	careerRecommendation.TopProfession1ID = req.TopProfession1ID
+	careerRecommendation.TopProfession2ID = req.TopProfession2ID
+	careerRecommendation.AIModelUsed = aiModelUsed
+	careerRecommendation.GeneratedAt = time.Now()
 
 	updateResult, err := s.careerRecommendationRepository.Update(ctx, nil, careerRecommendation)
 	if err != nil {
 		return dto_response.CreateCareerRecommendationResponse{}, err
 	}
-	var analysis []dto_response.CareerRecommendationAnalysisResponse
-	if err := json.Unmarshal(updateResult.Analysis, &analysis); err != nil {
-		return dto_response.CreateCareerRecommendationResponse{}, err
-	}
-
 	return dto_response.CreateCareerRecommendationResponse{
-		ID:             updateResult.ID.String(),
-		UserID:         updateResult.UserID.String(),
-		Analysis:       analysis,
-		TopProfessions: updateResult.TopProfessions,
+		ID:                  updateResult.ID,
+		TestSessionID:       updateResult.TestSessionID,
+		RecommendationsData: updateResult.RecommendationsData,
+		TopProfession1ID:    updateResult.TopProfession1ID,
+		TopProfession2ID:    updateResult.TopProfession2ID,
+		GeneratedAt:         updateResult.GeneratedAt,
+		AIModelUsed:         updateResult.AIModelUsed,
 	}, nil
 }

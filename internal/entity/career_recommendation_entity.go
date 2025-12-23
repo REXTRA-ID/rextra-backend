@@ -1,16 +1,23 @@
 package entity
 
 import (
-	"github.com/google/uuid"
-	"github.com/lib/pq"
+	"time"
+
 	"gorm.io/datatypes"
 )
 
 type CareerRecommendation struct {
-	ID             uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
-	UserID         uuid.UUID      `json:"user_id" gorm:"type:uuid;not null"`
-	Analysis       datatypes.JSON `json:"analysis" gorm:"type:jsonb;not null"`
-	TopProfessions pq.StringArray `json:"top_professions" gorm:"type:text[];not null"`
+	ID                  int64          `json:"id" gorm:"primaryKey;autoIncrement"`
+	TestSessionID       int64          `json:"test_session_id" gorm:"uniqueIndex;not null"`
+	RecommendationsData datatypes.JSON `json:"recommendations_data" gorm:"type:jsonb;not null"`
+	TopProfession1ID    *int64         `json:"top_profession_1_id" gorm:"type:bigint"`
+	TopProfession2ID    *int64         `json:"top_profession_2_id" gorm:"type:bigint"`
+	GeneratedAt         time.Time      `json:"generated_at" gorm:"type:timestamptz;default:now();autoCreateTime"`
+	AIModelUsed         string         `json:"ai_model_used" gorm:"size:50;default:'gemini-1.5-flash';not null"`
 
-	Timestamp
+	CareerProfileTestSession CareerProfileTestSession `json:"-" gorm:"foreignKey:TestSessionID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+}
+
+func (CareerRecommendation) TableName() string {
+	return "career_recommendations"
 }
