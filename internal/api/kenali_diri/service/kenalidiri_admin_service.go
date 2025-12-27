@@ -17,6 +17,7 @@ import (
 	myerror "rextra-backend/internal/pkg/error"
 	"rextra-backend/internal/utils"
 
+	"errors"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -116,7 +117,7 @@ func (s *kenalidiriAdminService) GetTestHistory(ctx context.Context, req dto_req
 
 	histories, total, err := s.historyRepo.ListWithFilters(ctx, nil, filters)
 	if err != nil {
-		return dto_response.TestHistoryListResponse{}, err
+		return dto_response.TestHistoryListResponse{}, wrapNotFound(err, "kenalidiri history")
 	}
 
 	items := make([]dto_response.TestHistoryItem, 0, len(histories))
@@ -168,7 +169,7 @@ func (s *kenalidiriAdminService) DeleteTestData(ctx context.Context, req dto_req
 		history, err := s.historyRepo.GetByID(ctx, tx, id)
 		if err != nil {
 			tx.Rollback()
-			return err
+			return wrapNotFound(err, "kenalidiri history")
 		}
 
 		sessionID := history.DetailSessionID
@@ -222,7 +223,11 @@ func (s *kenalidiriAdminService) ExportTestHistory(ctx context.Context, req dto_
 
 	histories, _, err := s.historyRepo.ListWithFilters(ctx, nil, filters)
 	if err != nil {
-		return dto_response.ExportFileResponse{}, err
+		return dto_response.ExportFileResponse{}, wrapNotFound(err, "kenalidiri history")
+	}
+
+	if len(histories) == 0 {
+		return dto_response.ExportFileResponse{}, myerror.RecordNotFound("kenalidiri history")
 	}
 
 	data := make([]map[string]interface{}, 0, len(histories))
@@ -280,7 +285,7 @@ func (s *kenalidiriAdminService) ExportTestHistory(ctx context.Context, req dto_
 func (s *kenalidiriAdminService) GetTestDetail(ctx context.Context, historyID int64) (dto_response.TestDetailResponse, error) {
 	history, err := s.historyRepo.GetByID(ctx, nil, historyID)
 	if err != nil {
-		return dto_response.TestDetailResponse{}, err
+		return dto_response.TestDetailResponse{}, wrapNotFound(err, "kenalidiri history")
 	}
 
 	sessionID := history.DetailSessionID
@@ -344,7 +349,7 @@ func (s *kenalidiriAdminService) GetStudentFeedbackList(ctx context.Context, req
 
 	data, total, err := s.feedbackRepo.ListStudentFeedback(ctx, nil, filters)
 	if err != nil {
-		return dto_response.FeedbackListResponse{}, err
+		return dto_response.FeedbackListResponse{}, wrapNotFound(err, "student feedback")
 	}
 
 	items := make([]dto_response.FeedbackItem, 0, len(data))
@@ -380,7 +385,7 @@ func (s *kenalidiriAdminService) GetStudentFeedbackStats(ctx context.Context, ca
 
 	stats, err := s.feedbackRepo.GetStudentFeedbackStats(ctx, nil, filters)
 	if err != nil {
-		return dto_response.FeedbackStatsResponse{}, err
+		return dto_response.FeedbackStatsResponse{}, wrapNotFound(err, "student feedback stats")
 	}
 
 	trendData := map[string]interface{}{}
@@ -419,7 +424,7 @@ func (s *kenalidiriAdminService) GetExpertFeedbackList(ctx context.Context, req 
 
 	data, total, err := s.feedbackRepo.ListExpertFeedback(ctx, nil, filters)
 	if err != nil {
-		return dto_response.ExpertFeedbackListResponse{}, err
+		return dto_response.ExpertFeedbackListResponse{}, wrapNotFound(err, "expert feedback")
 	}
 
 	items := make([]dto_response.ExpertFeedbackItem, 0, len(data))
@@ -454,7 +459,7 @@ func (s *kenalidiriAdminService) GetExpertFeedbackList(ctx context.Context, req 
 func (s *kenalidiriAdminService) GetExpertFeedbackDetail(ctx context.Context, feedbackID int64) (dto_response.ExpertFeedbackDetailResponse, error) {
 	fb, err := s.feedbackRepo.GetExpertFeedbackByID(ctx, nil, feedbackID)
 	if err != nil {
-		return dto_response.ExpertFeedbackDetailResponse{}, err
+		return dto_response.ExpertFeedbackDetailResponse{}, wrapNotFound(err, "expert feedback")
 	}
 
 	topN := deriveTopNStatusFromJSON(fb.TopFiveProfessions, fb.Profession)
@@ -489,7 +494,7 @@ func (s *kenalidiriAdminService) GetRiasecCodeList(ctx context.Context, req dto_
 		codes, err = s.riasecCodeRepo.GetAll(ctx, nil)
 	}
 	if err != nil {
-		return dto_response.RiasecCodeListResponse{}, err
+		return dto_response.RiasecCodeListResponse{}, wrapNotFound(err, "riasec code")
 	}
 
 	items := make([]dto_response.RiasecCodeItem, 0, len(codes))
@@ -520,7 +525,7 @@ func (s *kenalidiriAdminService) GetRiasecCodeList(ctx context.Context, req dto_
 func (s *kenalidiriAdminService) GetRiasecCodeDetail(ctx context.Context, codeID int64) (dto_response.RiasecCodeDetailResponse, error) {
 	code, err := s.riasecCodeRepo.GetByID(ctx, nil, codeID)
 	if err != nil {
-		return dto_response.RiasecCodeDetailResponse{}, err
+		return dto_response.RiasecCodeDetailResponse{}, wrapNotFound(err, "riasec code")
 	}
 
 	return dto_response.RiasecCodeDetailResponse{
@@ -551,6 +556,16 @@ func (s *kenalidiriAdminService) UpdateRiasecCode(ctx context.Context, codeID in
 	code.InteractionStyles = mustMarshalJSON(req.InteractionStyles)
 
 	return s.riasecCodeRepo.Update(ctx, nil, code)
+}
+
+func wrapNotFound(err error, item string) error {
+	if err == nil {
+		return nil
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return myerror.RecordNotFound(item)
+	}
+	return err
 }
 
 func buildIkigaiResult(total entity.IkigaiTotalScore) *dto_response.IkigaiResultDetail {

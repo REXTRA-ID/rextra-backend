@@ -33,13 +33,7 @@ func (m Middleware) Authenticate() gin.HandlerFunc {
 
 		idToken, err := myjwt.GetPayloadInsideToken(authHeader)
 		if err != nil {
-			if err.Error() == "token expired" {
-				res := response.NewFailed(MESSAGE_FAILED_VERIFY_TOKEN, myerror.InvalidToken())
-				res.SendWithAbort(ctx)
-				return
-			}
-
-			res := response.NewFailed(MESSAGE_FAILED_VERIFY_TOKEN, myerror.ErrGeneral)
+			res := response.NewFailed(MESSAGE_FAILED_VERIFY_TOKEN, myerror.InvalidToken())
 			res.SendWithAbort(ctx)
 			return
 		}
