@@ -263,7 +263,7 @@ func (s *authService) SendVerificationEmail(ctx context.Context, email string) e
 	}
 
 	// generate token
-	token = fmt.Sprintf("%s/api/v1/auth/auth/verify?token=%s", os.Getenv("APP_URL"), token)
+	token = fmt.Sprintf("%s/api/v1/auth/verify?token=%s", os.Getenv("APP_URL"), token)
 	if err := s.mailService.MakeMail("./internal/pkg/email/template/verification_email.html", map[string]any{
 		"Fullname": user.Fullname,
 		"Verify":   token,
