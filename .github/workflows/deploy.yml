@@ -29,6 +29,4 @@ jobs:
 
             sleep 15
 
-            make docker-migrate ENV=dev
-
             docker image prune -f
