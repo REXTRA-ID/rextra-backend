@@ -16,6 +16,7 @@ import (
 type ExportService interface {
 	GenerateCSV(data []map[string]interface{}, filename string) (string, error)
 	GenerateExcel(data []map[string]interface{}, filename, sheetName string) (string, error)
+	GenerateExcelMultiSheet(sheets map[string][]map[string]interface{}, filename string) (string, error)
 	GeneratePDF(data []map[string]interface{}, filename, title string) (string, error)
 }
 
@@ -43,6 +44,12 @@ func (s *exportService) GenerateCSV(data []map[string]interface{}, filename stri
 func (s *exportService) GenerateExcel(data []map[string]interface{}, filename, sheetName string) (string, error) {
 	return s.generateAndUpload(func() (string, error) {
 		return s.excelExporter.Generate(data, filename, sheetName)
+	})
+}
+
+func (s *exportService) GenerateExcelMultiSheet(sheets map[string][]map[string]interface{}, filename string) (string, error) {
+	return s.generateAndUpload(func() (string, error) {
+		return s.excelExporter.GenerateMultiSheet(sheets, filename)
 	})
 }
 

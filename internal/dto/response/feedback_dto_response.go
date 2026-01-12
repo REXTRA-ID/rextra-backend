@@ -17,12 +17,17 @@ type (
 	}
 
 	FeedbackStatsResponse struct {
-		TotalFeedback     int                    `json:"total_feedback"`
-		AvgEaseOfUse      float64                `json:"avg_ease_of_use"`
-		AvgRelevance      float64                `json:"avg_relevance"`
-		AvgSatisfaction   float64                `json:"avg_satisfaction"`
-		ParticipationRate float64                `json:"participation_rate"`
-		TrendData         map[string]interface{} `json:"trend_data"`
+		TotalFeedback        int                        `json:"total_feedback"`
+		AvgEaseOfUse         float64                    `json:"avg_ease_of_use"`
+		AvgRelevance         float64                    `json:"avg_relevance"`
+		AvgSatisfaction      float64                    `json:"avg_satisfaction"`
+		ParticipationRate    float64                    `json:"participation_rate"`
+		TrendData            TrendChartData             `json:"trend_data"`
+		ScoreDistribution    ScoreDistributionSet       `json:"score_distribution"`
+		ObstacleSummary      ObstacleSummary            `json:"obstacle_summary"`
+		ObstacleDistribution []ObstacleDistributionItem `json:"obstacle_distribution"`
+		SentimentComposition []SentimentCompositionItem `json:"sentiment_composition"`
+		ResponseRateInfo     ResponseRateInfo           `json:"response_rate_info"`
 	}
 
 	ExpertFeedbackListResponse struct {
@@ -63,5 +68,48 @@ type (
 		SubmittedAt         string   `json:"submitted_at"`
 		TestSessionToken    string   `json:"test_session_token,omitempty"`
 		RecommendationNotes string   `json:"recommendation_notes,omitempty"`
+	}
+
+	TrendChartData struct {
+		Labels         []string `json:"labels"`
+		TestCounts     []int    `json:"test_counts"`
+		FeedbackCounts []int    `json:"feedback_counts"`
+	}
+
+	ScoreDistributionItem struct {
+		Score      int     `json:"score"`
+		Count      int     `json:"count"`
+		Percentage float64 `json:"percentage"`
+	}
+
+	ScoreDistributionSet struct {
+		EaseOfUse    []ScoreDistributionItem `json:"ease_of_use"`
+		Relevance    []ScoreDistributionItem `json:"relevance"`
+		Satisfaction []ScoreDistributionItem `json:"satisfaction"`
+	}
+
+	ObstacleSummary struct {
+		WithObstacles    int `json:"with_obstacles"`
+		WithoutObstacles int `json:"without_obstacles"`
+	}
+
+	ObstacleDistributionItem struct {
+		Name       string  `json:"name"`
+		Count      int     `json:"count"`
+		Percentage float64 `json:"percentage"`
+	}
+
+	SentimentCompositionItem struct {
+		Metric   string  `json:"metric"`
+		Negative float64 `json:"negative"`
+		Neutral  float64 `json:"neutral"`
+		Positive float64 `json:"positive"`
+	}
+
+	ResponseRateInfo struct {
+		FeedbackCount  int     `json:"feedback_count"`
+		CompletedTests int     `json:"completed_tests"`
+		NotFilled      int     `json:"not_filled"`
+		ResponseRate   float64 `json:"response_rate"`
 	}
 )

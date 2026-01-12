@@ -4,17 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"rextra-backend/internal/api/kenali_diri/repository"
 	dto_request "rextra-backend/internal/dto/request"
 	dto_response "rextra-backend/internal/dto/response"
 	"rextra-backend/internal/entity"
 	"rextra-backend/internal/pkg/cache"
-	"rextra-backend/internal/pkg/export"
 	myerror "rextra-backend/internal/pkg/error"
+	"rextra-backend/internal/pkg/export"
 	"rextra-backend/internal/utils"
 
 	"errors"
@@ -231,6 +234,8 @@ func (s *kenalidiriAdminService) ExportTestHistory(ctx context.Context, req dto_
 	}
 
 	data := make([]map[string]interface{}, 0, len(histories))
+	sheets := make(map[string][]map[string]interface{})
+	sheetUsage := make(map[string]int)
 	for _, h := range histories {
 		var resultCode string
 		if strings.EqualFold(h.Status, "completed") {
@@ -258,13 +263,23 @@ func (s *kenalidiriAdminService) ExportTestHistory(ctx context.Context, req dto_
 		}
 
 		data = append(data, record)
+
+		baseName := h.TestCategory.CategoryName
+		if strings.TrimSpace(baseName) == "" {
+			baseName = fmt.Sprintf("Kategori %d", h.TestCategory.ID)
+		}
+		sheetName := buildSheetName(baseName, h.TestCategory.ID, sheetUsage)
+		sheets[sheetName] = append(sheets[sheetName], record)
 	}
 
 	filename := fmt.Sprintf("riwayat_tes_%s", time.Now().Format("20060102_150405"))
 	var fileURL string
 	switch strings.ToLower(req.Format) {
 	case "excel":
-		fileURL, err = s.exportService.GenerateExcel(data, filename, "Riwayat Tes")
+		if len(sheets) == 0 {
+			sheets["Riwayat Tes"] = data
+		}
+		fileURL, err = s.exportService.GenerateExcelMultiSheet(sheets, filename)
 	case "pdf":
 		fileURL, err = s.exportService.GeneratePDF(data, filename, "Riwayat Tes")
 	default:
@@ -378,9 +393,13 @@ func (s *kenalidiriAdminService) GetStudentFeedbackList(ctx context.Context, req
 	}, nil
 }
 
-func (s *kenalidiriAdminService) GetStudentFeedbackStats(ctx context.Context, categoryID *int64, _ string) (dto_response.FeedbackStatsResponse, error) {
+func (s *kenalidiriAdminService) GetStudentFeedbackStats(ctx context.Context, categoryID *int64, timeRange string) (dto_response.FeedbackStatsResponse, error) {
+	normalizedRange := normalizeTimeRange(timeRange)
+	start := calculateStatsStart(normalizedRange)
 	filters := repository.StudentFeedbackFilters{
 		CategoryID: categoryID,
+		StartDate:  start,
+		TimeRange:  normalizedRange,
 	}
 
 	stats, err := s.feedbackRepo.GetStudentFeedbackStats(ctx, nil, filters)
@@ -388,18 +407,37 @@ func (s *kenalidiriAdminService) GetStudentFeedbackStats(ctx context.Context, ca
 		return dto_response.FeedbackStatsResponse{}, wrapNotFound(err, "student feedback stats")
 	}
 
-	trendData := map[string]interface{}{}
-	if td, ok := stats["trend_data"].(map[string]interface{}); ok {
-		trendData = td
+	labels, testCounts, feedbackCounts := buildTrendSeries(stats.BucketGranularity, stats.TrendTests, stats.TrendFeedback)
+	scoreDistribution := dto_response.ScoreDistributionSet{
+		EaseOfUse:    convertScoreDistribution(stats.ScoreEase, stats.TotalFeedback),
+		Relevance:    convertScoreDistribution(stats.ScoreRelevance, stats.TotalFeedback),
+		Satisfaction: convertScoreDistribution(stats.ScoreSatisfaction, stats.TotalFeedback),
 	}
+	obstacleSummary := dto_response.ObstacleSummary{
+		WithObstacles:    int(stats.WithObstacles),
+		WithoutObstacles: int(stats.WithoutObstacles),
+	}
+	obstacleDistribution := convertObstacleDistribution(stats.ObstacleBreakdown, stats.TotalFeedback)
+	sentimentComposition := convertSentimentComposition(stats.SentimentScores, stats.TotalFeedback)
+	responseInfo := buildResponseInfo(stats.ResponseTotals)
+	participationRate := responseInfo.ResponseRate
 
 	return dto_response.FeedbackStatsResponse{
-		TotalFeedback:     int(getFloat(stats["total_feedback"])),
-		AvgEaseOfUse:      getFloat(stats["avg_ease_of_use"]),
-		AvgRelevance:      getFloat(stats["avg_relevance"]),
-		AvgSatisfaction:   getFloat(stats["avg_satisfaction"]),
-		ParticipationRate: getFloat(stats["participation_rate"]),
-		TrendData:         trendData,
+		TotalFeedback:     int(stats.TotalFeedback),
+		AvgEaseOfUse:      stats.AvgEaseOfUse,
+		AvgRelevance:      stats.AvgRelevance,
+		AvgSatisfaction:   stats.AvgSatisfaction,
+		ParticipationRate: participationRate,
+		TrendData: dto_response.TrendChartData{
+			Labels:         labels,
+			TestCounts:     testCounts,
+			FeedbackCounts: feedbackCounts,
+		},
+		ScoreDistribution:    scoreDistribution,
+		ObstacleSummary:      obstacleSummary,
+		ObstacleDistribution: obstacleDistribution,
+		SentimentComposition: sentimentComposition,
+		ResponseRateInfo:     responseInfo,
 	}, nil
 }
 
@@ -736,4 +774,216 @@ func derefString(str *string) string {
 func mustMarshalJSON(arr []string) datatypes.JSON {
 	bytes, _ := json.Marshal(arr)
 	return datatypes.JSON(bytes)
+}
+
+func buildSheetName(raw string, categoryID int64, usage map[string]int) string {
+	fallback := fmt.Sprintf("Kategori %d", categoryID)
+	base := sanitizeSheetBaseName(raw, fallback)
+	count := usage[base]
+	if count == 0 {
+		usage[base] = 1
+		return base
+	}
+
+	count++
+	usage[base] = count
+	suffix := fmt.Sprintf("_%d", count)
+	maxLen := 31 - utf8.RuneCountInString(suffix)
+	if maxLen < 1 {
+		maxLen = 1
+	}
+
+	baseRunes := []rune(base)
+	if len(baseRunes) > maxLen {
+		baseRunes = baseRunes[:maxLen]
+	}
+
+	return string(baseRunes) + suffix
+}
+
+func sanitizeSheetBaseName(name, fallback string) string {
+	trimmed := strings.TrimSpace(name)
+	if trimmed == "" {
+		trimmed = fallback
+	}
+
+	for _, invalid := range []string{":", "\\", "/", "?", "*", "[", "]"} {
+		trimmed = strings.ReplaceAll(trimmed, invalid, "")
+	}
+
+	trimmed = strings.TrimSpace(trimmed)
+	if trimmed == "" {
+		trimmed = fallback
+	}
+
+	if utf8.RuneCountInString(trimmed) > 31 {
+		trimmed = string([]rune(trimmed)[:31])
+	}
+
+	return trimmed
+}
+
+func normalizeTimeRange(value string) string {
+	switch strings.ToLower(value) {
+	case "bulanan":
+		return "bulanan"
+	case "sepanjang_waktu":
+		return "sepanjang_waktu"
+	default:
+		return "mingguan"
+	}
+}
+
+func calculateStatsStart(timeRange string) *time.Time {
+	now := time.Now().UTC().Truncate(24 * time.Hour)
+	var start time.Time
+
+	switch timeRange {
+	case "bulanan":
+		start = now.AddDate(0, 0, -27)
+		return &start
+	case "sepanjang_waktu":
+		return nil
+	default:
+		start = now.AddDate(0, 0, -6)
+		return &start
+	}
+}
+
+func buildTrendSeries(bucket string, tests, feedback []repository.TimeBucketCount) ([]string, []int, []int) {
+	bucketMap := make(map[int64]time.Time)
+	for _, b := range tests {
+		bucketMap[b.Bucket.Unix()] = b.Bucket
+	}
+	for _, b := range feedback {
+		bucketMap[b.Bucket.Unix()] = b.Bucket
+	}
+
+	if len(bucketMap) == 0 {
+		return []string{}, []int{}, []int{}
+	}
+
+	keys := make([]int64, 0, len(bucketMap))
+	for k := range bucketMap {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+
+	testMap := make(map[int64]int64)
+	for _, b := range tests {
+		testMap[b.Bucket.Unix()] = b.Count
+	}
+
+	feedbackMap := make(map[int64]int64)
+	for _, b := range feedback {
+		feedbackMap[b.Bucket.Unix()] = b.Count
+	}
+
+	labels := make([]string, 0, len(keys))
+	testCounts := make([]int, 0, len(keys))
+	feedbackCounts := make([]int, 0, len(keys))
+
+	for _, key := range keys {
+		labels = append(labels, formatTrendLabel(bucket, bucketMap[key]))
+		testCounts = append(testCounts, int(testMap[key]))
+		feedbackCounts = append(feedbackCounts, int(feedbackMap[key]))
+	}
+
+	return labels, testCounts, feedbackCounts
+}
+
+func formatTrendLabel(bucket string, t time.Time) string {
+	switch bucket {
+	case "week":
+		start := t
+		end := t.AddDate(0, 0, 6)
+		return fmt.Sprintf("%s-%s", start.Format("02 Jan"), end.Format("02 Jan"))
+	case "month":
+		return t.Format("Jan 2006")
+	default:
+		return t.Format("Mon, 02 Jan")
+	}
+}
+
+func convertScoreDistribution(entries []repository.ScoreCount, total int64) []dto_response.ScoreDistributionItem {
+	result := make([]dto_response.ScoreDistributionItem, 0, 7)
+	scoreMap := make(map[int]int64)
+	for _, entry := range entries {
+		scoreMap[entry.Score] = entry.Count
+	}
+
+	for score := 1; score <= 7; score++ {
+		count := scoreMap[score]
+		result = append(result, dto_response.ScoreDistributionItem{
+			Score:      score,
+			Count:      int(count),
+			Percentage: percentage(count, total),
+		})
+	}
+
+	return result
+}
+
+func convertObstacleDistribution(entries []repository.ObstacleCount, total int64) []dto_response.ObstacleDistributionItem {
+	result := make([]dto_response.ObstacleDistributionItem, 0, len(entries))
+	for _, entry := range entries {
+		result = append(result, dto_response.ObstacleDistributionItem{
+			Name:       entry.Name,
+			Count:      int(entry.Count),
+			Percentage: percentage(entry.Count, total),
+		})
+	}
+
+	return result
+}
+
+func convertSentimentComposition(data map[string]repository.SentimentCount, total int64) []dto_response.SentimentCompositionItem {
+	metrics := []struct {
+		Key   string
+		Label string
+	}{
+		{Key: "ease_of_use", Label: "Kemudahan Tes"},
+		{Key: "relevance", Label: "Relevansi Rekomendasi"},
+		{Key: "satisfaction", Label: "Kepuasan Fitur"},
+	}
+
+	result := make([]dto_response.SentimentCompositionItem, 0, len(metrics))
+	for _, metric := range metrics {
+		count := data[metric.Key]
+		result = append(result, dto_response.SentimentCompositionItem{
+			Metric:   metric.Label,
+			Negative: percentage(count.Negative, total),
+			Neutral:  percentage(count.Neutral, total),
+			Positive: percentage(count.Positive, total),
+		})
+	}
+
+	return result
+}
+
+func buildResponseInfo(totals repository.ResponseRateTotals) dto_response.ResponseRateInfo {
+	notFilled := totals.CompletedTests - totals.FeedbackCount
+	if notFilled < 0 {
+		notFilled = 0
+	}
+
+	rate := 0.0
+	if totals.CompletedTests > 0 {
+		rate = math.Round((float64(totals.FeedbackCount)/float64(totals.CompletedTests))*100*100) / 100
+	}
+
+	return dto_response.ResponseRateInfo{
+		FeedbackCount:  int(totals.FeedbackCount),
+		CompletedTests: int(totals.CompletedTests),
+		NotFilled:      int(notFilled),
+		ResponseRate:   rate,
+	}
+}
+
+func percentage(part, total int64) float64 {
+	if total <= 0 {
+		return 0
+	}
+
+	return math.Round((float64(part)/float64(total))*100*100) / 100
 }
