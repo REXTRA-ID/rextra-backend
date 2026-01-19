@@ -58,9 +58,7 @@ func (r *kenalidiriCategoryRepository) GetAll(ctx context.Context, tx *gorm.DB) 
 	}
 
 	if r.cache != nil {
-		if bytes, err := json.Marshal(categories); err == nil {
-			_ = r.cache.Set(ctx, categoryCacheKeyAll, bytes, r.ttl)
-		}
+		_ = r.cache.Set(ctx, categoryCacheKeyAll, categories, r.ttl)
 	}
 
 	return categories, nil
@@ -104,6 +102,15 @@ func decodeCategoryCache(data interface{}) ([]entity.KenaliDiriCategory, bool) {
 	case string:
 		var categories []entity.KenaliDiriCategory
 		if err := json.Unmarshal([]byte(v), &categories); err == nil {
+			return categories, true
+		}
+	case []interface{}:
+		bytes, err := json.Marshal(v)
+		if err != nil {
+			return nil, false
+		}
+		var categories []entity.KenaliDiriCategory
+		if err := json.Unmarshal(bytes, &categories); err == nil {
 			return categories, true
 		}
 	}

@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"rextra-backend/db"
 
+	"rextra-backend/internal/api/controller"
 	kdcontroller "rextra-backend/internal/api/kenali_diri/controller"
 	kdrepo "rextra-backend/internal/api/kenali_diri/repository"
 	kdroutes "rextra-backend/internal/api/kenali_diri/routes"
 	kdservice "rextra-backend/internal/api/kenali_diri/service"
-	"rextra-backend/internal/api/controller"
 	"rextra-backend/internal/api/repository"
 	"rextra-backend/internal/api/routes"
 	"rextra-backend/internal/api/service"
@@ -24,8 +24,32 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// initCache initializes cache service with Redis if available, fallback to memory cache
+func initCache() cache.CacheService {
+	redisHost := os.Getenv("REDIS_HOST")
+	redisPort := os.Getenv("REDIS_PORT")
+	redisPassword := os.Getenv("REDIS_PASSWORD")
+	redisDB := 0 // Default to DB 0
+
+	// Try to initialize Redis cache
+	if redisHost != "" {
+		redisCache, err := cache.NewRedis(redisHost, redisPort, redisPassword, redisDB)
+		if err != nil {
+			log.Printf("⚠️  Failed to connect to Redis at %s:%s, falling back to memory cache: %v", redisHost, redisPort, err)
+			return cache.NewMemory()
+		}
+		log.Printf("✅ Redis cache initialized successfully at %s:%s", redisHost, redisPort)
+		return redisCache
+	}
+
+	// If REDIS_HOST not set, use memory cache
+	log.Println("ℹ️  REDIS_HOST not configured, using memory cache")
+	return cache.NewMemory()
+}
+
 type RestConfig struct {
-	server *gin.Engine
+	server       *gin.Engine
+	cacheService cache.CacheService
 }
 
 func NewRest() RestConfig {
@@ -39,7 +63,7 @@ func NewRest() RestConfig {
 		//=========== (PACKAGE) ===========//
 		mailerService mailer.Mailer = mailer.New()
 		exportService export.ExportService = export.New()
-		cacheService  cache.CacheService  = cache.NewMemory()
+		cacheService  cache.CacheService  = initCache()
 		// awsS3Service  storage.AwsS3 = storage.NewAwsS3()
 
 		//=========== (REPOSITORY) ===========//
@@ -99,7 +123,8 @@ func NewRest() RestConfig {
 	kdroutes.ServeKenalidiriAdmin(server, kenalidiriAdminController, middleware)
 
 	return RestConfig{
-		server: server,
+		server:       server,
+		cacheService: cacheService,
 	}
 }
 
@@ -115,4 +140,13 @@ func (ap *RestConfig) Start() {
 		log.Panicf("failed to start server: %s", err)
 	}
 	log.Println("server start on port ", serve)
+}
+
+func (ap *RestConfig) Close() error {
+	if ap.cacheService != nil {
+		if closer, ok := ap.cacheService.(interface{ Close() error }); ok {
+			return closer.Close()
+		}
+	}
+	return nil
 }

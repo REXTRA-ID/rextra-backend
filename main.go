@@ -15,5 +15,6 @@ func main() {
 	}
 
 	RestApi := config.NewRest()
+	defer RestApi.Close()
 	RestApi.Start()
 }

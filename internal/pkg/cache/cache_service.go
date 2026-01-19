@@ -16,6 +16,7 @@ type CacheService interface {
 	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error
 	Delete(ctx context.Context, key string) error
 	Clear(ctx context.Context, pattern string) error
+	Close() error
 }
 
 // Service is kept as alias for backward compatibility with earlier naming.
@@ -57,6 +58,10 @@ func (c *memoryCache) Clear(_ context.Context, pattern string) error {
 		}
 		return true
 	})
+	return nil
+}
+
+func (c *memoryCache) Close() error {
 	return nil
 }
 

@@ -180,9 +180,7 @@ func (r *riasecCodeRepository) storeCache(ctx context.Context, key string, data 
 		return
 	}
 
-	if bytes, err := json.Marshal(data); err == nil {
-		_ = r.cache.Set(ctx, key, bytes, r.ttl)
-	}
+	_ = r.cache.Set(ctx, key, data, r.ttl)
 }
 
 func (r *riasecCodeRepository) invalidateCache(ctx context.Context, id int64, code string) {
@@ -208,6 +206,15 @@ func decodeRiasecCache(data interface{}) ([]entity.RiasecCode, bool) {
 	case string:
 		var codes []entity.RiasecCode
 		if err := json.Unmarshal([]byte(v), &codes); err == nil {
+			return codes, true
+		}
+	case []interface{}:
+		bytes, err := json.Marshal(v)
+		if err != nil {
+			return nil, false
+		}
+		var codes []entity.RiasecCode
+		if err := json.Unmarshal(bytes, &codes); err == nil {
 			return codes, true
 		}
 	}
