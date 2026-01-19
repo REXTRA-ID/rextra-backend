@@ -1,26 +1,17 @@
 services:
   app:
-    build:
-      context: .
-      dockerfile: ./docker/dev/Dockerfile
-    container_name: ${APP_NAME:-rextra-backend}-dev
-    volumes:
-      - .:/app
-    ports:
-      - ${APP_PORT:-8081}:8080
+    image: rextra/rextra-backend-dev:${IMAGE_TAG:-latest}
     depends_on:
       - db
-    env_file: .env.dev
+    env_file:
+      - ./.env.dev
     networks:
       - app-dev-network
 
   db:
     image: postgres:16
-    container_name: ${APP_NAME:-rextra-backend}-db-dev
-    environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASS:-password}
-      POSTGRES_DB: ${DB_NAME:-rextra}
+    env_file:
+      - ./.env.dev
     volumes:
       - db-data:/var/lib/postgresql/data
     ports:

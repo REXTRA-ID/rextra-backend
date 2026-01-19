@@ -20,6 +20,8 @@ services:
       POSTGRES_DB: ${DB_NAME:-rextra}
     volumes:
       - db-data-prod:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
     networks:
       - app-prod-network
     restart: always

@@ -1,16 +1,21 @@
 .PHONY: help tidy run watch seeder migrate both up down reset build-docker docker-migrate docker-seeder docker-both
 
 # Panggil dengan: make up ENV=prod
-ENV ?= dev
+ENV ?= local
 APP_NAME ?= rextra-backend
 COMPOSE_FILE = docker-compose.$(ENV).yml
 PROJECT_NAME = $(APP_NAME)-$(ENV)
-ENV_FILE = .env.$(ENV)
 
-ifeq ($(ENV),prod)
-	DOCKER_RUN_CMD = /app/main
+ifeq ($(ENV),local)
+	ENV_FILE = .env.dev
 else
+	ENV_FILE = .env.$(ENV)
+endif
+
+ifeq ($(ENV),local)
 	DOCKER_RUN_CMD = go run main.go
+else
+	DOCKER_RUN_CMD = /app/main
 endif
 
 # Target Go Local
@@ -60,8 +65,8 @@ deploy-prod:
 
 # Help
 help:
-	@echo "Usage: make [target] [ENV=prod]"
-	@echo "  (ENV default ke 'dev' jika tidak diset)"
+	@echo "Usage: make [target] [ENV=local|dev|prod]"
+	@echo "  (ENV default ke 'local' jika tidak diset)"
 	@echo ""
 	@echo "Targets Lokal:"
 	@echo "  tidy        Tidy dependencies"
