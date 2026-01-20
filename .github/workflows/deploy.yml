@@ -27,8 +27,9 @@ jobs:
         with:
           file: ./docker/dev/Dockerfile
           push: true
-          # Menggunakan nomor eksekusi (run number) sebagai tag untuk versioning yang unik dan sekuensial.
-          tags: ${{ secrets.DOCKER_USERNAME }}/rextra-backend-dev:${{ github.run_number }}
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/rextra-backend-dev:latest
+            ${{ secrets.DOCKER_USERNAME }}/rextra-backend-dev:${{ github.run_number }}
           labels: "org.opencontainers.image.revision=${{ github.sha }}"
 
   deploy:
