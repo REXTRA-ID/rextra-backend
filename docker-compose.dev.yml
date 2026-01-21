@@ -2,6 +2,8 @@ services:
   app:
     image: rextra/rextra-backend-dev:${IMAGE_TAG:-latest}
     container_name: rextra-backend-dev
+    ports:
+      - 8080:8080
     depends_on:
       - db
     env_file:
