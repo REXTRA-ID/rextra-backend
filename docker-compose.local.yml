@@ -3,20 +3,20 @@ services:
     build:
       context: .
       dockerfile: ./docker/local/Dockerfile
-    container_name: ${APP_NAME:-rextra-backend}-local
+    container_name: rextra-backend-local
     volumes:
       - .:/app
     ports:
-      - ${APP_PORT:-8081}:8080
+      - ${APP_PORT:-8080}:8080
     depends_on:
       - db
     env_file: .env.dev
-    networks:
-      - app-local-network
+    networks: # <--- TAMBAHAN PENTING
+      - rextra-net
 
   db:
     image: postgres:16
-    container_name: ${APP_NAME:-rextra-backend}-db-local
+    container_name: rextra-backend-db-local
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASS:-password}
@@ -26,24 +26,11 @@ services:
     ports:
       - 5432:5432
     networks:
-      - app-local-network
-
-  nginx:
-    image: nginx:latest
-    container_name: ${APP_NAME:-rextra-backend}-nginx-local
-    volumes:
-      - .:/var/www/html
-      - ./docker/dev/nginx/default.conf:/etc/nginx/conf.d/default.conf
-    ports:
-      - ${NGINX_PORT:-81}:80
-    depends_on:
-      - app
-    networks:
-      - app-local-network
+      - rextra-net
 
 volumes:
   db-data:
 
 networks:
-  app-local-network:
-    driver: bridge
+  rextra-net:
+    external: true

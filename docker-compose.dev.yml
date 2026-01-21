@@ -1,15 +1,17 @@
 services:
   app:
     image: rextra/rextra-backend-dev:${IMAGE_TAG:-latest}
+    container_name: rextra-backend-dev
     depends_on:
       - db
     env_file:
       - ./.env.dev
     networks:
-      - app-dev-network
+      - rextra-net
 
   db:
     image: postgres:16
+    container_name: rextra-backend-db-dev
     env_file:
       - ./.env.dev
     volumes:
@@ -17,24 +19,11 @@ services:
     ports:
       - 5433:5432
     networks:
-      - app-dev-network
-
-  nginx:
-    image: nginx:latest
-    container_name: ${APP_NAME:-rextra-backend}-nginx-dev
-    volumes:
-      - .:/var/www/html
-      - ./docker/dev/nginx/default.conf:/etc/nginx/conf.d/default.conf
-    ports:
-      - ${NGINX_PORT:-81}:80
-    depends_on:
-      - app
-    networks:
-      - app-dev-network
+      - rextra-net
 
 volumes:
   db-data:
 
 networks:
-  app-dev-network:
-    driver: bridge
+  rextra-net:
+    external: true

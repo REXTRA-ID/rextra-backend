@@ -25,6 +25,6 @@ RUN chmod +x /app/main
 
 USER appuser
 
-EXPOSE 8001
+EXPOSE 8080
 
 CMD ["/app/main"]
