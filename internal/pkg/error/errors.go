@@ -17,6 +17,7 @@ func New(msg string, statusCode ErrorCode) Error {
 		Message:    msg,
 		ErrorCode:  statusCode,
 		StatusCode: HttpStatuses[statusCode],
+		Detail:     msg,
 	}
 }
 

@@ -60,7 +60,6 @@ func (c *authController) RegisterAdmin(ctx *gin.Context) {
 	}
 
 	user, err := c.authService.RegisterAdmin(ctx, req)
-	println(err)
 	if err != nil {
 		response.NewFailed("failed register admin account", err).Send(ctx)
 		return

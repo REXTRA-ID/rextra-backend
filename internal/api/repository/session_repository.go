@@ -10,7 +10,7 @@ import (
 type (
 	SessionRepository interface {
 		Create(ctx context.Context, tx *gorm.DB, session entity.SessionToken) (entity.SessionToken, error)
-		GetByToken(ctx context.Context, tx *gorm.DB, token string) (entity.SessionToken, error)
+		GetByToken(ctx context.Context, tx *gorm.DB, token string) (entity.SessionToken, bool, error)
 		Update(ctx context.Context, tx *gorm.DB, session entity.SessionToken) (entity.SessionToken, error)
 		Delete(ctx context.Context, tx *gorm.DB, session entity.SessionToken) error
 	}
@@ -36,17 +36,17 @@ func (r *sessionRepository) Create(ctx context.Context, tx *gorm.DB, session ent
 	return session, nil
 }
 
-func (r *sessionRepository) GetByToken(ctx context.Context, tx *gorm.DB, token string) (entity.SessionToken, error) {
+func (r *sessionRepository) GetByToken(ctx context.Context, tx *gorm.DB, token string) (entity.SessionToken, bool, error) {
 	if tx == nil {
 		tx = r.db
 	}
 
 	var session entity.SessionToken
 	if err := tx.WithContext(ctx).Take(&session, "token = ?", token).Error; err != nil {
-		return entity.SessionToken{}, err
+		return entity.SessionToken{}, false, err
 	}
 
-	return session, nil
+	return session, true, nil
 }
 
 func (r *sessionRepository) Update(ctx context.Context, tx *gorm.DB, session entity.SessionToken) (entity.SessionToken, error) {

@@ -11,6 +11,7 @@ const (
 	Error_Unauthorized       ErrorCode = "E4030"
 	Error_APILocked          ErrorCode = "E4031"
 	Error_RoleNotAllowed     ErrorCode = "E4032"
+	Error_NotVerified        ErrorCode = "E4033"
 	Error_RouteNotFound      ErrorCode = "E4040"
 	Error_RecordNotFound     ErrorCode = "E4041"
 	Error_RecordAlreadyExist ErrorCode = "E4090"
@@ -36,6 +37,7 @@ var Message = map[ErrorCode]string{
 	Error_Unauthorized:   "You do not have permission to perform this action",
 	Error_APILocked:      "This API is temporarily locked. Please try again later",
 	Error_RoleNotAllowed: "Your role is not allowed to access this resource",
+	Error_NotVerified:    "Your account is not verified",
 
 	// 404
 	Error_RouteNotFound:  "Route not found",

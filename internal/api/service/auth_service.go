@@ -218,7 +218,7 @@ func (s *authService) Login(ctx context.Context, req dto_request.LoginRequest) (
 	}
 
 	if !user.IsVerified {
-		return dto_response.LoginResponse{}, myerror.New("user is not verify", myerror.Error_Unauthorized)
+		return dto_response.LoginResponse{}, myerror.NotVerified()
 	}
 
 	checkPassword, err := utils.CheckPassword(user.Password, []byte(req.Password))
@@ -375,7 +375,12 @@ func (s *authService) LoginWithGoogle(ctx context.Context, idToken string) (dto_
 }
 
 func (s *authService) Logout(ctx context.Context, req dto_request.LogoutRequest) error {
-	session, err := s.sessionRepository.GetByToken(ctx, nil, req.RefreshToken)
+	session, found, err := s.sessionRepository.GetByToken(ctx, nil, req.RefreshToken)
+
+	if !found {
+		return myerror.RecordNotFound("session")
+	}
+
 	if err != nil {
 		return myerror.DatabaseError(err)
 	}
