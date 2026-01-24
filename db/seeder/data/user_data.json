@@ -1,11 +1,26 @@
 [
-    {
-        "id":"a1a2b473-f398-4489-b7ef-6984b60e4f10",
-        "username":"admin youngtive",
-        "email":"admin@email.com",
-        "password":"Password.1",
-        "is_verified": true,
-        "phone_number": "0888888888",
-        "role":"ADMIN"
-    }
+  {
+    "username": "admin youngtive",
+    "email": "admin@email.com",
+    "password": "Password.1",
+    "is_verified": true,
+    "phone_number": "0888888888",
+    "role": "ADMIN"
+  },
+  {
+    "username": "user youngtive",
+    "email": "user@email.com",
+    "password": "Password.2",
+    "is_verified": true,
+    "phone_number": "0888888889",
+    "role": "USER"
+  },
+  {
+    "username": "expert youngtive",
+    "email": "expert@email.com",
+    "password": "Password.3",
+    "is_verified": true,
+    "phone_number": "0888888890",
+    "role": "EXPERT"
+  }
 ]
