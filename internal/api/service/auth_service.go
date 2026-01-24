@@ -26,6 +26,7 @@ import (
 type (
 	AuthService interface {
 		Register(ctx context.Context, req dto_request.RegisterRequest) (dto_response.RegisterResponse, error)
+		RegisterAdmin(ctx context.Context, req dto_request.RegisterAdminRequest) (dto_response.RegisterResponse, error)
 		Login(ctx context.Context, req dto_request.LoginRequest) (dto_response.LoginResponse, error)
 		Verify(ctx context.Context, authtoken string) error
 		ForgetPassword(ctx context.Context, req dto_request.ForgetPasswordRequest) error
@@ -60,24 +61,52 @@ func NewAuth(userRepository repository.UserRepository,
 }
 
 func (s *authService) Register(ctx context.Context, req dto_request.RegisterRequest) (dto_response.RegisterResponse, error) {
-	_, err := s.userRepository.GetByEmail(ctx, nil, req.Email)
-	if err == nil {
-		return dto_response.RegisterResponse{}, myerror.New("user with this email already exist", myerror.Error_RecordAlreadyExist)
-	}
-
-	hashPassword, err := utils.HashPassword(req.Password)
-	if err != nil {
-		return dto_response.RegisterResponse{}, myerror.ProcessingError(err)
-	}
-
 	userCreation := entity.User{
 		Fullname:    req.Fullname,
 		Email:       req.Email,
-		Password:    hashPassword,
+		Password:    req.Password,
 		PhoneNumber: req.PhoneNumber,
 	}
 
-	createResult, err := s.userRepository.Create(ctx, nil, userCreation)
+	return s.registerUser(ctx, userCreation)
+}
+
+func (s *authService) RegisterAdmin(ctx context.Context, req dto_request.RegisterAdminRequest) (dto_response.RegisterResponse, error) {
+	secretToken := os.Getenv("ADMIN_SECRET_TOKEN")
+
+	if secretToken == "" {
+		return dto_response.RegisterResponse{}, myerror.InvalidToken()
+	}
+
+	if secretToken != req.Token {
+		return dto_response.RegisterResponse{}, myerror.InvalidToken()
+	}
+
+	adminCreation := entity.User{
+		Fullname:    req.Fullname,
+		Email:       req.Email,
+		PhoneNumber: req.PhoneNumber,
+		Password:    req.Password,
+		Role:        entity.RoleAdmin,
+	}
+
+	return s.registerUser(ctx, adminCreation)
+}
+
+// Helper function to register a user
+func (s *authService) registerUser(ctx context.Context, user entity.User) (dto_response.RegisterResponse, error) {
+	_, err := s.userRepository.GetByEmail(ctx, nil, user.Email)
+	if err == nil {
+		return dto_response.RegisterResponse{}, myerror.RecordAlreadyExist("email")
+	}
+
+	hashPassword, err := utils.HashPassword(user.Password)
+	if err != nil {
+		return dto_response.RegisterResponse{}, myerror.ProcessingError(err)
+	}
+	user.Password = hashPassword
+
+	createResult, err := s.userRepository.Create(ctx, nil, user)
 	if err != nil {
 		return dto_response.RegisterResponse{}, err
 	}
