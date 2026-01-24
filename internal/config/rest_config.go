@@ -24,6 +24,15 @@ type RestConfig struct {
 
 func NewRest() RestConfig {
 	db := db.New()
+
+	// Mode
+	mode := os.Getenv("APP_MODE")
+	if mode == "production" {
+		gin.SetMode(gin.ReleaseMode)
+	} else {
+		gin.SetMode(gin.DebugMode)
+	}
+
 	app := gin.Default()
 	server := NewRouter(app)
 	firebaseApp := myfirebase.New()
