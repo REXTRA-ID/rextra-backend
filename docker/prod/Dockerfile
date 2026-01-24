@@ -17,6 +17,7 @@ WORKDIR /app
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /app/internal/pkg/email/template /app/internal/pkg/email/template
 
 COPY --from=builder /app/main /app/main
 
@@ -24,6 +25,6 @@ RUN chmod +x /app/main
 
 USER appuser
 
-EXPOSE 8001
+EXPOSE 8080
 
 CMD ["/app/main"]

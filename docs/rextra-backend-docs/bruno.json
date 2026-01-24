@@ -1,9 +1,0 @@
-{
-  "version": "1",
-  "name": "rextra-backend-docs",
-  "type": "collection",
-  "ignore": [
-    "node_modules",
-    ".git"
-  ]
-}

@@ -26,6 +26,7 @@ import (
 type (
 	AuthService interface {
 		Register(ctx context.Context, req dto_request.RegisterRequest) (dto_response.RegisterResponse, error)
+		RegisterAdmin(ctx context.Context, req dto_request.RegisterAdminRequest) (dto_response.RegisterResponse, error)
 		Login(ctx context.Context, req dto_request.LoginRequest) (dto_response.LoginResponse, error)
 		Verify(ctx context.Context, authtoken string) error
 		ForgetPassword(ctx context.Context, req dto_request.ForgetPasswordRequest) error
@@ -60,24 +61,52 @@ func NewAuth(userRepository repository.UserRepository,
 }
 
 func (s *authService) Register(ctx context.Context, req dto_request.RegisterRequest) (dto_response.RegisterResponse, error) {
-	_, err := s.userRepository.GetByEmail(ctx, nil, req.Email)
-	if err == nil {
-		return dto_response.RegisterResponse{}, myerror.New("user with this email already exist", myerror.Error_RecordAlreadyExist)
-	}
-
-	hashPassword, err := utils.HashPassword(req.Password)
-	if err != nil {
-		return dto_response.RegisterResponse{}, myerror.ProcessingError(err)
-	}
-
 	userCreation := entity.User{
 		Fullname:    req.Fullname,
 		Email:       req.Email,
-		Password:    hashPassword,
+		Password:    req.Password,
 		PhoneNumber: req.PhoneNumber,
 	}
 
-	createResult, err := s.userRepository.Create(ctx, nil, userCreation)
+	return s.registerUser(ctx, userCreation)
+}
+
+func (s *authService) RegisterAdmin(ctx context.Context, req dto_request.RegisterAdminRequest) (dto_response.RegisterResponse, error) {
+	secretToken := os.Getenv("ADMIN_SECRET_TOKEN")
+
+	if secretToken == "" {
+		return dto_response.RegisterResponse{}, myerror.InvalidToken()
+	}
+
+	if secretToken != req.Token {
+		return dto_response.RegisterResponse{}, myerror.InvalidToken()
+	}
+
+	adminCreation := entity.User{
+		Fullname:    req.Fullname,
+		Email:       req.Email,
+		PhoneNumber: req.PhoneNumber,
+		Password:    req.Password,
+		Role:        entity.RoleAdmin,
+	}
+
+	return s.registerUser(ctx, adminCreation)
+}
+
+// Helper function to register a user
+func (s *authService) registerUser(ctx context.Context, user entity.User) (dto_response.RegisterResponse, error) {
+	_, err := s.userRepository.GetByEmail(ctx, nil, user.Email)
+	if err == nil {
+		return dto_response.RegisterResponse{}, myerror.RecordAlreadyExist("email")
+	}
+
+	hashPassword, err := utils.HashPassword(user.Password)
+	if err != nil {
+		return dto_response.RegisterResponse{}, myerror.ProcessingError(err)
+	}
+	user.Password = hashPassword
+
+	createResult, err := s.userRepository.Create(ctx, nil, user)
 	if err != nil {
 		return dto_response.RegisterResponse{}, err
 	}
@@ -85,12 +114,12 @@ func (s *authService) Register(ctx context.Context, req dto_request.RegisterRequ
 	token, err := myjwt.GenerateToken(map[string]string{
 		"user_id": createResult.ID.String(),
 		"email":   createResult.Email,
-	}, 24*time.Hour)
+	}, 1*time.Minute)
 	if err != nil {
 		return dto_response.RegisterResponse{}, err
 	}
 
-	token = fmt.Sprintf("%s/auth/verify?token=%s", os.Getenv("APP_URL"), token)
+	token = fmt.Sprintf("%s/verifikasi-akun?token=%s", os.Getenv("FE_URL"), token)
 	if err := s.mailService.MakeMail("./internal/pkg/email/template/verification_email.html", map[string]any{
 		"Fullname": createResult.Fullname,
 		"Verify":   token,
@@ -141,13 +170,13 @@ func (s *authService) ForgetPassword(ctx context.Context, req dto_request.Forget
 	token, err := myjwt.GenerateToken(map[string]string{
 		"user_id": user.ID.String(),
 		"email":   user.Email,
-	}, 24*time.Hour)
+	}, 1*time.Minute)
 	if err != nil {
 		return err
 	}
 
 	// generate token
-	token = fmt.Sprintf("%s/auth/change?token=%s", os.Getenv("APP_URL"), token)
+	token = fmt.Sprintf("%s/change-password?token=%s", os.Getenv("FE_URL"), token)
 	if err := s.mailService.MakeMail("./internal/pkg/email/template/forget_password_email.html", map[string]any{
 		"Fullname": user.Fullname,
 		"Link":     token,
@@ -189,7 +218,7 @@ func (s *authService) Login(ctx context.Context, req dto_request.LoginRequest) (
 	}
 
 	if !user.IsVerified {
-		return dto_response.LoginResponse{}, myerror.New("user is not verify", myerror.Error_Unauthorized)
+		return dto_response.LoginResponse{}, myerror.NotVerified()
 	}
 
 	checkPassword, err := utils.CheckPassword(user.Password, []byte(req.Password))
@@ -201,7 +230,7 @@ func (s *authService) Login(ctx context.Context, req dto_request.LoginRequest) (
 		"user_id": user.ID.String(),
 		"email":   user.Email,
 		"role":    string(user.Role),
-	}, 24*time.Hour)
+	}, 1*time.Minute)
 	if err != nil {
 		return dto_response.LoginResponse{}, err
 	}
@@ -257,13 +286,13 @@ func (s *authService) SendVerificationEmail(ctx context.Context, email string) e
 	token, err := myjwt.GenerateToken(map[string]string{
 		"user_id": user.ID.String(),
 		"email":   user.Email,
-	}, 24*time.Hour)
+	}, 1*time.Minute)
 	if err != nil {
 		return err
 	}
 
 	// generate token
-	token = fmt.Sprintf("%s/auth/verify?token=%s", os.Getenv("APP_URL"), token)
+	token = fmt.Sprintf("%s/verifikasi-akun?token=%s", os.Getenv("FE_URL"), token)
 	if err := s.mailService.MakeMail("./internal/pkg/email/template/verification_email.html", map[string]any{
 		"Fullname": user.Fullname,
 		"Verify":   token,
@@ -315,7 +344,7 @@ func (s *authService) LoginWithGoogle(ctx context.Context, idToken string) (dto_
 		"user_id": user.ID.String(),
 		"email":   user.Email,
 		"role":    string(user.Role),
-	}, 24*time.Hour)
+	}, 1*time.Minute)
 	if err != nil {
 		return dto_response.LoginResponse{}, err
 	}
@@ -329,7 +358,7 @@ func (s *authService) LoginWithGoogle(ctx context.Context, idToken string) (dto_
 	refreshToken, err := s.sessionRepository.Create(ctx, nil, entity.SessionToken{
 		UserID:       user.ID.String(),
 		Token:        token,
-		ExpiresAt:    time.Now().Add(30 * 24 * time.Hour),
+		ExpiresAt:    time.Now().Add(1 * time.Minute),
 		IsActive:     true,
 		AuthProvider: authToken.Firebase.SignInProvider,
 		DeviceInfo:   nil,
@@ -346,7 +375,12 @@ func (s *authService) LoginWithGoogle(ctx context.Context, idToken string) (dto_
 }
 
 func (s *authService) Logout(ctx context.Context, req dto_request.LogoutRequest) error {
-	session, err := s.sessionRepository.GetByToken(ctx, nil, req.RefreshToken)
+	session, found, err := s.sessionRepository.GetByToken(ctx, nil, req.RefreshToken)
+
+	if !found {
+		return myerror.RecordNotFound("session")
+	}
+
 	if err != nil {
 		return myerror.DatabaseError(err)
 	}
