@@ -5,7 +5,7 @@ import (
 	dto_request "rextra-backend/internal/dto/request"
 	myerror "rextra-backend/internal/pkg/error"
 	"rextra-backend/internal/pkg/response"
-	"rextra-backend/internal/utils"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,7 +13,7 @@ import (
 type (
 	CareerRecommendationController interface {
 		Create(ctx *gin.Context)
-		GetByUserID(ctx *gin.Context)
+		GetByTestSessionID(ctx *gin.Context)
 		Update(ctx *gin.Context)
 	}
 
@@ -35,14 +35,6 @@ func (c *careerRecommendationController) Create(ctx *gin.Context) {
 		return
 	}
 
-	userId, err := utils.GetUserIdFromCtx(ctx)
-	if err != nil {
-		response.NewFailed("failed get user id from context", myerror.InvalidRequest(err)).Send(ctx)
-		return
-	}
-
-	req.UserID = userId
-
 	createResult, err := c.careerRecommendationService.Create(ctx, req)
 	if err != nil {
 		response.NewFailed("failed create career recommendation", err).Send(ctx)
@@ -50,28 +42,31 @@ func (c *careerRecommendationController) Create(ctx *gin.Context) {
 	}
 
 	response.NewSuccess("success create career recommendation", createResult).Send(ctx)
+
 }
 
-func (c *careerRecommendationController) GetByUserID(ctx *gin.Context) {
-	userId, err := utils.GetUserIdFromCtx(ctx)
+func (c *careerRecommendationController) GetByTestSessionID(ctx *gin.Context) {
+	testSessionIDParam := ctx.Param("id")
+	testSessionID, err := strconv.ParseInt(testSessionIDParam, 10, 64)
 	if err != nil {
-		response.NewFailed("failed get user id from context", myerror.InvalidRequest(err)).Send(ctx)
+		response.NewFailed("invalid test session id", myerror.InvalidRequest(err)).Send(ctx)
 		return
 	}
 
-	careerRecommendation, err := c.careerRecommendationService.GetByUserID(ctx, userId)
+	careerRecommendation, err := c.careerRecommendationService.GetByTestSessionID(ctx, testSessionID)
 	if err != nil {
-		response.NewFailed("failed get career recommendation by id", err).Send(ctx)
+		response.NewFailed("failed get career recommendation by test session id", err).Send(ctx)
 		return
 	}
 
-	response.NewSuccess("success get career recommendation by id", careerRecommendation).Send(ctx)
+	response.NewSuccess("success get career recommendation by test session id", careerRecommendation).Send(ctx)
 }
 
 func (c *careerRecommendationController) Update(ctx *gin.Context) {
-	userId, err := utils.GetUserIdFromCtx(ctx)
+	testSessionIDParam := ctx.Param("id")
+	testSessionID, err := strconv.ParseInt(testSessionIDParam, 10, 64)
 	if err != nil {
-		response.NewFailed("failed get user id from context", myerror.InvalidRequest(err)).Send(ctx)
+		response.NewFailed("invalid test session id", myerror.InvalidRequest(err)).Send(ctx)
 		return
 	}
 
@@ -81,7 +76,7 @@ func (c *careerRecommendationController) Update(ctx *gin.Context) {
 		return
 	}
 
-	updateResult, err := c.careerRecommendationService.Update(ctx, userId, req)
+	updateResult, err := c.careerRecommendationService.Update(ctx, testSessionID, req)
 	if err != nil {
 		response.NewFailed("failed update career recommendation", err).Send(ctx)
 		return

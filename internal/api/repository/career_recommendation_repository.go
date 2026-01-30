@@ -9,10 +9,10 @@ import (
 
 type (
 	CareerRecommendationRepository interface {
-		Create(ctx context.Context, tx *gorm.DB, session entity.CareerRecommendation) (entity.CareerRecommendation, error)
-		GetByID(ctx context.Context, tx *gorm.DB, id string) (entity.CareerRecommendation, error)
-		GetByUserID(ctx context.Context, tx *gorm.DB, userID string) (entity.CareerRecommendation, error)
-		Update(ctx context.Context, tx *gorm.DB, session entity.CareerRecommendation) (entity.CareerRecommendation, error)
+		Create(ctx context.Context, tx *gorm.DB, recommendation entity.CareerRecommendation) (entity.CareerRecommendation, error)
+		GetByID(ctx context.Context, tx *gorm.DB, id int64) (entity.CareerRecommendation, error)
+		GetByTestSessionID(ctx context.Context, tx *gorm.DB, testSessionID int64) (entity.CareerRecommendation, error)
+		Update(ctx context.Context, tx *gorm.DB, recommendation entity.CareerRecommendation) (entity.CareerRecommendation, error)
 	}
 
 	careerRecommendationRepository struct {
@@ -36,7 +36,7 @@ func (r *careerRecommendationRepository) Create(ctx context.Context, tx *gorm.DB
 	return careerRecommendation, nil
 }
 
-func (r *careerRecommendationRepository) GetByID(ctx context.Context, tx *gorm.DB, id string) (entity.CareerRecommendation, error) {
+func (r *careerRecommendationRepository) GetByID(ctx context.Context, tx *gorm.DB, id int64) (entity.CareerRecommendation, error) {
 	if tx == nil {
 		tx = r.db
 	}
@@ -49,13 +49,13 @@ func (r *careerRecommendationRepository) GetByID(ctx context.Context, tx *gorm.D
 	return careerRecommendation, nil
 }
 
-func (r *careerRecommendationRepository) GetByUserID(ctx context.Context, tx *gorm.DB, userID string) (entity.CareerRecommendation, error) {
+func (r *careerRecommendationRepository) GetByTestSessionID(ctx context.Context, tx *gorm.DB, testSessionID int64) (entity.CareerRecommendation, error) {
 	if tx == nil {
 		tx = r.db
 	}
 
 	var careerRecommendation entity.CareerRecommendation
-	if err := tx.WithContext(ctx).Take(&careerRecommendation, "user_id = ?", userID).Error; err != nil {
+	if err := tx.WithContext(ctx).Take(&careerRecommendation, "test_session_id = ?", testSessionID).Error; err != nil {
 		return entity.CareerRecommendation{}, err
 	}
 	return careerRecommendation, nil
