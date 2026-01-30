@@ -11,7 +11,7 @@ func ServeCareerRecommendation(app *gin.Engine, careerRecommendationcontroller c
 	routes := app.Group("/api/v1/user/:id/career-recommendation")
 	{
 		routes.POST("", middleware.Authenticate(), careerRecommendationcontroller.Create)
-		routes.GET("", middleware.Authenticate(), careerRecommendationcontroller.GetByUserID)
+		routes.GET("", middleware.Authenticate(), careerRecommendationcontroller.GetByTestSessionID)
 		routes.PUT("", middleware.Authenticate(), careerRecommendationcontroller.Update)
 	}
 }

@@ -9,9 +9,10 @@ This guide will walk you through setting up and running the project for both dev
 ### Prerequisites
 
 Make sure you have the following software installed on your machine:
-*   [Go](https://go.dev/doc/install) (for local development without Docker)
-*   [Docker](https://docs.docker.com/get-docker/)
-*   [Docker Compose](https://docs.docker.com/compose/install/)
+
+- [Go](https://go.dev/doc/install) (for local development without Docker)
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
 
 ### Configuration
 
@@ -59,16 +60,19 @@ All development tasks are managed via `make` commands.
 1.  **Start the Environment**
 
     To build the Docker images and start all services (app, database, nginx) for development, run:
+
     ```sh
     make up
     ```
-    *   The application will be accessible via Nginx at `http://localhost:81`.
-    *   The Go app itself is exposed on `http://localhost:8081`.
-    *   The PostgreSQL database is exposed on port `5433`.
+
+    - The application will be accessible via Nginx at `http://localhost:81`.
+    - The Go app itself is exposed on `http://localhost:8081`.
+    - The PostgreSQL database is exposed on port `5433`.
 
 2.  **Run Database Migrations and Seeders**
 
     After starting the environment, you can run migrations and seed the database with initial data using:
+
     ```sh
     # Run migrations only
     make docker-migrate
@@ -83,9 +87,11 @@ All development tasks are managed via `make` commands.
 3.  **Stop the Environment**
 
     To stop all running Docker containers for the development environment, use:
+
     ```sh
     make down
     ```
+
     To stop the containers and also remove the database volume, use `make reset`.
 
 ## Deployment (Production)
@@ -95,6 +101,7 @@ The deployment process is also streamlined with `make`.
 1.  **Initial Deployment**
 
     On your production server, after cloning the repository and creating the `.env.prod` file, run the following command to build and start all production services:
+
     ```sh
     make up ENV=prod
     ```
@@ -102,6 +109,7 @@ The deployment process is also streamlined with `make`.
 2.  **Updating the Application**
 
     For subsequent updates, you only need to pull the latest code changes and run a single command to rebuild and redeploy just the application container, leaving the database untouched.
+
     ```sh
     make deploy-prod
     ```
@@ -110,15 +118,16 @@ The deployment process is also streamlined with `make`.
 
 Here is a list of the most common commands available in the `Makefile`.
 
-| Command | `ENV` | Description |
-|---|---|---|
-| `make up` | `dev` (default) | Starts all services using Docker Compose. |
-| `make up` | `prod` | Starts all production services. |
-| `make down` | `dev`/`prod` | Stops all services. |
-| `make reset` | `dev`/`prod` | Stops services and removes the database volume. |
-| `make build-docker` | `dev`/`prod` | Forces a rebuild of all images and restarts services. |
-| `make docker-migrate` | `dev`/`prod` | Runs database migrations inside the Docker container. |
-| `make docker-seeder` | `dev`/`prod` | Runs database seeders inside the Docker container. |
-| `make deploy-prod` | (prod only) | Rebuilds and deploys only the `app` service for production. |
-| `make run` | (local) | Runs the Go application locally without Docker. |
-| `make watch` | (local) | Runs the app locally with hot-reloading. |
+| Command               | `ENV`           | Description                                                 |
+| --------------------- | --------------- | ----------------------------------------------------------- |
+| `make up`             | `dev` (default) | Starts all services using Docker Compose.                   |
+| `make up`             | `prod`          | Starts all production services.                             |
+| `make down`           | `dev`/`prod`    | Stops all services.                                         |
+| `make reset`          | `dev`/`prod`    | Stops services and removes the database volume.             |
+| `make build-docker`   | `dev`/`prod`    | Forces a rebuild of all images and restarts services.       |
+| `make docker-migrate` | `dev`/`prod`    | Runs database migrations inside the Docker container.       |
+| `make docker-seeder`  | `dev`/`prod`    | Runs database seeders inside the Docker container.          |
+| `make deploy-prod`    | (prod only)     | Rebuilds and deploys only the `app` service for production. |
+| `make run`            | (local)         | Runs the Go application locally without Docker.             |
+| `make watch`          | (local)         | Runs the app locally with hot-reloading.                    |
+
