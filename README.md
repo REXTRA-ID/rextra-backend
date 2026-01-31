@@ -3,7 +3,7 @@
 Selamat datang di Rextra Backend! Proyek ini merupakan layanan backend yang dibangun menggunakan Go, dengan arsitektur modular yang modern dan skalabel. Dokumentasi ini akan memandu Anda dalam melakukan setup, memahami arsitektur, dan cara berkontribusi pada proyek.
 
 ##  Daftar Isi
-
+0.  [Database Schema](https://dbdiagram.io/d/rextra-backend-697de7d0bd82f5fce234f212)
 1.  [Cara Menjalankan Proyek](#1-cara-menjalankan-proyek)
     *   [Prasyarat](#prasyarat)
     *   [Konfigurasi](#konfigurasi)
@@ -18,6 +18,9 @@ Selamat datang di Rextra Backend! Proyek ini merupakan layanan backend yang diba
     *   [Langkah-langkah](#langkah-langkah)
 
 ---
+
+## 0. Database Schema
+Klik [disini](https://dbdiagram.io/d/rextra-backend-697de7d0bd82f5fce234f212) untuk melihat skema database.
 
 ## 1. Cara Menjalankan Proyek
 

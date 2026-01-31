@@ -22,6 +22,14 @@ services:
       - 5433:5432
     networks:
       - rextra-net
+  redis:
+    image: redis:latest
+    container_name: rextra-backend-redis-local
+    env_file: .env.dev
+    ports:
+      - 6379:6379
+    networks:
+      - rextra-net
 
 volumes:
   db-data:
