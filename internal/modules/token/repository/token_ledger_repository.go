@@ -14,6 +14,7 @@ type (
 		// FOR USER
 		GetWalletHistory(ctx context.Context, tx *gorm.DB, WalletID string, limit int, offset int) ([]entity.TokenLedger, error)
 		GetByWalletPeriod(ctx context.Context, tx *gorm.DB, WalletID string, startDate string, endDate string) ([]entity.TokenLedger, error)
+		GetDetail(ctx context.Context, tx *gorm.DB, WalletID string, id string) (entity.TokenLedger, error)
 
 		GetByID(ctx context.Context, tx *gorm.DB, id string) (entity.TokenLedger, error)
 		CountByWalletID(ctx context.Context, tx *gorm.DB, WalletID string) (int, error)
@@ -73,6 +74,18 @@ func (r *tokenLedgerRepository) GetByWalletPeriod(ctx context.Context, tx *gorm.
 		return nil, err
 	}
 	return ledgers, nil
+}
+
+func (r *tokenLedgerRepository) GetDetail(ctx context.Context, tx *gorm.DB, WalletID string, id string) (entity.TokenLedger, error) {
+	if tx == nil {
+		tx = r.db
+	}
+	var ledger entity.TokenLedger
+	err := tx.WithContext(ctx).Where("id = ? AND wallet_id = ?", id, WalletID).First(&ledger).Error
+	if err != nil {
+		return entity.TokenLedger{}, err
+	}
+	return ledger, nil
 }
 
 func (r *tokenLedgerRepository) CountByWalletID(ctx context.Context, tx *gorm.DB, WalletID string) (int, error) {
