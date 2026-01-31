@@ -1,0 +1,24 @@
+package routes
+
+import (
+	"rextra-backend/internal/middleware"
+	"rextra-backend/internal/modules/auth/controller"
+
+	"github.com/gin-gonic/gin"
+)
+
+func ServeAuth(app *gin.Engine, authcontroller controller.AuthController, middleware middleware.Middleware) {
+	routes := app.Group("/api/v1/auth")
+	{
+		routes.POST("/login", authcontroller.Login)
+		routes.POST("/register", authcontroller.Register)
+		routes.POST("/admin", authcontroller.RegisterAdmin)
+		routes.GET("/verify", authcontroller.Verify)
+		routes.POST("/send-email", authcontroller.SendVerificationEmail)
+		routes.POST("/forget", authcontroller.ForgetPassword)
+		routes.POST("/change", authcontroller.ChangePassword)
+		routes.GET("/me", middleware.Authenticate(), authcontroller.Me)
+		routes.DELETE("/logout", middleware.Authenticate(), authcontroller.Logout)
+		routes.POST("/google", authcontroller.LoginWithGoogle)
+	}
+}
