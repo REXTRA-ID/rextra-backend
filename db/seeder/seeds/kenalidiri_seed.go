@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/google/uuid"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 
@@ -28,12 +27,17 @@ func SeederKenaliDiri(db *gorm.DB) error {
 			"kenalidiri_categories",
 		}
 		for _, tbl := range tables {
-			if err := tx.Exec("TRUNCATE TABLE "+tbl+" RESTART IDENTITY CASCADE;").Error; err != nil {
+			if err := tx.Exec("TRUNCATE TABLE " + tbl + " RESTART IDENTITY CASCADE;").Error; err != nil {
 				return err
 			}
 		}
 
-		userID := uuid.MustParse("ef9cf8e8-46b1-4e91-89d0-40f6c824319e")
+		// get user ID where email is "user@example.com"
+		var user entity.User
+		if err := tx.Where("email = ?", "user@email.com").First(&user).Error; err != nil {
+			return err
+		}
+		userID := user.ID
 
 		categories := []entity.KenaliDiriCategory{
 			{

@@ -23,7 +23,7 @@ func Migrate(db *gorm.DB) error {
 		&entity.KenaliDiriHistory{},
 		&entity.SessionToken{},
 		&entity.Persona{},
-		&entity.Riasec{},
+		// &entity.Riasec{},
 		&entity.RiasecCode{},
 		&entity.CareerProfileTestSession{},
 		&entity.RiasecQuestionSet{},
@@ -33,9 +33,11 @@ func Migrate(db *gorm.DB) error {
 		&entity.IkigaiResponse{},
 		&entity.IkigaiDimensionScore{},
 		&entity.IkigaiTotalScore{},
+		&entity.ExpertFeedback{},
+		&entity.StudentFeedback{},
 		&entity.CareerRecommendation{},
-		&entity.UserIkigai{},
-		&entity.UserRiasec{},
+		// &entity.UserIkigai{},
+		// &entity.UserRiasec{},
 	); err != nil {
 		return err
 	}
