@@ -114,7 +114,7 @@ func (s *authService) registerUser(ctx context.Context, user entity.User) (dto_r
 	token, err := myjwt.GenerateToken(map[string]string{
 		"user_id": createResult.ID.String(),
 		"email":   createResult.Email,
-	}, 1*time.Minute)
+	}, 24*time.Hour)
 	if err != nil {
 		return dto_response.RegisterResponse{}, err
 	}
@@ -170,7 +170,7 @@ func (s *authService) ForgetPassword(ctx context.Context, req dto_request.Forget
 	token, err := myjwt.GenerateToken(map[string]string{
 		"user_id": user.ID.String(),
 		"email":   user.Email,
-	}, 1*time.Minute)
+	}, 24*time.Hour)
 	if err != nil {
 		return err
 	}
@@ -230,7 +230,7 @@ func (s *authService) Login(ctx context.Context, req dto_request.LoginRequest) (
 		"user_id": user.ID.String(),
 		"email":   user.Email,
 		"role":    string(user.Role),
-	}, 1*time.Minute)
+	}, 24*time.Hour)
 	if err != nil {
 		return dto_response.LoginResponse{}, err
 	}
@@ -286,7 +286,7 @@ func (s *authService) SendVerificationEmail(ctx context.Context, email string) e
 	token, err := myjwt.GenerateToken(map[string]string{
 		"user_id": user.ID.String(),
 		"email":   user.Email,
-	}, 1*time.Minute)
+	}, 24*time.Hour)
 	if err != nil {
 		return err
 	}
@@ -344,7 +344,7 @@ func (s *authService) LoginWithGoogle(ctx context.Context, idToken string) (dto_
 		"user_id": user.ID.String(),
 		"email":   user.Email,
 		"role":    string(user.Role),
-	}, 1*time.Minute)
+	}, 24*time.Hour)
 	if err != nil {
 		return dto_response.LoginResponse{}, err
 	}
@@ -358,7 +358,7 @@ func (s *authService) LoginWithGoogle(ctx context.Context, idToken string) (dto_
 	refreshToken, err := s.sessionRepository.Create(ctx, nil, entity.SessionToken{
 		UserID:       user.ID.String(),
 		Token:        token,
-		ExpiresAt:    time.Now().Add(1 * time.Minute),
+		ExpiresAt:    time.Now().Add(30 * 24 * time.Hour),
 		IsActive:     true,
 		AuthProvider: authToken.Firebase.SignInProvider,
 		DeviceInfo:   nil,
