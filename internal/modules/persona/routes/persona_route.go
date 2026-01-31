@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"rextra-backend/internal/api/controller"
 	"rextra-backend/internal/middleware"
+	"rextra-backend/internal/modules/persona/controller"
 
 	"github.com/gin-gonic/gin"
 )

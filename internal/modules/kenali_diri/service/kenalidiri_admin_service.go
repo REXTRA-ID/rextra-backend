@@ -11,16 +11,17 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"rextra-backend/internal/api/kenali_diri/repository"
 	dto_request "rextra-backend/internal/dto/request"
 	dto_response "rextra-backend/internal/dto/response"
 	"rextra-backend/internal/entity"
+	"rextra-backend/internal/modules/kenali_diri/repository"
 	"rextra-backend/internal/pkg/cache"
 	myerror "rextra-backend/internal/pkg/error"
 	"rextra-backend/internal/pkg/export"
 	"rextra-backend/internal/utils"
 
 	"errors"
+
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )

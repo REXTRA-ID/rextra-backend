@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"rextra-backend/internal/api/service"
 	dto_request "rextra-backend/internal/dto/request"
+	"rextra-backend/internal/modules/persona/service"
 	myerror "rextra-backend/internal/pkg/error"
 	"rextra-backend/internal/pkg/response"
 	"rextra-backend/internal/utils"

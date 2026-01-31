@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	"rextra-backend/internal/api/repository"
 	dto_request "rextra-backend/internal/dto/request"
 	dto_response "rextra-backend/internal/dto/response"
 	"rextra-backend/internal/entity"
+	"rextra-backend/internal/modules/auth/repository"
 	mailer "rextra-backend/internal/pkg/email"
 	myerror "rextra-backend/internal/pkg/error"
 	myfirebase "rextra-backend/internal/pkg/firebase"

@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"rextra-backend/internal/api/kenali_diri/controller"
 	"rextra-backend/internal/middleware"
+	"rextra-backend/internal/modules/kenali_diri/controller"
 
 	"github.com/gin-gonic/gin"
 )

@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"math"
-	"rextra-backend/internal/api/repository"
 	dto_request "rextra-backend/internal/dto/request"
 	dto_response "rextra-backend/internal/dto/response"
 	"rextra-backend/internal/entity"
+	"rextra-backend/internal/modules/persona/repository"
 	myerror "rextra-backend/internal/pkg/error"
 
 	"github.com/google/uuid"

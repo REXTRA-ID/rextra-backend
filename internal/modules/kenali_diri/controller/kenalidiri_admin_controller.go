@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"rextra-backend/internal/api/kenali_diri/service"
 	dto_request "rextra-backend/internal/dto/request"
-	"rextra-backend/internal/pkg/response"
+	"rextra-backend/internal/modules/kenali_diri/service"
 	myerror "rextra-backend/internal/pkg/error"
+	"rextra-backend/internal/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )

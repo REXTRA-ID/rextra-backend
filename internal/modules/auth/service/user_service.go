@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	"rextra-backend/internal/api/repository"
 	dto_response "rextra-backend/internal/dto/response"
+	"rextra-backend/internal/modules/auth/repository"
 
 	"gorm.io/gorm"
 )

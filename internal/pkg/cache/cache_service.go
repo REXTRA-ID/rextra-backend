@@ -3,6 +3,8 @@ package cache
 import (
 	"context"
 	"errors"
+	"log"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -24,6 +26,12 @@ type Service = CacheService
 
 type memoryCache struct {
 	data *sync.Map
+}
+
+// New initializes a cache service based on environment configuration.
+// It prioritizes Redis if configured, otherwise falls back to in-memory cache.
+func New() CacheService {
+	return initCache()
 }
 
 // NewMemory creates an in-memory cache implementation.
@@ -68,4 +76,26 @@ func (c *memoryCache) Close() error {
 // containsPattern performs a simple substring match; avoid heavy globbing to keep it lightweight.
 func containsPattern(key, pattern string) bool {
 	return pattern == "" || strings.Contains(key, pattern)
+}
+
+func initCache() CacheService {
+	redisHost := os.Getenv("REDIS_HOST")
+	redisPort := os.Getenv("REDIS_PORT")
+	redisPassword := os.Getenv("REDIS_PASSWORD")
+	redisDB := 0 // Default to DB 0
+
+	// Try to initialize Redis cache
+	if redisHost != "" {
+		redisCache, err := NewRedis(redisHost, redisPort, redisPassword, redisDB)
+		if err != nil {
+			log.Printf("⚠️  Failed to connect to Redis at %s:%s, falling back to memory cache: %v", redisHost, redisPort, err)
+			return NewMemory()
+		}
+		log.Printf("✅ Redis cache initialized successfully at %s:%s", redisHost, redisPort)
+		return redisCache
+	}
+
+	// If REDIS_HOST not set, use memory cache
+	log.Println("ℹ️  REDIS_HOST not configured, using memory cache")
+	return NewMemory()
 }

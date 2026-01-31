@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"rextra-backend/internal/api/service"
+	"rextra-backend/internal/modules/auth/service"
 	"rextra-backend/internal/pkg/response"
 
 	"github.com/gin-gonic/gin"
