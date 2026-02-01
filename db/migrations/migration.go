@@ -62,5 +62,10 @@ func Migrate(db *gorm.DB) error {
 		return err
 	}
 
+	mylog.Infof("Adding feedback constraints...")
+	if err := AddFeedbackConstraints(db); err != nil {
+		return err
+	}
+
 	return nil
 }
