@@ -12,6 +12,8 @@ func Seeding(db *gorm.DB) error {
 	seeders := []func(*gorm.DB) error{
 		seeds.SeederUser,
 		seeds.SeederRiasecCodes,
+		seeds.SeedStudentObstacleOptions,
+		seeds.SeedExpertObstacleOptions,
 		seeds.SeederKenaliDiri,
 	}
 

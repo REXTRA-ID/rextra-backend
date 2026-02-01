@@ -1,0 +1,498 @@
+openapi: 3.0.3
+info:
+  title: Kenali Diri API - Feedback & Core System
+  description: >-
+    API Specification untuk modul Umpan Balik (Feedback) Kenali Diri (Admin Dashboard)
+    dan manajemen Profil Karier User.
+    
+    Berdasarkan dokumen:
+    - REST API Implementation Brief v1.1 CORRECTED [1]
+    - Database Migration Guide v2.3 FINAL [20]
+  version: "1.1.0"
+  contact:
+    name: REXTRA Backend Team
+    email: tech-lead@rextra.id
+
+servers:
+  - url: https://api.rextra.id/v1
+    description: Production Server
+
+tags:
+  - name: Admin Feedback
+    description: Endpoints untuk dashboard admin (Data Mentah Feedback)
+  - name: User Profile
+    description: Endpoints untuk manajemen profil karier pengguna
+
+paths:
+  # ============================================================
+  # ADMIN: FEEDBACK MAHASISWA
+  # Source: [12]
+  # ============================================================
+  /api/admin/kenali-diri/feedback/student:
+    get:
+      tags:
+        - Admin Feedback
+      summary: Get List Feedback Mahasiswa
+      description: >-
+        Mengambil daftar feedback mahasiswa dengan filter, search (trigram), dan pagination.
+        Menggunakan CTE untuk agregasi kendala. [12]
+      parameters:
+        - in: query
+          name: test_category
+          schema:
+            type: string
+            enum: [CAREER_PROFILE]
+            default: CAREER_PROFILE
+          description: Kategori tes (MVP Fixed: CAREER_PROFILE).
+        - in: query
+          name: q
+          schema:
+            type: string
+            minLength: 3
+          description: Search query (nama user/email). Minimal 3 karakter. [12]
+        - in: query
+          name: start_date
+          schema:
+            type: string
+            format: date
+          description: Filter tanggal mulai (YYYY-MM-DD).
+        - in: query
+          name: end_date
+          schema:
+            type: string
+            format: date
+          description: Filter tanggal akhir (YYYY-MM-DD).
+        - in: query
+          name: sort_by
+          schema:
+            type: string
+            enum: [name, submitted_at]
+            default: submitted_at
+          description: Kolom untuk pengurutan.
+        - in: query
+          name: sort_dir
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Arah pengurutan.
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Nomor halaman.
+        - in: query
+          name: page_size
+          schema:
+            type: integer
+            default: 25
+            maximum: 100
+          description: Jumlah item per halaman.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStudentFeedback'
+        '400':
+          description: Bad Request (Validasi input gagal)
+
+  # ============================================================
+  # ADMIN: FEEDBACK EXPERT LIST
+  # Source: [14]
+  # ============================================================
+  /api/admin/kenali-diri/feedback/expert:
+    get:
+      tags:
+        - Admin Feedback
+      summary: Get List Feedback Expert
+      description: >-
+        Mengambil daftar feedback expert dengan filter khusus Top 5 Status. [14]
+      parameters:
+        - in: query
+          name: test_category
+          schema:
+            type: string
+            enum: [CAREER_PROFILE]
+            default: CAREER_PROFILE
+        - in: query
+          name: q
+          schema:
+            type: string
+            minLength: 3
+          description: Search query (nama expert/profesi).
+        - in: query
+          name: top5_status
+          schema:
+            type: string
+            enum: [P1, P2, P3_5, NOT_PRESENT]
+          description: Filter berdasarkan status posisi rekomendasi.
+        - in: query
+          name: start_date
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: end_date
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: sort_by
+          schema:
+            type: string
+            enum: [name, submitted_at]
+            default: submitted_at
+        - in: query
+          name: sort_dir
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: page_size
+          schema:
+            type: integer
+            default: 25
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedExpertFeedbackList'
+
+  # ============================================================
+  # ADMIN: FEEDBACK EXPERT DETAIL (DRAWER)
+  # Source: [15]
+  # ============================================================
+  /api/admin/kenali-diri/feedback/expert/{id}:
+    get:
+      tags:
+        - Admin Feedback
+      summary: Get Detail Feedback Expert
+      description: >-
+        Mengambil detail lengkap feedback expert untuk tampilan Drawer, termasuk snapshot JSON rekomendasi. [15]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID Feedback (kenalidiri_feedback.id)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpertFeedbackDetail'
+        '404':
+          description: Feedback tidak ditemukan
+
+  # ============================================================
+  # ADMIN: METADATA
+  # Source: [15]
+  # ============================================================
+  /api/admin/kenali-diri/feedback/meta:
+    get:
+      tags:
+        - Admin Feedback
+      summary: Get Metadata Filter
+      description: Menyediakan opsi dropdown untuk filter dan sorting di frontend admin. [15]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  test_categories:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        label: 
+                          type: string
+                          example: "Tes Profil Karier"
+                        value: 
+                          type: string
+                          example: "CAREER_PROFILE"
+                  top5_statuses:
+                    type: array
+                    items:
+                      type: string
+                      enum: [P1, P2, P3_5, NOT_PRESENT]
+                  sort_options:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        label:
+                          type: string
+                        value:
+                          type: string
+
+  # ============================================================
+  # USER: SET ACTIVE PROFILE
+  # Source: [32-34]
+  # ============================================================
+  /api/kenali-diri/profile/set-active:
+    post:
+      tags:
+        - User Profile
+      summary: Tetapkan Profil Karier Aktif
+      description: >-
+        Menetapkan sesi tes tertentu sebagai profil karier aktif user.
+        Mengubah set_source menjadi USER_SELECTED. [33]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - session_id
+              properties:
+                session_id:
+                  type: integer
+                  description: ID sesi tes (careerprofile_test_sessions) yang dipilih user.
+                  example: 88901
+      responses:
+        '200':
+          description: Berhasil menetapkan profil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Profil karier berhasil diperbarui."
+                  active_profile:
+                    $ref: '#/components/schemas/UserCareerProfile'
+        '400':
+          description: Sesi tidak valid atau tidak milik user tersebut.
+
+components:
+  schemas:
+    # --------------------------------------------------------
+    # SHARED COMPONENTS
+    # --------------------------------------------------------
+    PaginationMeta:
+      type: object
+      properties:
+        current_page:
+          type: integer
+        per_page:
+          type: integer
+        total_items:
+          type: integer
+        total_pages:
+          type: integer
+
+    ObstacleItem:
+      type: object
+      properties:
+        obstacle_id:
+          type: integer
+        key:
+          type: string
+          example: "DURATION_TOO_LONG"
+        label:
+          type: string
+          example: "Durasi tes terasa terlalu lama"
+        other_text:
+          type: string
+          nullable: true
+          description: Diisi jika opsi OTHER dipilih [35]
+
+    # --------------------------------------------------------
+    # STUDENT SCHEMAS [5, 36, 37]
+    # --------------------------------------------------------
+    StudentFeedbackItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Feedback ID
+        submitted_at:
+          type: string
+          format: date-time
+        respondent:
+          type: object
+          properties:
+            user_id:
+              type: integer
+            name:
+              type: string
+            email:
+              type: string
+        scores:
+          type: object
+          properties:
+            ease:
+              type: integer
+              description: 1-7 [36]
+            relevance:
+              type: integer
+              description: 1-7 [36]
+            satisfaction:
+              type: integer
+              description: 1-7 [36]
+        obstacles:
+          type: array
+          items:
+            $ref: '#/components/schemas/ObstacleItem'
+        message_to_team:
+          type: string
+          nullable: true
+
+    PaginatedStudentFeedback:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudentFeedbackItem'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    # --------------------------------------------------------
+    # EXPERT SCHEMAS [6, 10, 38, 39]
+    # --------------------------------------------------------
+    ExpertFeedbackListItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        submitted_at:
+          type: string
+          format: date-time
+        expert:
+          type: object
+          properties:
+            name:
+              type: string
+              description: Snapshot expert_name [38]
+            profession:
+              type: string
+              description: Snapshot expert_profession [38]
+        top5_status:
+          type: string
+          enum: [P1, P2, P3_5, NOT_PRESENT]
+          description: Generated column value [39]
+        scores:
+          type: object
+          properties:
+            accuracy:
+              type: integer
+            logic:
+              type: integer
+            usefulness:
+              type: integer
+        obstacle_count:
+          type: integer
+          description: Jumlah kendala yang dilaporkan
+
+    PaginatedExpertFeedbackList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExpertFeedbackListItem'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    ExpertFeedbackDetail:
+      type: object
+      description: Detail lengkap untuk Drawer [10]
+      properties:
+        id:
+          type: integer
+        submitted_at:
+          type: string
+          format: date-time
+        expert_identity:
+          type: object
+          properties:
+            name: 
+              type: string
+            profession:
+              type: string
+            degree:
+              type: string
+            experience_years:
+              type: integer
+            education_level:
+              type: string
+            university:
+              type: string
+            study_program:
+              type: string
+        recommendation_snapshot:
+          type: object
+          properties:
+            selected_expert_profession_id:
+              type: integer
+              nullable: true
+              description: ID profesi yang dipilih expert saat validasi [40]
+            top5_status:
+              type: string
+              enum: [P1, P2, P3_5, NOT_PRESENT]
+            top5_json:
+              type: array
+              description: Snapshot rekomendasi Rank 1-5 [39]
+              items:
+                type: object
+                properties:
+                  rank:
+                    type: integer
+                  profession_id:
+                    type: integer
+                  profession_name:
+                    type: string
+        scores:
+          type: object
+          properties:
+            accuracy:
+              type: integer
+            logic:
+              type: integer
+            usefulness:
+              type: integer
+        suggestion_text:
+          type: string
+          nullable: true
+        obstacles:
+          type: array
+          items:
+            $ref: '#/components/schemas/ObstacleItem'
+
+    # --------------------------------------------------------
+    # USER PROFILE SCHEMA [33]
+    # --------------------------------------------------------
+    UserCareerProfile:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        active_session_id:
+          type: integer
+        pinned:
+          type: boolean
+        set_source:
+          type: string
+          enum: [AUTO_FIRST_TIME, USER_SELECTED]
+        set_at:
+          type: string
+          format: date-time

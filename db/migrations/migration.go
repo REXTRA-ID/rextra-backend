@@ -26,6 +26,7 @@ func Migrate(db *gorm.DB) error {
 		// &entity.Riasec{},
 		&entity.RiasecCode{},
 		&entity.CareerProfileTestSession{},
+		&entity.UserCareerProfile{}, // NEW: User active profile pointer
 		&entity.RiasecQuestionSet{},
 		&entity.RiasecResponse{},
 		&entity.RiasecResult{},
@@ -33,12 +34,31 @@ func Migrate(db *gorm.DB) error {
 		&entity.IkigaiResponse{},
 		&entity.IkigaiDimensionScore{},
 		&entity.IkigaiTotalScore{},
-		&entity.ExpertFeedback{},
+		
 		&entity.StudentFeedback{},
+		&entity.ExpertFeedback{},
+		
+		&entity.KenaliDiriFeedback{},                         
+		
+		&entity.CareerProfileFeedbackStudent{},               
+		&entity.CareerProfileObstacleOption{},                
+		&entity.CareerProfileFeedbackObstacle{},              
+		
+		&entity.CareerProfileFeedbackExpert{},                
+		&entity.CareerProfileExpertObstacleOption{},          
+		&entity.CareerProfileFeedbackExpertObstacle{},        
+		
 		&entity.CareerRecommendation{},
 		// &entity.UserIkigai{},
 		// &entity.UserRiasec{},
 	); err != nil {
+		return err
+	}
+
+	mylog.Infof("Migration completed successfully")
+
+	mylog.Infof("Adding feedback indexes...")
+	if err := AddFeedbackIndexes(db); err != nil {
 		return err
 	}
 
