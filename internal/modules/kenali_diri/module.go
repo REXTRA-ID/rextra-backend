@@ -24,6 +24,7 @@ func InitModule(server *gin.Engine, db *gorm.DB, middleware middleware.Middlewar
 		ikigaiRepository               repository.IkigaiRepository             = repository.NewIkigai(db)
 		recommendationRepository       repository.RecommendationRepository     = repository.NewRecommendation(db)
 		feedbackRepository             repository.FeedbackRepository           = repository.NewFeedback(db)
+		careerProfileFeedbackRepo      repository.CareerProfileFeedbackRepository = repository.NewCareerProfileFeedbackRepository(db)
 	)
 
 	kenalidiriAdminService := service.NewKenalidiriAdmin(
@@ -41,6 +42,9 @@ func InitModule(server *gin.Engine, db *gorm.DB, middleware middleware.Middlewar
 	)
 
 	kenalidiriAdminController := controller.NewKenalidiriAdmin(kenalidiriAdminService)
+	careerProfileFeedbackService := service.NewCareerProfileFeedbackService(careerProfileFeedbackRepo)
+	careerProfileFeedbackController := controller.NewCareerProfileFeedbackController(careerProfileFeedbackService)
 
 	routes.ServeKenalidiriAdmin(server, kenalidiriAdminController, middleware)
+	routes.ServeCareerProfileFeedback(server, careerProfileFeedbackController, middleware)
 }
