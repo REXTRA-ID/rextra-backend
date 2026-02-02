@@ -3,7 +3,9 @@ package service
 import (
 	"context"
 	"errors"
+	dto_request "rextra-backend/internal/dto/request"
 	dto_response "rextra-backend/internal/dto/response"
+	"rextra-backend/internal/entity"
 	"rextra-backend/internal/modules/token/repository"
 	myerror "rextra-backend/internal/pkg/error"
 
@@ -15,6 +17,11 @@ type (
 		// FOR ALL ROLE
 		GetAll(ctx context.Context) ([]dto_response.TokenBundleDTOResponse, error)
 		GetByID(ctx context.Context, id string) (dto_response.TokenBundleDTOResponse, error)
+
+		// FOR ADMIN ROLE
+		Create(ctx context.Context, data dto_request.TokenBundleDTORequest) (dto_response.TokenBundleDTOResponse, error)
+		// Update(ctx context.Context, id string, data dto_request.TokenBundleDTORequest) (dto_response.TokenBundleDTOResponse, error)
+		// Delete(ctx context.Context, id string) error
 	}
 
 	bundleService struct {
@@ -84,3 +91,48 @@ func (s *bundleService) GetByID(ctx context.Context, id string) (dto_response.To
 
 	return tokenBundle, nil
 }
+
+func (s *bundleService) Create(ctx context.Context, data dto_request.TokenBundleDTORequest) (dto_response.TokenBundleDTOResponse, error) {
+	var tokenBundle dto_response.TokenBundleDTOResponse
+
+	_, isExist, err := s.tokenBundleRepository.GetByName(ctx, nil, data.Name)
+	if isExist {
+		return tokenBundle, myerror.New("Bundle Name Already Exist", myerror.Error_InvalidRequest)
+	}
+	if err != nil {
+		return tokenBundle, err
+	}
+
+	bundle := entity.TokenBundlePackage{
+		Name:        data.Name,
+		TokenAmount: int64(data.TokenAmount),
+		PriceRp:     int64(data.PriceRp),
+		Label:       &data.Label,
+		IsActive:    data.IsActive,
+	}
+
+	createBundle, err := s.tokenBundleRepository.Create(ctx, nil, bundle)
+	if err != nil {
+		return tokenBundle, err
+	}
+
+	var label string
+	if createBundle.Label != nil {
+		label = *createBundle.Label
+	}
+
+	tokenBundle = dto_response.TokenBundleDTOResponse{
+		ID:          createBundle.ID.String(),
+		Name:        createBundle.Name,
+		TokenAmount: createBundle.TokenAmount,
+		PriceRp:     createBundle.PriceRp,
+		Label:       label,
+		IsActive:    createBundle.IsActive,
+	}
+
+	return tokenBundle, nil
+}
+
+// func (s *bundleService) Update(ctx context.Context, id string, data dto_request.TokenBundleDTORequest) (dto_response.TokenBundleDTOResponse, error){
+
+// }
