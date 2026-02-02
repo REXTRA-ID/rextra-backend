@@ -6,5 +6,5 @@ type TokenBundleDTORequest struct {
 	PriceRp      int    `json:"price_rp" binding:"required"`
 	Label        string `json:"label,omitempty"`
 	DisplayOrder int    `json:"display_order" binding:"required"`
-	IsActive     bool   `json:"is_active" binding:"required"`
+	IsActive     *bool  `json:"is_active" binding:"required"`
 }

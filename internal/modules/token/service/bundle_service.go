@@ -20,8 +20,8 @@ type (
 
 		// FOR ADMIN ROLE
 		Create(ctx context.Context, data dto_request.TokenBundleDTORequest) (dto_response.TokenBundleDTOResponse, error)
-		// Update(ctx context.Context, id string, data dto_request.TokenBundleDTORequest) (dto_response.TokenBundleDTOResponse, error)
-		// Delete(ctx context.Context, id string) error
+		Update(ctx context.Context, id string, data dto_request.TokenBundleDTORequest) (dto_response.TokenBundleDTOResponse, error)
+		Delete(ctx context.Context, id string) error
 	}
 
 	bundleService struct {
@@ -108,7 +108,7 @@ func (s *bundleService) Create(ctx context.Context, data dto_request.TokenBundle
 		TokenAmount: int64(data.TokenAmount),
 		PriceRp:     int64(data.PriceRp),
 		Label:       &data.Label,
-		IsActive:    data.IsActive,
+		IsActive:    *data.IsActive,
 	}
 
 	createBundle, err := s.tokenBundleRepository.Create(ctx, nil, bundle)
@@ -133,6 +133,64 @@ func (s *bundleService) Create(ctx context.Context, data dto_request.TokenBundle
 	return tokenBundle, nil
 }
 
-// func (s *bundleService) Update(ctx context.Context, id string, data dto_request.TokenBundleDTORequest) (dto_response.TokenBundleDTOResponse, error){
+func (s *bundleService) Update(ctx context.Context, id string, data dto_request.TokenBundleDTORequest) (dto_response.TokenBundleDTOResponse, error) {
 
-// }
+	existingBundle, err := s.tokenBundleRepository.GetByID(ctx, nil, id)
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return dto_response.TokenBundleDTOResponse{}, myerror.RecordNotFound(id)
+		}
+		return dto_response.TokenBundleDTOResponse{}, err
+	}
+
+	if existingBundle.Name != data.Name {
+		duplicateCheck, isExist, err := s.tokenBundleRepository.GetByName(ctx, nil, data.Name)
+		if err != nil {
+			return dto_response.TokenBundleDTOResponse{}, err
+		}
+		if isExist && duplicateCheck.ID != existingBundle.ID {
+			return dto_response.TokenBundleDTOResponse{}, myerror.New("Bundle Name Already Exist", myerror.Error_InvalidRequest)
+		}
+
+	}
+
+	existingBundle.Name = data.Name
+	existingBundle.TokenAmount = int64(data.TokenAmount)
+	existingBundle.PriceRp = int64(data.PriceRp)
+	existingBundle.Label = &data.Label
+	existingBundle.IsActive = *data.IsActive
+
+	updatedBundle, err := s.tokenBundleRepository.Update(ctx, nil, existingBundle)
+	if err != nil {
+		return dto_response.TokenBundleDTOResponse{}, err
+	}
+
+	var label string
+	if updatedBundle.Label != nil {
+		label = *updatedBundle.Label
+	}
+
+	response := dto_response.TokenBundleDTOResponse{
+		ID:          updatedBundle.ID.String(),
+		Name:        updatedBundle.Name,
+		TokenAmount: updatedBundle.TokenAmount,
+		PriceRp:     updatedBundle.PriceRp,
+		Label:       label,
+		IsActive:    updatedBundle.IsActive,
+	}
+
+	return response, nil
+}
+
+func (s *bundleService) Delete(ctx context.Context, id string) error {
+	_, err := s.tokenBundleRepository.GetByID(ctx, nil, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerror.RecordNotFound("bundle")
+		}
+		return err
+	}
+
+	return s.tokenBundleRepository.Delete(ctx, nil, id)
+}

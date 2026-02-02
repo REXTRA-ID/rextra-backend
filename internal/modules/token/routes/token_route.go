@@ -18,6 +18,12 @@ func ServeToken(app *gin.Engine, tokenWalletController controller.TokenWalletCon
 		// BUNDLE
 		routes.GET("/bundle", tokenBundleController.GetAll)
 		routes.GET("/bundle/:id", tokenBundleController.GetByID)
-		routes.POST("/bundle", middleware.Authenticate(), middleware.OnlyAdmin(), tokenBundleController.Create)
+	}
+
+	routes.Use(middleware.Authenticate(), middleware.OnlyAdmin())
+	{
+		routes.POST("/bundle", tokenBundleController.Create)
+		routes.PUT("/bundle/:id", tokenBundleController.Update)
+		routes.DELETE("/bundle/:id", tokenBundleController.Delete)
 	}
 }

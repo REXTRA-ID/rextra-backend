@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"rextra-backend/internal/entity"
+	myerror "rextra-backend/internal/pkg/error"
 
 	"gorm.io/gorm"
 )
@@ -14,7 +15,8 @@ type (
 		GetByID(ctx context.Context, tx *gorm.DB, id string) (entity.TokenBundlePackage, error)
 		GetByName(ctx context.Context, tx *gorm.DB, name string) (entity.TokenBundlePackage, bool, error)
 		Create(ctx context.Context, tx *gorm.DB, tokenBundlePackage entity.TokenBundlePackage) (entity.TokenBundlePackage, error)
-		Update(ctx context.Context, tx *gorm.DB, tokenBundlePackage entity.TokenBundlePackage) error
+		Update(ctx context.Context, tx *gorm.DB, tokenBundlePackage entity.TokenBundlePackage) (entity.TokenBundlePackage, error)
+		Delete(ctx context.Context, tx *gorm.DB, id string) error
 		ToggleActive(ctx context.Context, tx *gorm.DB, id string, isActive bool) error
 	}
 	tokenBundlePackageRepository struct {
@@ -72,12 +74,26 @@ func (r *tokenBundlePackageRepository) Create(ctx context.Context, tx *gorm.DB, 
 	return tokenBundlePackage, nil
 }
 
-func (r *tokenBundlePackageRepository) Update(ctx context.Context, tx *gorm.DB, tokenBundlePackage entity.TokenBundlePackage) error {
+func (r *tokenBundlePackageRepository) Update(ctx context.Context, tx *gorm.DB, tokenBundlePackage entity.TokenBundlePackage) (entity.TokenBundlePackage, error) {
 	if tx == nil {
 		tx = r.db
 	}
 	if err := tx.Save(&tokenBundlePackage).Error; err != nil {
-		return err
+		return entity.TokenBundlePackage{}, err
+	}
+	return tokenBundlePackage, nil
+}
+
+func (r *tokenBundlePackageRepository) Delete(ctx context.Context, tx *gorm.DB, id string) error {
+	if tx == nil {
+		tx = r.db
+	}
+	result := tx.WithContext(ctx).Where("id = ?", id).Delete(&entity.TokenBundlePackage{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return myerror.RecordNotFound("bundle")
 	}
 	return nil
 }
