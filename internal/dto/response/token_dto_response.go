@@ -61,4 +61,19 @@ type (
 		ToToken     int64   `json:"to_token"`
 		DiscountPct float64 `json:"discount_pct"`
 	}
+
+	TopupTransactionDTOResponse struct {
+		ID              string    `json:"id"`
+		UserID          string    `json:"user_id"`
+		Type            string    `json:"type"`
+		BundlePackageID string    `json:"bundle_package_id,omitempty"`
+		TokenAmount     int64     `json:"token_amount"`
+		TotalPriceRp    int64     `json:"total_price_rp"`
+		Status          string    `json:"status"`
+		InvoiceID       string    `json:"invoice_id,omitempty"`
+		Provider        string    `json:"provider,omitempty"`
+		PaidAt          time.Time `json:"paid_at"`
+		ExpiredAt       time.Time `json:"expired_at"`
+		LedgerID        string    `json:"ledger_id,omitempty"`
+	}
 )

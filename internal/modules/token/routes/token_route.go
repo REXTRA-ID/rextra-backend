@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ServeToken(app *gin.Engine, tokenWalletController controller.TokenWalletController, tokenBundleController controller.TokenBundleController, customPricingController controller.CustomPricingController, middleware middleware.Middleware) {
+func ServeToken(app *gin.Engine, tokenWalletController controller.TokenWalletController, tokenBundleController controller.TokenBundleController, customPricingController controller.CustomPricingController, topupTransactionsController controller.TopupTransactionController, middleware middleware.Middleware) {
 	routes := app.Group("/api/v1/token")
 	{
 		// WALLET
@@ -30,5 +30,8 @@ func ServeToken(app *gin.Engine, tokenWalletController controller.TokenWalletCon
 		routes.GET("/custom-pricing/history", customPricingController.GetHistory)
 		routes.POST("/custom-pricing/toggle-active", customPricingController.ToggleActive)
 		routes.POST("/custom-pricing", customPricingController.CreateNewVersion)
+
+		routes.GET("/topup-transactions", topupTransactionsController.GetAll)
+		routes.GET("/topup-transactions/:id", topupTransactionsController.GetById)
 	}
 }

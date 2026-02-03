@@ -22,6 +22,7 @@ type (
 		GetByID(ctx context.Context, tx *gorm.DB, id uuid.UUID) (*entity.TopupTransaction, error)
 		GetByInvoiceID(ctx context.Context, tx *gorm.DB, invoiceID string) (*entity.TopupTransaction, error)
 		GetUserTransactions(ctx context.Context, tx *gorm.DB, userID uuid.UUID, filters TopupTransactionFilters, limit, offset int) ([]entity.TopupTransaction, int64, error)
+		GetAll(ctx context.Context, tx *gorm.DB, filters TopupTransactionFilters, limit, offset int) ([]entity.TopupTransaction, int64, error)
 		UpdateStatus(ctx context.Context, tx *gorm.DB, id uuid.UUID, status entity.TopupStatus, paidAt *time.Time, metadata map[string]any) error
 		SetLedgerID(ctx context.Context, tx *gorm.DB, id uuid.UUID, ledgerID uuid.UUID) error
 	}
@@ -83,6 +84,29 @@ func (r *topupTransactionRepository) GetUserTransactions(ctx context.Context, tx
 	query = r.applyTransactionFilters(query, filters)
 
 	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if err := query.Preload("BundlePackage").Order("created_at DESC").Limit(limit).Offset(offset).Find(&transactions).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return transactions, total, nil
+}
+
+func (r *topupTransactionRepository) GetAll(ctx context.Context, tx *gorm.DB, filters TopupTransactionFilters, limit, offset int) ([]entity.TopupTransaction, int64, error) {
+	if tx == nil {
+		tx = r.db
+	}
+	var transactions []entity.TopupTransaction
+	var total int64
+
+	query := tx.WithContext(ctx).Model(&entity.TopupTransaction{})
+	query = r.applyTransactionFilters(query, filters)
+
+	countQuery := query
+
+	if err := countQuery.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 

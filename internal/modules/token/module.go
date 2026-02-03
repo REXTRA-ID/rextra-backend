@@ -17,16 +17,18 @@ func InitModule(server *gin.Engine, db *gorm.DB, middleware middleware.Middlewar
 		tokenLedgerRepository   repository.TokenLedgerRepository        = repository.NewTokenLedgerRepository(db)
 		tokenWalletRepository   repository.TokenWalletRepository        = repository.NewTokenWalletRepository(db)
 		customPricingRepository repository.CustomPricingRepository      = repository.NewCustomPricingRepository(db)
-		// topUpRepository repository.TopupTransactionRepository = repository.NewTopupTransactionRepository(db)
+		topUpRepository         repository.TopupTransactionRepository   = repository.NewTopupTransactionRepository(db)
 
-		walletService        service.WalletService        = service.NewWalletService(tokenWalletRepository, tokenLedgerRepository, db)
-		bundleService        service.BundleService        = service.NewBundleService(tokenBundleRepository, db)
-		customPricingService service.CustomPricingService = service.NewCustomPricingService(customPricingRepository, db)
+		walletService        service.WalletService           = service.NewWalletService(tokenWalletRepository, tokenLedgerRepository, db)
+		bundleService        service.BundleService           = service.NewBundleService(tokenBundleRepository, db)
+		customPricingService service.CustomPricingService    = service.NewCustomPricingService(customPricingRepository, db)
+		topUpService         service.TopupTransactionService = service.NewTopupTransactionService(topUpRepository, db)
 
-		tokenBundleController   controller.TokenBundleController   = controller.NewTokenBundleController(bundleService)
-		tokenWalletController   controller.TokenWalletController   = controller.NewTokenWalletController(walletService)
-		customPricingController controller.CustomPricingController = controller.NewCustomPricingController(customPricingService)
+		tokenBundleController   controller.TokenBundleController      = controller.NewTokenBundleController(bundleService)
+		tokenWalletController   controller.TokenWalletController      = controller.NewTokenWalletController(walletService)
+		customPricingController controller.CustomPricingController    = controller.NewCustomPricingController(customPricingService)
+		topUpController         controller.TopupTransactionController = controller.NewTopupTransactionController(topUpService)
 	)
 
-	routes.ServeToken(server, tokenWalletController, tokenBundleController, customPricingController, middleware)
+	routes.ServeToken(server, tokenWalletController, tokenBundleController, customPricingController, topUpController, middleware)
 }
