@@ -11,12 +11,13 @@ import (
 
 type CustomPricingRepository interface {
 	// Config operations
-	GetCurrentConfig(ctx context.Context) (*entity.CustomPricingConfig, error)
-	GetConfigByID(ctx context.Context, id uuid.UUID) (*entity.CustomPricingConfig, error)
-	GetConfigHistory(ctx context.Context, limit int) ([]entity.CustomPricingConfig, error)
+	GetCurrentConfig(ctx context.Context, tx *gorm.DB) (*entity.CustomPricingConfig, error)
+	GetConfigByID(ctx context.Context, tx *gorm.DB, id uuid.UUID) (*entity.CustomPricingConfig, error)
+	GetConfigHistory(ctx context.Context, tx *gorm.DB, limit int, preloads ...string) ([]entity.CustomPricingConfig, error)
 
 	// Version management
-	CreateNewVersion(ctx context.Context, config *entity.CustomPricingConfig, tiers []entity.CustomPricingTier) error
+	CreateNewVersion(ctx context.Context, tx *gorm.DB, config *entity.CustomPricingConfig, tiers []entity.CustomPricingTier) error
+	ToggleActive(ctx context.Context, tx *gorm.DB, active bool) error
 }
 
 type customPricingRepository struct {
@@ -28,10 +29,13 @@ func NewCustomPricingRepository(db *gorm.DB) CustomPricingRepository {
 }
 
 // GetCurrentConfig retrieves current active config
-func (r *customPricingRepository) GetCurrentConfig(ctx context.Context) (*entity.CustomPricingConfig, error) {
+func (r *customPricingRepository) GetCurrentConfig(ctx context.Context, tx *gorm.DB) (*entity.CustomPricingConfig, error) {
+	if tx == nil {
+		tx = r.db
+	}
 	var config entity.CustomPricingConfig
 
-	err := r.db.WithContext(ctx).
+	err := tx.WithContext(ctx).
 		Preload("Tiers", func(db *gorm.DB) *gorm.DB {
 			return db.Order("from_token ASC")
 		}).
@@ -45,10 +49,13 @@ func (r *customPricingRepository) GetCurrentConfig(ctx context.Context) (*entity
 	return &config, nil
 }
 
-func (r *customPricingRepository) GetConfigByID(ctx context.Context, id uuid.UUID) (*entity.CustomPricingConfig, error) {
+func (r *customPricingRepository) GetConfigByID(ctx context.Context, tx *gorm.DB, id uuid.UUID) (*entity.CustomPricingConfig, error) {
+	if tx == nil {
+		tx = r.db
+	}
 	var config entity.CustomPricingConfig
 
-	err := r.db.WithContext(ctx).
+	err := tx.WithContext(ctx).
 		Preload("Tiers", func(db *gorm.DB) *gorm.DB {
 			return db.Order("from_token ASC")
 		}).
@@ -64,10 +71,17 @@ func (r *customPricingRepository) GetConfigByID(ctx context.Context, id uuid.UUI
 	return &config, nil
 }
 
-func (r *customPricingRepository) GetConfigHistory(ctx context.Context, limit int) ([]entity.CustomPricingConfig, error) {
+func (r *customPricingRepository) GetConfigHistory(ctx context.Context, tx *gorm.DB, limit int, preloads ...string) ([]entity.CustomPricingConfig, error) {
+	if tx == nil {
+		tx = r.db
+	}
+
 	var configs []entity.CustomPricingConfig
 
-	err := r.db.WithContext(ctx).
+	for _, preload := range preloads {
+		tx = tx.Preload(preload)
+	}
+	err := tx.WithContext(ctx).
 		Order("effective_from DESC").
 		Limit(limit).
 		Find(&configs).Error
@@ -75,14 +89,15 @@ func (r *customPricingRepository) GetConfigHistory(ctx context.Context, limit in
 	return configs, err
 }
 
-func (r *customPricingRepository) CreateNewVersion(ctx context.Context, config *entity.CustomPricingConfig, tiers []entity.CustomPricingTier) error {
+func (r *customPricingRepository) CreateNewVersion(ctx context.Context, tx *gorm.DB, config *entity.CustomPricingConfig, tiers []entity.CustomPricingTier) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// 1. Close current config
-		if err := tx.Model(&entity.CustomPricingConfig{}).
+		if err := tx.Table("custom_pricing_config").
 			Where("is_current = ?", true).
 			Updates(map[string]any{
 				"is_current":   false,
 				"effective_to": time.Now(),
+				"is_enabled":   false,
 			}).Error; err != nil {
 			return err
 		}
@@ -90,6 +105,7 @@ func (r *customPricingRepository) CreateNewVersion(ctx context.Context, config *
 		// 2. Create new config
 		config.IsCurrent = true
 		config.EffectiveFrom = time.Now()
+
 		if err := tx.Create(config).Error; err != nil {
 			return err
 		}
@@ -97,11 +113,23 @@ func (r *customPricingRepository) CreateNewVersion(ctx context.Context, config *
 		// 3. Create tiers
 		for i := range tiers {
 			tiers[i].ConfigID = config.ID
-			if err := tx.Create(&tiers[i]).Error; err != nil {
-				return err
-			}
+		}
+
+		if err := tx.Create(&tiers).Error; err != nil {
+			return err
 		}
 
 		return nil
 	})
+}
+
+func (r *customPricingRepository) ToggleActive(ctx context.Context, tx *gorm.DB, active bool) error {
+	if tx == nil {
+		tx = r.db
+	}
+
+	return tx.WithContext(ctx).
+		Table("custom_pricing_config").
+		Where("is_current = ?", true).
+		Update("is_enabled", active).Error
 }

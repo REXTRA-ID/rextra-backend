@@ -45,4 +45,20 @@ type (
 		DisplayOrder int    `json:"display_order"`
 		IsActive     bool   `json:"is_available"`
 	}
+
+	CustomPricingDTOResponse struct {
+		ID                       string              `json:"id"`
+		IsEnabled                bool                `json:"is_enabled"`
+		Mintoken                 int64               `json:"mintoken"`
+		Maxtoken                 int64               `json:"maxtoken"`
+		RecommendedPricePerToken int64               `json:"recommended_price_per_token"`
+		Tiers                    []CustomPricingTier `json:"tiers"`
+	}
+
+	CustomPricingTier struct {
+		ID          string  `json:"id"`
+		FromToken   int64   `json:"from_token"`
+		ToToken     int64   `json:"to_token"`
+		DiscountPct float64 `json:"discount_pct"`
+	}
 )
