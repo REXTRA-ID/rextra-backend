@@ -76,4 +76,13 @@ type (
 		ExpiredAt       time.Time `json:"expired_at"`
 		LedgerID        string    `json:"ledger_id,omitempty"`
 	}
+
+	TokenLedgerActivityDTOResponse struct {
+		ID            string    `json:"id"`
+		Username      string    `json:"username"`
+		SourceType    string    `json:"source_type"`
+		BalanceBefore int64     `json:"balance_before"`
+		BalanceAfter  int64     `json:"balance_after"`
+		CreatedAt     time.Time `json:"created_at"`
+	}
 )

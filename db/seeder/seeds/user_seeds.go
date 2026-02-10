@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func SeederUser(db *gorm.DB) error {
@@ -17,7 +18,6 @@ func SeederUser(db *gorm.DB) error {
 	if err != nil {
 		return err
 	}
-
 	defer jsonFile.Close()
 
 	var listEntity []entity.User
@@ -25,12 +25,18 @@ func SeederUser(db *gorm.DB) error {
 		return err
 	}
 
-	for _, entity := range listEntity {
-		hashedPwd, _ := utils.HashPassword(entity.Password)
-		entity.Password = hashedPwd
-		if err := db.Save(&entity).Error; err != nil {
-			return err
-		}
+	for i := range listEntity {
+		hashedPwd, _ := utils.HashPassword(listEntity[i].Password)
+		listEntity[i].Password = hashedPwd
+	}
+
+	err = db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "email"}},
+		DoUpdates: clause.AssignmentColumns([]string{"username", "phone_number", "role", "is_verified", "updated_at"}),
+	}).Create(&listEntity).Error
+
+	if err != nil {
+		return err
 	}
 
 	mylog.Infof("[COMPLETE] Seeding users completed")

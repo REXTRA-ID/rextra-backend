@@ -12,7 +12,8 @@ func Seeding(db *gorm.DB) error {
 	seeders := []func(*gorm.DB) error{
 		// seeds.SeederUser,
 		// seeds.SeederRiasecCodes,
-		seeds.SeedTokenBundlePackages,
+		// seeds.SeedTokenBundlePackages,
+		seeds.SeedTopupTransactions,
 		// seeds.SeederKenaliDiri,
 	}
 
