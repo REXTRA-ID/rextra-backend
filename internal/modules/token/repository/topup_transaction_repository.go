@@ -25,6 +25,7 @@ type (
 		GetAll(ctx context.Context, tx *gorm.DB, filters TopupTransactionFilters, limit, offset int) ([]entity.TopupTransaction, int64, error)
 		UpdateStatus(ctx context.Context, tx *gorm.DB, id uuid.UUID, status entity.TopupStatus, paidAt *time.Time, metadata map[string]any) error
 		SetLedgerID(ctx context.Context, tx *gorm.DB, id uuid.UUID, ledgerID uuid.UUID) error
+		CountByStatus(ctx context.Context, tx *gorm.DB, status entity.TopupStatus, startDate, endDate string) (int, error)
 	}
 
 	topupTransactionRepository struct {
@@ -160,4 +161,30 @@ func (r *topupTransactionRepository) applyTransactionFilters(query *gorm.DB, fil
 		}
 	}
 	return query
+}
+
+func (r *topupTransactionRepository) CountByStatus(ctx context.Context, tx *gorm.DB, status entity.TopupStatus, startDate, endDate string) (int, error) {
+	if tx == nil {
+		tx = r.db
+	}
+	var count int64
+	query := tx.WithContext(ctx).Model(&entity.TopupTransaction{}).Where("status = ?", status)
+
+	if startDate != "" {
+		if startDateParsed, err := time.Parse("2006-01-02", startDate); err == nil {
+			query = query.Where("created_at >= ?", startDateParsed)
+		}
+	}
+	if endDate != "" {
+		if endDateParsed, err := time.Parse("2006-01-02", endDate); err == nil {
+			endDateParsed = endDateParsed.Add(23*time.Hour + 59*time.Minute + 59*time.Second)
+			query = query.Where("created_at <= ?", endDateParsed)
+		}
+	}
+
+	err := query.Count(&count).Error
+	if err != nil {
+		return 0, err
+	}
+	return int(count), nil
 }

@@ -11,6 +11,7 @@ import (
 type (
 	TokenLedgerService interface {
 		GetActivity(ctx context.Context, filters repository.TokenLedgerFilter, limit int, offset int) ([]dto_response.TokenLedgerActivityDTOResponse, int64, error)
+		// GetKPISummary(ctx context.Context, filters repository.TokenLedgerFilter) (dto_response.TokenLedgerSummaryDTOResponse, error)
 	}
 
 	tokenLedgerService struct {

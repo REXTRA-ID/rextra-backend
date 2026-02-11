@@ -14,6 +14,7 @@ func ServeToken(
 	customPricingController controller.CustomPricingController,
 	topupTransactionsController controller.TopupTransactionController,
 	tokenLedgerController controller.TokenLedgerController,
+	summaryController controller.SummaryController,
 	middleware middleware.Middleware) {
 	routes := app.Group("/api/v1/token")
 	{
@@ -42,5 +43,7 @@ func ServeToken(
 		routes.GET("/topup-transactions/:id", topupTransactionsController.GetById)
 
 		routes.GET("/ledger/activity", tokenLedgerController.GetActivity)
+
+		routes.GET("/summary/kpi", summaryController.GetKPI)
 	}
 }

@@ -28,6 +28,8 @@ type (
 		CountByWalletID(ctx context.Context, tx *gorm.DB, WalletID string) (int, error)
 
 		GetAllActivity(ctx context.Context, tx *gorm.DB, filter TokenLedgerFilter, limit int, offset int, preloads ...string) ([]entity.TokenLedger, int64, error)
+		CountTokenByDirection(ctx context.Context, tx *gorm.DB, direction string, startDate string, endDate string) (int, error)
+		CountTokenByType(ctx context.Context, tx *gorm.DB, sourceType string, startDate string, endDate string) (int, error)
 	}
 
 	tokenLedgerRepository struct {
@@ -153,4 +155,56 @@ func (r *tokenLedgerRepository) GetAllActivity(ctx context.Context, tx *gorm.DB,
 	}
 
 	return ledgers, total, nil
+}
+
+func (r *tokenLedgerRepository) CountTokenByDirection(ctx context.Context, tx *gorm.DB, direction string, startDate string, endDate string) (int, error) {
+	if tx == nil {
+		tx = r.db
+	}
+	var count int64
+	query := tx.WithContext(ctx).Model(&entity.TokenLedger{}).Where("direction = ?", direction)
+
+	if startDate != "" {
+		if startDateParsed, err := time.Parse("2006-01-02", startDate); err == nil {
+			query = query.Where("created_at >= ?", startDateParsed)
+		}
+	}
+	if endDate != "" {
+		if endDateParsed, err := time.Parse("2006-01-02", endDate); err == nil {
+			endDateParsed = endDateParsed.Add(23*time.Hour + 59*time.Minute + 59*time.Second)
+			query = query.Where("created_at <= ?", endDateParsed)
+		}
+	}
+
+	err := query.Count(&count).Error
+	if err != nil {
+		return 0, err
+	}
+	return int(count), nil
+}
+
+func (r *tokenLedgerRepository) CountTokenByType(ctx context.Context, tx *gorm.DB, sourceType string, startDate string, endDate string) (int, error) {
+	if tx == nil {
+		tx = r.db
+	}
+	var count int64
+	query := tx.WithContext(ctx).Model(&entity.TokenLedger{}).Where("source_type = ?", sourceType)
+
+	if startDate != "" {
+		if startDateParsed, err := time.Parse("2006-01-02", startDate); err == nil {
+			query = query.Where("created_at >= ?", startDateParsed)
+		}
+	}
+	if endDate != "" {
+		if endDateParsed, err := time.Parse("2006-01-02", endDate); err == nil {
+			endDateParsed = endDateParsed.Add(23*time.Hour + 59*time.Minute + 59*time.Second)
+			query = query.Where("created_at <= ?", endDateParsed)
+		}
+	}
+
+	err := query.Count(&count).Error
+	if err != nil {
+		return 0, err
+	}
+	return int(count), nil
 }

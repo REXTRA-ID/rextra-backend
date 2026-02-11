@@ -22,3 +22,8 @@ type CustomPricingTierDTORequest struct {
 	ToToken     int     `json:"to_token" binding:"required,gte=1"`
 	DiscountPct float64 `json:"discount_pct" binding:"required,gte=0,lte=100"`
 }
+
+type KPIDTORequest struct {
+	StartDate string `json:"start_date" binding:"required"`
+	EndDate   string `json:"end_date" binding:"required"`
+}

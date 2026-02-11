@@ -85,4 +85,24 @@ type (
 		BalanceAfter  int64     `json:"balance_after"`
 		CreatedAt     time.Time `json:"created_at"`
 	}
+
+	KPI struct {
+		Value      int64   `json:"value"`
+		Label      string  `json:"label"`
+		Percentage float64 `json:"percentage"`
+	}
+
+	TokenKPIOverviewDTOResponse struct {
+		TokenIn              KPI `json:"token_in"`
+		TokenOut             KPI `json:"token_out"`
+		Netflow              KPI `json:"netflow"`
+		TopupSuccess         KPI `json:"topup_success"`
+		MembershipAllocation KPI `json:"membership_allocation"`
+		TokenUsage           KPI `json:"token_usage"`
+	}
+
+	TokenGraphActivityDTOResponse struct {
+		Time  time.Time `json:"time"`
+		Value int64     `json:"value"`
+	}
 )
