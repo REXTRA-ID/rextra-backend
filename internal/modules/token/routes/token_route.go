@@ -45,5 +45,7 @@ func ServeToken(
 		routes.GET("/ledger/activity", tokenLedgerController.GetActivity)
 
 		routes.GET("/summary/kpi", summaryController.GetKPI)
+		routes.GET("/summary/trend/q", summaryController.GetTrendBySourceType)
+		routes.GET("/summary/trend/direction", summaryController.GetTrendDirection)
 	}
 }

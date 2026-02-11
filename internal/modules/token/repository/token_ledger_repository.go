@@ -15,6 +15,12 @@ type TokenLedgerFilter struct {
 	EndDate    *string
 }
 
+type TrendQueryResult struct {
+	Date      time.Time
+	Direction entity.TokenDirection
+	Amount    int
+}
+
 type (
 	TokenLedgerRepository interface {
 		Create(ctx context.Context, tx *gorm.DB, ledger entity.TokenLedger) (entity.TokenLedger, error)
@@ -30,6 +36,8 @@ type (
 		GetAllActivity(ctx context.Context, tx *gorm.DB, filter TokenLedgerFilter, limit int, offset int, preloads ...string) ([]entity.TokenLedger, int64, error)
 		CountTokenByDirection(ctx context.Context, tx *gorm.DB, direction string, startDate string, endDate string) (int, error)
 		CountTokenByType(ctx context.Context, tx *gorm.DB, sourceType string, startDate string, endDate string) (int, error)
+		TrendByDirection(ctx context.Context, tx *gorm.DB, startDate string, endDate string) ([]TrendQueryResult, error)
+		TrendBySourceType(ctx context.Context, tx *gorm.DB, sourceType string, startDate string, endDate string) ([]TrendQueryResult, error)
 	}
 
 	tokenLedgerRepository struct {
@@ -207,4 +215,46 @@ func (r *tokenLedgerRepository) CountTokenByType(ctx context.Context, tx *gorm.D
 		return 0, err
 	}
 	return int(count), nil
+}
+
+func (r *tokenLedgerRepository) TrendByDirection(ctx context.Context, tx *gorm.DB, startDate string, endDate string) ([]TrendQueryResult, error) {
+	if tx == nil {
+		tx = r.db
+	}
+
+	var results []TrendQueryResult
+
+	query := tx.WithContext(ctx).
+		Model(&entity.TokenLedger{}).
+		Select("DATE(occurred_at) as date, direction, SUM(amount) as amount").
+		Where("occurred_at BETWEEN ? AND ?", startDate, endDate).
+		Group("date, direction").
+		Order("date ASC")
+
+	if err := query.Scan(&results).Error; err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+func (r *tokenLedgerRepository) TrendBySourceType(ctx context.Context, tx *gorm.DB, sourceType string, startDate string, endDate string) ([]TrendQueryResult, error) {
+	if tx == nil {
+		tx = r.db
+	}
+
+	var results []TrendQueryResult
+
+	query := tx.WithContext(ctx).
+		Model(&entity.TokenLedger{}).
+		Select("DATE(occurred_at) as date, SUM(amount) as amount").
+		Where("source_type = ? AND occurred_at BETWEEN ? AND ?", sourceType, startDate, endDate).
+		Group("date").
+		Order("date ASC")
+
+	if err := query.Scan(&results).Error; err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }

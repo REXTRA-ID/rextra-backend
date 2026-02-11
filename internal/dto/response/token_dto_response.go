@@ -101,8 +101,22 @@ type (
 		TokenUsage           KPI `json:"token_usage"`
 	}
 
-	TokenGraphActivityDTOResponse struct {
-		Time  time.Time `json:"time"`
-		Value int64     `json:"value"`
+	TokenTrendByDirectionDTOResponse struct {
+		Date     time.Time `json:"date"`
+		TokenIn  int       `json:"token_in"`
+		TokenOut int       `json:"token_out"`
+		Amount   int       `json:"amount"`
 	}
 )
+
+type TokenTrendSummaryDTOResponse struct {
+	Date     string `json:"date"`
+	TokenIn  int    `json:"token_in"`
+	TokenOut int    `json:"token_out"`
+	Net      int    `json:"net"`
+}
+
+type TokenSourceTrendDTOResponse struct {
+	Date  string `json:"date"`
+	Value int    `json:"value"`
+}

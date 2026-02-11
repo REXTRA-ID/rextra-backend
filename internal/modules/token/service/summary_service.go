@@ -7,6 +7,7 @@ import (
 	dto_response "rextra-backend/internal/dto/response"
 	"rextra-backend/internal/entity"
 	"rextra-backend/internal/modules/token/repository"
+	myerror "rextra-backend/internal/pkg/error"
 
 	"golang.org/x/sync/errgroup"
 	"gorm.io/gorm"
@@ -21,6 +22,8 @@ const (
 type (
 	TokenSummaryService interface {
 		GetKPISummary(ctx context.Context, startDate, endDate string) (dto_response.TokenKPIOverviewDTOResponse, error)
+		GetGraphTrendByDirection(ctx context.Context, startDate, endDate string) ([]dto_response.TokenTrendSummaryDTOResponse, error)
+		GetGraphTrendBySourceType(ctx context.Context, sourceType entity.TokenSourceType, startDate, endDate string) ([]dto_response.TokenSourceTrendDTOResponse, error)
 	}
 
 	tokenSummaryService struct {
@@ -63,6 +66,64 @@ func (s *tokenSummaryService) GetKPISummary(ctx context.Context, startDate, endD
 
 	return s.buildKPIResponse(metrics), nil
 }
+func (s *tokenSummaryService) GetGraphTrendByDirection(ctx context.Context, startDate, endDate string) ([]dto_response.TokenTrendSummaryDTOResponse, error) {
+	results, err := s.tokenLedgerRepo.TrendByDirection(ctx, nil, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	summaryMap := make(map[string]*dto_response.TokenTrendSummaryDTOResponse)
+	var dates []string
+
+	for _, res := range results {
+		dateStr := res.Date.Format("2006-01-02")
+		summary, exists := summaryMap[dateStr]
+		if !exists {
+			summary = &dto_response.TokenTrendSummaryDTOResponse{Date: dateStr}
+			summaryMap[dateStr] = summary
+			dates = append(dates, dateStr)
+		}
+
+		if res.Direction == entity.DirectionIN {
+			summary.TokenIn += res.Amount
+		} else if res.Direction == entity.DirectionOUT {
+			summary.TokenOut += res.Amount
+		}
+	}
+
+	var finalSummary []dto_response.TokenTrendSummaryDTOResponse
+	for _, dateStr := range dates {
+		summary := summaryMap[dateStr]
+		summary.Net = summary.TokenIn - summary.TokenOut
+		finalSummary = append(finalSummary, *summary)
+	}
+
+	return finalSummary, nil
+}
+
+func (s *tokenSummaryService) GetGraphTrendBySourceType(ctx context.Context, sourceType entity.TokenSourceType, startDate, endDate string) ([]dto_response.TokenSourceTrendDTOResponse, error) {
+	if !sourceType.IsValid() {
+		return nil, myerror.New("Invalid Source type", myerror.Error_InvalidRequest)
+	}
+
+	results, err := s.tokenLedgerRepo.TrendBySourceType(ctx, nil, string(sourceType), startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	var graph []dto_response.TokenSourceTrendDTOResponse
+	for _, res := range results {
+		dateStr := res.Date.Format("2006-01-02")
+		graph = append(graph, dto_response.TokenSourceTrendDTOResponse{
+			Date:  dateStr,
+			Value: res.Amount,
+		})
+	}
+
+	return graph, nil
+}
+
+// ===== HELPER FUNCTIONS ======== //
 
 // fetchAllMetrics retrieves all KPI metrics concurrently for both periods
 func (s *tokenSummaryService) fetchAllMetrics(ctx context.Context, startDate, endDate, prevStartDate, prevEndDate string) (periodMetrics, error) {

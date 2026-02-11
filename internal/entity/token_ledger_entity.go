@@ -28,6 +28,15 @@ const (
 	SourceTypeExpired    TokenSourceType = "EXPIRED"
 )
 
+// IsValid checks if the token source type is valid
+func (t TokenSourceType) IsValid() bool {
+	switch t {
+	case SourceTypeTopup, SourceTypeMembership, SourceTypeUsage, SourceTypeAdjustment, SourceTypeRefund, SourceTypeExpired:
+		return true
+	}
+	return false
+}
+
 // TokenLedgerMetadata for JSONB field
 type TokenLedgerMetadata map[string]any
 
