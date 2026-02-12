@@ -30,22 +30,22 @@ func ServeToken(
 
 	routes.Use(middleware.Authenticate(), middleware.OnlyAdmin())
 	{
-		routes.POST("/bundle", tokenBundleController.Create)
-		routes.PUT("/bundle/:id", tokenBundleController.Update)
-		routes.DELETE("/bundle/:id", tokenBundleController.Delete)
+		routes.POST("/admin/bundle", tokenBundleController.Create)
+		routes.PUT("/admin/bundle/:id", tokenBundleController.Update)
+		routes.DELETE("/admin/bundle/:id", tokenBundleController.Delete)
 
-		routes.GET("/custom-pricing", customPricingController.GetCurrent)
-		routes.GET("/custom-pricing/history", customPricingController.GetHistory)
-		routes.POST("/custom-pricing/toggle-active", customPricingController.ToggleActive)
-		routes.POST("/custom-pricing", customPricingController.CreateNewVersion)
+		routes.GET("/admin/custom-pricing", customPricingController.GetCurrent)
+		routes.GET("/admin/custom-pricing/history", customPricingController.GetHistory)
+		routes.POST("/admin/custom-pricing/toggle-active", customPricingController.ToggleActive)
+		routes.POST("/admin/custom-pricing", customPricingController.CreateNewVersion)
 
-		routes.GET("/topup-transactions", topupTransactionsController.GetAll)
-		routes.GET("/topup-transactions/:id", topupTransactionsController.GetById)
+		routes.GET("/admin/topup-transactions", topupTransactionsController.GetAll)
+		routes.GET("/admin/topup-transactions/:id", topupTransactionsController.GetById)
 
-		routes.GET("/ledger/activity", tokenLedgerController.GetActivity)
+		routes.GET("/admin/ledger/activity", tokenLedgerController.GetActivity)
 
-		routes.GET("/summary/kpi", summaryController.GetKPI)
-		routes.GET("/summary/trend/q", summaryController.GetTrendBySourceType)
-		routes.GET("/summary/trend/direction", summaryController.GetTrendDirection)
+		routes.GET("/admin/summary/kpi", summaryController.GetKPI)
+		routes.GET("/admin/summary/trend/q", summaryController.GetTrendBySourceType)
+		routes.GET("/admin/summary/trend/direction", summaryController.GetTrendDirection)
 	}
 }
