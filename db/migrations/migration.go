@@ -38,6 +38,12 @@ func Migrate(db *gorm.DB) error {
 		&entity.CareerRecommendation{},
 		// &entity.UserIkigai{},
 		// &entity.UserRiasec{},
+		&entity.TokenBundlePackage{},
+		&entity.TokenLedger{},
+		&entity.TokenWallet{},
+		&entity.TopupTransaction{},
+		&entity.CustomPricingTier{},
+		&entity.CustomPricingConfig{},
 	); err != nil {
 		return err
 	}

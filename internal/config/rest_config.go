@@ -9,6 +9,8 @@ import (
 	auth "rextra-backend/internal/modules/auth"
 	kenalidiri "rextra-backend/internal/modules/kenali_diri"
 	persona "rextra-backend/internal/modules/persona"
+	token "rextra-backend/internal/modules/token"
+
 	"rextra-backend/internal/pkg/cache"
 	"rextra-backend/internal/pkg/export"
 	myfirebase "rextra-backend/internal/pkg/firebase"
@@ -44,6 +46,7 @@ func NewRest() RestConfig {
 	auth.InitModule(server, db, middleware)
 	persona.InitModule(server, db, middleware)
 	kenalidiri.InitModule(server, db, middleware, cacheService, exportService)
+	token.InitModule(server, db, middleware)
 
 	return RestConfig{
 		server:       server,
