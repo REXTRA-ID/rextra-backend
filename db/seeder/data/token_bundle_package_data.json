@@ -1,0 +1,34 @@
+[
+  {
+    "name": "Starter 50 Token",
+    "token_amount": 50,
+    "price_rp": 25000,
+    "label": "Popular",
+    "display_order": 1,
+    "is_active": true
+  },
+  {
+    "name": "Hemat 120 Token",
+    "token_amount": 120,
+    "price_rp": 50000,
+    "label": "Best Value",
+    "display_order": 2,
+    "is_active": true
+  },
+  {
+    "name": "Pro 250 Token",
+    "token_amount": 250,
+    "price_rp": 95000,
+    "label": null,
+    "display_order": 3,
+    "is_active": true
+  },
+  {
+    "name": "Ultra 500 Token",
+    "token_amount": 500,
+    "price_rp": 175000,
+    "label": "Best Deal",
+    "display_order": 4,
+    "is_active": true
+  }
+]
