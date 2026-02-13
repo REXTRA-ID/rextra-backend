@@ -11,11 +11,9 @@ import (
 	mylog "rextra-backend/internal/pkg/logger"
 )
 
-// SeederKenaliDiri seeds core Kenali Diri data to simplify endpoint testing.
 func SeederKenaliDiri(db *gorm.DB) error {
 	mylog.Infof("[PROCESS] Seeding Kenali Diri fixtures...")
 	return db.Transaction(func(tx *gorm.DB) error {
-		// Clean dependent tables to keep IDs stable for tests.
 		tables := []string{
 			"careerprofile_feedback_expert_obstacles",
 			"careerprofile_feedback_obstacles",
@@ -36,7 +34,6 @@ func SeederKenaliDiri(db *gorm.DB) error {
 			}
 		}
 
-		// get user ID where email is "user@example.com"
 		var user entity.User
 		if err := tx.Where("email = ?", "user@email.com").First(&user).Error; err != nil {
 			return err

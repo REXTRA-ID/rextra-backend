@@ -163,7 +163,6 @@ func (s *kenalidiriAdminService) DeleteTestData(ctx context.Context, req dto_req
 	}
 
 	for _, id := range req.TestIDs {
-		// Manually delete related data to ensure data integrity, even if DB cascade is enabled.
 		relatedDeletes := []struct {
 			table interface{}
 		}{
@@ -175,14 +174,19 @@ func (s *kenalidiriAdminService) DeleteTestData(ctx context.Context, req dto_req
 			{table: &entity.IkigaiDimensionScore{}},
 			{table: &entity.IkigaiTotalScore{}},
 			{table: &entity.CareerRecommendation{}},
-			{table: &entity.UserCareerProfile{}},
-		}
+	}
 
 		for _, d := range relatedDeletes {
 			if err := tx.WithContext(ctx).Where("test_session_id = ?", id).Delete(d.table).Error; err != nil {
 				tx.Rollback()
 				return err
 			}
+		}
+
+		// Delete UserCareerProfile separately using active_session_id
+		if err := tx.WithContext(ctx).Where("active_session_id = ?", id).Delete(&entity.UserCareerProfile{}).Error; err != nil {
+			tx.Rollback()
+			return err
 		}
 	}
 
@@ -465,7 +469,7 @@ func buildRecommendations(total entity.IkigaiTotalScore) []dto_response.Recommen
 			MatchPercentage: p.MatchPercentage,
 			MatchReasoning:  p.Reasoning,
 		})
-		if idx == 1 { // Limit to top 2 recommendations
+		if idx == 1 {
 			break
 		}
 	}

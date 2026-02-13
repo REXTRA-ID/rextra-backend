@@ -73,7 +73,6 @@ func SeedFeedbackData(db *gorm.DB) error {
 	}
 
 	return db.Transaction(func(tx *gorm.DB) error {
-		// Seed Students
 		for _, s := range data.Students {
 			// Create user if not exists
 			var user entity.User

@@ -1,13 +1,11 @@
 package controller
 
 import (
-	"net/http"
-	"strconv"
-
 	dto_request "rextra-backend/internal/dto/request"
 	"rextra-backend/internal/modules/kenali_diri/service"
 	myerror "rextra-backend/internal/pkg/error"
 	"rextra-backend/internal/pkg/response"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -76,7 +74,7 @@ func (c *kenalidiriAdminController) DeleteTestData(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	response.NewSuccess("success delete test data", nil).Send(ctx)
 }
 
 func (c *kenalidiriAdminController) ExportTestHistory(ctx *gin.Context) {

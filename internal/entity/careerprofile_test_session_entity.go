@@ -6,7 +6,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// Test goal types
 type TestGoal string
 
 const (

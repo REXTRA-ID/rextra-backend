@@ -26,7 +26,7 @@ func Migrate(db *gorm.DB) error {
 		// &entity.Riasec{},
 		&entity.RiasecCode{},
 		&entity.CareerProfileTestSession{},
-		&entity.UserCareerProfile{}, // NEW: User active profile pointer
+		&entity.UserCareerProfile{}, 
 		&entity.RiasecQuestionSet{},
 		&entity.RiasecResponse{},
 		&entity.RiasecResult{},

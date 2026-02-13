@@ -1,6 +1,5 @@
 package dto_request
 
-// GetTestHistoryRequest carries filters and pagination for admin test history list.
 type GetTestHistoryRequest struct {
 	Page        int    `form:"page" json:"page" binding:"omitempty,min=1"`
 	Limit       int    `form:"limit" json:"limit" binding:"omitempty,min=1,max=100"`
@@ -13,7 +12,6 @@ type GetTestHistoryRequest struct {
 	SortBy      string `form:"sort_by" json:"sort_by" binding:"omitempty,oneof=name_asc name_desc date_asc date_desc"`
 }
 
-// ExportTestHistoryRequest wraps filters for exporting test history.
 type ExportTestHistoryRequest struct {
 	TestGoal    string `form:"test_goal" json:"test_goal"`
 	PersonaType string `form:"persona_type" json:"persona_type"`
@@ -23,12 +21,10 @@ type ExportTestHistoryRequest struct {
 	Format      string `form:"format" json:"format" binding:"required,oneof=csv excel pdf"`
 }
 
-// DeleteTestDataRequest supports single or bulk deletion by test IDs.
 type DeleteTestDataRequest struct {
 	TestIDs []int64 `json:"test_ids" binding:"required,min=1,dive,required"`
 }
 
-// UpdateRiasecCodeRequest carries payload to update master data.
 type UpdateRiasecCodeRequest struct {
 	RiasecTitle       string   `json:"riasec_title" binding:"required"`
 	RiasecDescription string   `json:"riasec_description" binding:"required"`
@@ -39,7 +35,6 @@ type UpdateRiasecCodeRequest struct {
 	InteractionStyles []string `json:"interaction_styles" binding:"required,min=1,dive,required"`
 }
 
-// GetRiasecCodeListRequest filters RIASEC master data.
 type GetRiasecCodeListRequest struct {
 	CodeType string `form:"code_type" json:"code_type" binding:"omitempty,oneof=single dual triple"`
 	Search   string `form:"search" json:"search"`

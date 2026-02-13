@@ -458,9 +458,6 @@ func (r *careerProfileFeedbackRepository) GetExpertFeedbackDetail(ctx context.Co
 	return res, nil
 }
 func (r *careerProfileFeedbackRepository) GetFeedbackMetadata(ctx context.Context) (*dto_res.CareerProfileFeedbackMetadataResponse, error) {
-	// For now, these are static as per brief.
-	// In the future, test_categories could come from DB.
-
 	res := &dto_res.CareerProfileFeedbackMetadataResponse{
 		TestCategories: []dto_res.LabelValue{
 			{Label: "Tes Profil Karier", Value: feedback.TestCategoryCareerProfile},

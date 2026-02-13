@@ -24,7 +24,6 @@ func SeedExpertObstacleOptions(db *gorm.DB) error {
 		return nil
 	}
 
-	// Read data from JSON file
 	dataPath := filepath.Join("db", "seeder", "data", "expert_obstacles.json")
 	fileData, err := os.ReadFile(dataPath)
 	if err != nil {
