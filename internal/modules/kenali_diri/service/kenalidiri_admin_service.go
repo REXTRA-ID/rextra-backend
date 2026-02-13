@@ -4,9 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -37,10 +35,6 @@ type (
 		DeleteTestData(ctx context.Context, req dto_request.DeleteTestDataRequest) error
 		ExportTestHistory(ctx context.Context, req dto_request.ExportTestHistoryRequest) (dto_response.ExportFileResponse, error)
 		GetTestDetail(ctx context.Context, historyID int64) (dto_response.TestDetailResponse, error)
-		GetStudentFeedbackList(ctx context.Context, req dto_request.GetFeedbackListRequest) (dto_response.FeedbackListResponse, error)
-		GetStudentFeedbackStats(ctx context.Context, categoryID *int64, timeRange string) (dto_response.FeedbackStatsResponse, error)
-		GetExpertFeedbackList(ctx context.Context, req dto_request.GetExpertFeedbackListRequest) (dto_response.ExpertFeedbackListResponse, error)
-		GetExpertFeedbackDetail(ctx context.Context, feedbackID int64) (dto_response.ExpertFeedbackDetailResponse, error)
 		GetRiasecCodeList(ctx context.Context, req dto_request.GetRiasecCodeListRequest) (dto_response.RiasecCodeListResponse, error)
 		GetRiasecCodeDetail(ctx context.Context, codeID int64) (dto_response.RiasecCodeDetailResponse, error)
 		UpdateRiasecCode(ctx context.Context, codeID int64, req dto_request.UpdateRiasecCodeRequest) error
@@ -54,7 +48,6 @@ type (
 		riasecRepo         repository.RiasecRepository
 		ikigaiRepo         repository.IkigaiRepository
 		recommendationRepo repository.RecommendationRepository
-		feedbackRepo       repository.FeedbackRepository
 		exportService      export.ExportService
 		cache              cache.CacheService
 		db                 *gorm.DB
@@ -69,7 +62,6 @@ func NewKenalidiriAdmin(
 	riasecRepo repository.RiasecRepository,
 	ikigaiRepo repository.IkigaiRepository,
 	recommendationRepo repository.RecommendationRepository,
-	feedbackRepo repository.FeedbackRepository,
 	exportService export.ExportService,
 	cacheSvc cache.CacheService,
 	db *gorm.DB,
@@ -82,7 +74,6 @@ func NewKenalidiriAdmin(
 		riasecRepo:         riasecRepo,
 		ikigaiRepo:         ikigaiRepo,
 		recommendationRepo: recommendationRepo,
-		feedbackRepo:       feedbackRepo,
 		exportService:      exportService,
 		cache:              cacheSvc,
 		db:                 db,
@@ -137,7 +128,7 @@ func (s *kenalidiriAdminService) GetTestHistory(ctx context.Context, req dto_req
 		}
 
 		item := dto_response.TestHistoryItem{
-			TestID:         fmt.Sprintf("PK%d", sess.ID),
+			TestID:         sess.ID,
 			UserName:       sess.User.Fullname,
 			TestGoal:       string(sess.TestGoal),
 			PersonaType:    sess.PersonaType,
@@ -250,7 +241,7 @@ func (s *kenalidiriAdminService) ExportTestHistory(ctx context.Context, req dto_
 		}
 
 		record := map[string]interface{}{
-			"ID Tes":         fmt.Sprintf("PK%d", sess.ID),
+			"ID Tes":         sess.ID,
 			"Nama Pengguna":  sess.User.Fullname,
 			"Email":          sess.User.Email,
 			"Tujuan Tes":     string(sess.TestGoal),
@@ -311,7 +302,7 @@ func (s *kenalidiriAdminService) GetTestDetail(ctx context.Context, sessionID in
 	}
 
 	resp := dto_response.TestDetailResponse{
-		TestID:      fmt.Sprintf("PK%d", sess.ID),
+		TestID:      sess.ID,
 		UserName:    sess.User.Fullname,
 		TestGoal:    string(sess.TestGoal),
 		PersonaType: sess.PersonaType,
@@ -348,185 +339,6 @@ func (s *kenalidiriAdminService) GetTestDetail(ctx context.Context, sessionID in
 	}
 
 	return resp, nil
-}
-
-func (s *kenalidiriAdminService) GetStudentFeedbackList(ctx context.Context, req dto_request.GetFeedbackListRequest) (dto_response.FeedbackListResponse, error) {
-	page := req.Page
-	limit := req.Limit
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 {
-		limit = 10
-	}
-
-	filters := repository.StudentFeedbackFilters{
-		CategoryID:   req.CategoryID,
-		UserName:     req.UserName,
-		HasObstacles: req.HasObstacles,
-		SortBy:       req.SortBy,
-		Limit:        limit,
-		Offset:       (page - 1) * limit,
-	}
-
-	data, total, err := s.feedbackRepo.ListStudentFeedback(ctx, nil, filters)
-	if err != nil {
-		return dto_response.FeedbackListResponse{}, wrapNotFound(err, "student feedback")
-	}
-
-	items := make([]dto_response.FeedbackItem, 0, len(data))
-	for _, fb := range data {
-		item := dto_response.FeedbackItem{
-			ID:                fb.ID,
-			UserName:          fb.User.Fullname,
-			EaseOfUseScore:    fb.EaseOfUseScore,
-			RelevanceScore:    fb.RelevanceScore,
-			SatisfactionScore: fb.SatisfactionScore,
-			SubmittedAt:       fb.SubmittedAt.Format(timeFormatDisplay),
-			Obstacles:         decodeStringArray(fb.Obstacles),
-		}
-		items = append(items, item)
-	}
-
-	meta := utils.CalculatePaginationMeta(page, limit, total)
-	return dto_response.FeedbackListResponse{
-		Data: items,
-		Pagination: dto_response.PaginationMeta{
-			CurrentPage:  meta.CurrentPage,
-			TotalPages:   meta.TotalPages,
-			TotalRecords: meta.TotalRecords,
-			PerPage:      meta.PerPage,
-		},
-	}, nil
-}
-
-func (s *kenalidiriAdminService) GetStudentFeedbackStats(ctx context.Context, categoryID *int64, timeRange string) (dto_response.FeedbackStatsResponse, error) {
-	normalizedRange := normalizeTimeRange(timeRange)
-	start := calculateStatsStart(normalizedRange)
-	filters := repository.StudentFeedbackFilters{
-		CategoryID: categoryID,
-		StartDate:  start,
-		TimeRange:  normalizedRange,
-	}
-
-	stats, err := s.feedbackRepo.GetStudentFeedbackStats(ctx, nil, filters)
-	if err != nil {
-		return dto_response.FeedbackStatsResponse{}, wrapNotFound(err, "student feedback stats")
-	}
-
-	labels, testCounts, feedbackCounts := buildTrendSeries(stats.BucketGranularity, stats.TrendTests, stats.TrendFeedback)
-	scoreDistribution := dto_response.ScoreDistributionSet{
-		EaseOfUse:    convertScoreDistribution(stats.ScoreEase, stats.TotalFeedback),
-		Relevance:    convertScoreDistribution(stats.ScoreRelevance, stats.TotalFeedback),
-		Satisfaction: convertScoreDistribution(stats.ScoreSatisfaction, stats.TotalFeedback),
-	}
-	obstacleSummary := dto_response.ObstacleSummary{
-		WithObstacles:    int(stats.WithObstacles),
-		WithoutObstacles: int(stats.WithoutObstacles),
-	}
-	obstacleDistribution := convertObstacleDistribution(stats.ObstacleBreakdown, stats.TotalFeedback)
-	sentimentComposition := convertSentimentComposition(stats.SentimentScores, stats.TotalFeedback)
-	responseInfo := buildResponseInfo(stats.ResponseTotals)
-	participationRate := responseInfo.ResponseRate
-
-	return dto_response.FeedbackStatsResponse{
-		TotalFeedback:     int(stats.TotalFeedback),
-		AvgEaseOfUse:      stats.AvgEaseOfUse,
-		AvgRelevance:      stats.AvgRelevance,
-		AvgSatisfaction:   stats.AvgSatisfaction,
-		ParticipationRate: participationRate,
-		TrendData: dto_response.TrendChartData{
-			Labels:         labels,
-			TestCounts:     testCounts,
-			FeedbackCounts: feedbackCounts,
-		},
-		ScoreDistribution:    scoreDistribution,
-		ObstacleSummary:      obstacleSummary,
-		ObstacleDistribution: obstacleDistribution,
-		SentimentComposition: sentimentComposition,
-		ResponseRateInfo:     responseInfo,
-	}, nil
-}
-
-func (s *kenalidiriAdminService) GetExpertFeedbackList(ctx context.Context, req dto_request.GetExpertFeedbackListRequest) (dto_response.ExpertFeedbackListResponse, error) {
-	page := req.Page
-	limit := req.Limit
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 {
-		limit = 10
-	}
-
-	filters := repository.ExpertFeedbackFilters{
-		CategoryID: req.CategoryID,
-		ExpertName: req.ExpertName,
-		TopNStatus: req.TopNStatus,
-		SortBy:     req.SortBy,
-		Limit:      limit,
-		Offset:     (page - 1) * limit,
-	}
-
-	data, total, err := s.feedbackRepo.ListExpertFeedback(ctx, nil, filters)
-	if err != nil {
-		return dto_response.ExpertFeedbackListResponse{}, wrapNotFound(err, "expert feedback")
-	}
-
-	items := make([]dto_response.ExpertFeedbackItem, 0, len(data))
-	for _, fb := range data {
-		topN := deriveTopNStatusFromJSON(fb.TopFiveProfessions, fb.Profession)
-		item := dto_response.ExpertFeedbackItem{
-			ID:            fb.ID,
-			ExpertName:    fb.ExpertName,
-			Profession:    fb.Profession,
-			TopNStatus:    topN,
-			AccuracyScore: fb.AccuracyScore,
-			LogicScore:    fb.LogicScore,
-			BenefitScore:  fb.BenefitScore,
-			SubmittedAt:   fb.SubmittedAt.Format(timeFormatDisplay),
-			Obstacles:     decodeStringArray(fb.Obstacles),
-		}
-		items = append(items, item)
-	}
-
-	meta := utils.CalculatePaginationMeta(page, limit, total)
-	return dto_response.ExpertFeedbackListResponse{
-		Data: items,
-		Pagination: dto_response.PaginationMeta{
-			CurrentPage:  meta.CurrentPage,
-			TotalPages:   meta.TotalPages,
-			TotalRecords: meta.TotalRecords,
-			PerPage:      meta.PerPage,
-		},
-	}, nil
-}
-
-func (s *kenalidiriAdminService) GetExpertFeedbackDetail(ctx context.Context, feedbackID int64) (dto_response.ExpertFeedbackDetailResponse, error) {
-	fb, err := s.feedbackRepo.GetExpertFeedbackByID(ctx, nil, feedbackID)
-	if err != nil {
-		return dto_response.ExpertFeedbackDetailResponse{}, wrapNotFound(err, "expert feedback")
-	}
-
-	topN := deriveTopNStatusFromJSON(fb.TopFiveProfessions, fb.Profession)
-	return dto_response.ExpertFeedbackDetailResponse{
-		ID:                 fb.ID,
-		ExpertName:         fb.ExpertName,
-		Profession:         fb.Profession,
-		Degree:             fb.Degree,
-		Experience:         fb.Experience,
-		Education:          fb.Education,
-		University:         fb.University,
-		StudyProgram:       fb.StudyProgram,
-		CategoryTest:       fb.CategoryTest,
-		TopFiveProfessions: decodeStringArray(fb.TopFiveProfessions),
-		TopNStatus:         topN,
-		AccuracyScore:      fb.AccuracyScore,
-		LogicScore:         fb.LogicScore,
-		BenefitScore:       fb.BenefitScore,
-		Obstacles:          decodeStringArray(fb.Obstacles),
-		Suggestions:        derefString(fb.Suggestions),
-		SubmittedAt:        fb.SubmittedAt.Format(timeFormatDisplay),
-	}, nil
 }
 
 func (s *kenalidiriAdminService) GetRiasecCodeList(ctx context.Context, req dto_request.GetRiasecCodeListRequest) (dto_response.RiasecCodeListResponse, error) {
@@ -828,169 +640,4 @@ func sanitizeSheetBaseName(name, fallback string) string {
 	}
 
 	return trimmed
-}
-
-func normalizeTimeRange(value string) string {
-	switch strings.ToLower(value) {
-	case "bulanan":
-		return "bulanan"
-	case "sepanjang_waktu":
-		return "sepanjang_waktu"
-	default:
-		return "mingguan"
-	}
-}
-
-func calculateStatsStart(timeRange string) *time.Time {
-	now := time.Now().UTC().Truncate(24 * time.Hour)
-	var start time.Time
-
-	switch timeRange {
-	case "bulanan":
-		start = now.AddDate(0, 0, -27)
-		return &start
-	case "sepanjang_waktu":
-		return nil
-	default:
-		start = now.AddDate(0, 0, -6)
-		return &start
-	}
-}
-
-func buildTrendSeries(bucket string, tests, feedback []repository.TimeBucketCount) ([]string, []int, []int) {
-	bucketMap := make(map[int64]time.Time)
-	for _, b := range tests {
-		bucketMap[b.Bucket.Unix()] = b.Bucket
-	}
-	for _, b := range feedback {
-		bucketMap[b.Bucket.Unix()] = b.Bucket
-	}
-
-	if len(bucketMap) == 0 {
-		return []string{}, []int{}, []int{}
-	}
-
-	keys := make([]int64, 0, len(bucketMap))
-	for k := range bucketMap {
-		keys = append(keys, k)
-	}
-	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
-
-	testMap := make(map[int64]int64)
-	for _, b := range tests {
-		testMap[b.Bucket.Unix()] = b.Count
-	}
-
-	feedbackMap := make(map[int64]int64)
-	for _, b := range feedback {
-		feedbackMap[b.Bucket.Unix()] = b.Count
-	}
-
-	labels := make([]string, 0, len(keys))
-	testCounts := make([]int, 0, len(keys))
-	feedbackCounts := make([]int, 0, len(keys))
-
-	for _, key := range keys {
-		labels = append(labels, formatTrendLabel(bucket, bucketMap[key]))
-		testCounts = append(testCounts, int(testMap[key]))
-		feedbackCounts = append(feedbackCounts, int(feedbackMap[key]))
-	}
-
-	return labels, testCounts, feedbackCounts
-}
-
-func formatTrendLabel(bucket string, t time.Time) string {
-	switch bucket {
-	case "week":
-		start := t
-		end := t.AddDate(0, 0, 6)
-		return fmt.Sprintf("%s-%s", start.Format("02 Jan"), end.Format("02 Jan"))
-	case "month":
-		return t.Format("Jan 2006")
-	default:
-		return t.Format("Mon, 02 Jan")
-	}
-}
-
-func convertScoreDistribution(entries []repository.ScoreCount, total int64) []dto_response.ScoreDistributionItem {
-	result := make([]dto_response.ScoreDistributionItem, 0, 7)
-	scoreMap := make(map[int]int64)
-	for _, entry := range entries {
-		scoreMap[entry.Score] = entry.Count
-	}
-
-	for score := 1; score <= 7; score++ {
-		count := scoreMap[score]
-		result = append(result, dto_response.ScoreDistributionItem{
-			Score:      score,
-			Count:      int(count),
-			Percentage: percentage(count, total),
-		})
-	}
-
-	return result
-}
-
-func convertObstacleDistribution(entries []repository.ObstacleCount, total int64) []dto_response.ObstacleDistributionItem {
-	result := make([]dto_response.ObstacleDistributionItem, 0, len(entries))
-	for _, entry := range entries {
-		result = append(result, dto_response.ObstacleDistributionItem{
-			Name:       entry.Name,
-			Count:      int(entry.Count),
-			Percentage: percentage(entry.Count, total),
-		})
-	}
-
-	return result
-}
-
-func convertSentimentComposition(data map[string]repository.SentimentCount, total int64) []dto_response.SentimentCompositionItem {
-	metrics := []struct {
-		Key   string
-		Label string
-	}{
-		{Key: "ease_of_use", Label: "Kemudahan Tes"},
-		{Key: "relevance", Label: "Relevansi Rekomendasi"},
-		{Key: "satisfaction", Label: "Kepuasan Fitur"},
-	}
-
-	result := make([]dto_response.SentimentCompositionItem, 0, len(metrics))
-	for _, metric := range metrics {
-		count := data[metric.Key]
-		result = append(result, dto_response.SentimentCompositionItem{
-			Metric:   metric.Label,
-			Negative: percentage(count.Negative, total),
-			Neutral:  percentage(count.Neutral, total),
-			Positive: percentage(count.Positive, total),
-		})
-	}
-
-	return result
-}
-
-func buildResponseInfo(totals repository.ResponseRateTotals) dto_response.ResponseRateInfo {
-	notFilled := totals.CompletedTests - totals.FeedbackCount
-	if notFilled < 0 {
-		notFilled = 0
-	}
-
-	rate := 0.0
-	if totals.CompletedTests > 0 {
-		rate = math.Round((float64(totals.FeedbackCount)/float64(totals.CompletedTests))*100*100) / 100
-	}
-
-	return dto_response.ResponseRateInfo{
-		FeedbackCount:  int(totals.FeedbackCount),
-		CompletedTests: int(totals.CompletedTests),
-		NotFilled:      int(notFilled),
-		ResponseRate:   rate,
-	}
-}
-
-func percentage(part, total int64) float64 {
-	if total <= 0 {
-		return 0
-	}
-
-	return math.Round((float64(part)/float64(total))*100*100) / 100
 }

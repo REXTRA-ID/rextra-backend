@@ -16,6 +16,7 @@ type CareerProfileFeedbackController interface {
 	GetExpertFeedbacks(ctx *gin.Context)
 	GetExpertFeedbackDetail(ctx *gin.Context)
 	GetFeedbackMetadata(ctx *gin.Context)
+	GetStudentFeedbackStats(ctx *gin.Context)
 }
 
 type careerProfileFeedbackController struct {
@@ -81,4 +82,21 @@ func (c *careerProfileFeedbackController) GetFeedbackMetadata(ctx *gin.Context) 
 	}
 
 	response.NewSuccess("success get feedback metadata", result).Send(ctx)
+}
+
+func (c *careerProfileFeedbackController) GetStudentFeedbackStats(ctx *gin.Context) {
+	var categoryID *int64
+	if idStr := ctx.Query("category_id"); idStr != "" {
+		if idVal, err := strconv.ParseInt(idStr, 10, 64); err == nil {
+			categoryID = &idVal
+		}
+	}
+
+	result, err := c.service.GetStudentFeedbackStats(ctx.Request.Context(), categoryID, ctx.Query("time_range"))
+	if err != nil {
+		response.NewFailed("failed get feedback stats", err).Send(ctx)
+		return
+	}
+
+	response.NewSuccess("success get feedback stats", result).Send(ctx)
 }

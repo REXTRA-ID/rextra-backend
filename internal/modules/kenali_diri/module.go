@@ -35,14 +35,13 @@ func InitModule(server *gin.Engine, db *gorm.DB, middleware middleware.Middlewar
 		kenalidiriRiasecRepository,
 		ikigaiRepository,
 		recommendationRepository,
-		feedbackRepository,
 		exportService,
 		cacheService,
 		db,
 	)
 
 	kenalidiriAdminController := controller.NewKenalidiriAdmin(kenalidiriAdminService)
-	careerProfileFeedbackService := service.NewCareerProfileFeedbackService(careerProfileFeedbackRepo)
+	careerProfileFeedbackService := service.NewCareerProfileFeedbackService(careerProfileFeedbackRepo, feedbackRepository)
 	careerProfileFeedbackController := controller.NewCareerProfileFeedbackController(careerProfileFeedbackService)
 
 	routes.ServeKenalidiriAdmin(server, kenalidiriAdminController, middleware)

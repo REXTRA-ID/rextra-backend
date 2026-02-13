@@ -13,10 +13,11 @@ func ServeCareerProfileFeedback(
 	middleware middleware.Middleware,
 ) {
 
-	r := app.Group("/api/admin/kenali-diri/feedback")
+	r := app.Group("/api/v1/admin/kenali-diri/feedback")
 	r.Use(middleware.Authenticate(), middleware.OnlyAdmin())
 	{
 		r.GET("/student", c.GetStudentFeedbacks)
+		r.GET("/student/stats", c.GetStudentFeedbackStats)
 		r.GET("/expert", c.GetExpertFeedbacks)
 		r.GET("/expert/:id", c.GetExpertFeedbackDetail)
 		r.GET("/meta", c.GetFeedbackMetadata)

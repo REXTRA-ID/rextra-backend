@@ -7,7 +7,7 @@ type (
 	}
 
 	TestHistoryItem struct {
-		TestID         string  `json:"test_id"`
+		TestID         int64   `json:"test_id"`
 		UserName       string  `json:"user_name"`
 		TestGoal       string  `json:"test_goal"`
 		PersonaType    string  `json:"persona_type"`
@@ -19,7 +19,7 @@ type (
 	}
 
 	TestDetailResponse struct {
-		TestID          string                 `json:"test_id"`
+		TestID          int64                  `json:"test_id"`
 		UserName        string                 `json:"user_name"`
 		TestGoal        string                 `json:"test_goal"`
 		PersonaType     string                 `json:"persona_type"`
