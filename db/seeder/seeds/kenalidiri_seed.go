@@ -76,7 +76,6 @@ func SeederKenaliDiri(db *gorm.DB) error {
 		}
 
 		session := entity.CareerProfileTestSession{
-			ID:                 1,
 			UserID:             userID,
 			SessionToken:       "session-kenalidiri-1",
 			PersonaType:        "pathfinder",
@@ -106,7 +105,6 @@ func SeederKenaliDiri(db *gorm.DB) error {
 		}
 
 		history := entity.KenaliDiriHistory{
-			ID:              1,
 			UserID:          userID,
 			TestCategoryID:  3,
 			DetailSessionID: session.ID,
@@ -119,7 +117,6 @@ func SeederKenaliDiri(db *gorm.DB) error {
 		}
 
 		riasecResult := entity.RiasecResult{
-			ID:                    1,
 			TestSessionID:         session.ID,
 			ScoreR:                12,
 			ScoreI:                14,
@@ -137,7 +134,6 @@ func SeederKenaliDiri(db *gorm.DB) error {
 		}
 
 		ikigaiScores := entity.IkigaiTotalScore{
-			ID:            1,
 			TestSessionID: session.ID,
 			ScoresData: mustJSON(map[string]interface{}{
 				"love_narrative":        "Kamu menikmati pemecahan masalah teknis.",
@@ -158,7 +154,6 @@ func SeederKenaliDiri(db *gorm.DB) error {
 		}
 
 		recommendation := entity.CareerRecommendation{
-			ID:            1,
 			TestSessionID: session.ID,
 			RecommendationsData: mustJSON([]map[string]interface{}{
 				{"profession_id": 101, "profession_name": "Data Analyst", "match_percentage": 92, "reasoning": "Kuat di analisis dan insight bisnis"},
@@ -177,7 +172,6 @@ func SeederKenaliDiri(db *gorm.DB) error {
 		}
 
 		studentFeedbackHeader := entity.KenaliDiriFeedback{
-			ID:               1,
 			TestCategory:     "CAREER_PROFILE",
 			TestSessionID:    session.ID,
 			RespondentType:   entity.RespondentTypeStudent,
@@ -200,7 +194,6 @@ func SeederKenaliDiri(db *gorm.DB) error {
 		}
 
 		expertFeedbackHeader := entity.KenaliDiriFeedback{
-			ID:               2,
 			TestCategory:     "CAREER_PROFILE",
 			TestSessionID:    session.ID,
 			RespondentType:   entity.RespondentTypeExpert,
