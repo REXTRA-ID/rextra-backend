@@ -19,8 +19,8 @@ type CareerProfileFeedbackExpert struct {
 
 	// Recommendation validation
 	ExpertProfessionID      *int64         `json:"expert_profession_id"` // ID profesi yang dipilih expert dari rekomendasi
-	Top5RecommendationsJSON datatypes.JSON `json:"top5_recommendations_json" gorm:"type:jsonb;not null;default:'[]'"`
-	Top5Status              string         `json:"top5_status" gorm:"type:varchar(20);->;virtualType:GENERATED ALWAYS AS (CASE WHEN expert_profession_id IS NULL THEN 'NOT_PRESENT' WHEN top5_recommendations_json->0->>'profession_id' = expert_profession_id::text THEN 'P1' WHEN top5_recommendations_json->1->>'profession_id' = expert_profession_id::text THEN 'P2' WHEN top5_recommendations_json->2->>'profession_id' = expert_profession_id::text OR top5_recommendations_json->3->>'profession_id' = expert_profession_id::text OR top5_recommendations_json->4->>'profession_id' = expert_profession_id::text THEN 'P3_5' ELSE 'NOT_PRESENT' END) STORED"`
+	Top5RecommendationsJSON datatypes.JSON `json:"top5_recommendations_json" gorm:"column:top5_recommendations;type:jsonb;not null;default:'[]'"`
+	Top5Status              string         `json:"top5_status" gorm:"type:varchar(20);->;virtualType:GENERATED ALWAYS AS (CASE WHEN expert_profession_id IS NULL THEN 'NOT_PRESENT' WHEN top5_recommendations->0->>'profession_id' = expert_profession_id::text THEN 'P1' WHEN top5_recommendations->1->>'profession_id' = expert_profession_id::text THEN 'P2' WHEN top5_recommendations->2->>'profession_id' = expert_profession_id::text OR top5_recommendations->3->>'profession_id' = expert_profession_id::text OR top5_recommendations->4->>'profession_id' = expert_profession_id::text THEN 'P3_5' ELSE 'NOT_PRESENT' END) STORED"`
 
 	SuggestionText *string `json:"suggestion_text" gorm:"type:text"`
 

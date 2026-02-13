@@ -26,6 +26,15 @@ func SeederUser(db *gorm.DB) error {
 	}
 
 	for _, entity := range listEntity {
+		var count int64
+		if err := db.Model(&entity).Where("email = ?", entity.Email).Count(&count).Error; err != nil {
+			return err
+		}
+		if count > 0 {
+			mylog.Infof("[SKIP] User %s already exists", entity.Email)
+			continue
+		}
+
 		hashedPwd, _ := utils.HashPassword(entity.Password)
 		entity.Password = hashedPwd
 		if err := db.Save(&entity).Error; err != nil {

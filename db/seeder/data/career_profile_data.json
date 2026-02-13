@@ -1,0 +1,80 @@
+{
+  "sessions": [
+    {
+      "id": 101,
+      "session_token": "sess-token-recommendation-001",
+      "persona_type": "pathfinder",
+      "test_goal": "RECOMMENDATION",
+      "uses_ikigai": true,
+      "status": "completed",
+      "started_at": "2024-02-01T08:00:00Z",
+      "completed_at": "2024-02-01T09:00:00Z",
+      "riasec_completed_at": "2024-02-01T08:30:00Z",
+      "ikigai_completed_at": "2024-02-01T09:00:00Z",
+      "algorithm_version": "v2.0",
+      "question_set_version": "2024-Q1"
+    },
+    {
+      "id": 102,
+      "session_token": "sess-token-fitcheck-002",
+      "persona_type": "builder",
+      "test_goal": "FIT_CHECK",
+      "target_profession_id": 101,
+      "uses_ikigai": false,
+      "status": "riasec_ongoing",
+      "started_at": "2024-02-02T10:00:00Z",
+      "algorithm_version": "v2.0",
+      "question_set_version": "2024-Q1"
+    },
+    {
+      "id": 103,
+      "session_token": "sess-token-fitcheck-003",
+      "persona_type": "builder",
+      "test_goal": "FIT_CHECK",
+      "target_profession_id": 103,
+      "uses_ikigai": false,
+      "status": "completed",
+      "started_at": "2024-02-03T11:00:00Z",
+      "completed_at": "2024-02-03T11:45:00Z",
+      "riasec_completed_at": "2024-02-03T11:45:00Z",
+      "algorithm_version": "v2.0",
+      "question_set_version": "2024-Q1"
+    }
+  ],
+  "riasec_results": [
+    {
+      "id": 101,
+      "test_session_id": 101,
+      "score_r": 20,
+      "score_i": 25,
+      "score_a": 15,
+      "score_s": 10,
+      "score_e": 5,
+      "score_c": 15,
+      "riasec_code_id": 1,
+      "riasec_code_type": "single",
+      "is_inconsistent_profile": false,
+      "calculated_at": "2024-02-01T08:31:00Z"
+    },
+    {
+      "id": 103,
+      "test_session_id": 103,
+      "score_r": 10,
+      "score_i": 30,
+      "score_a": 5,
+      "score_s": 5,
+      "score_e": 5,
+      "score_c": 20,
+      "riasec_code_id": 1,
+      "riasec_code_type": "single",
+      "is_inconsistent_profile": false,
+      "calculated_at": "2024-02-03T11:46:00Z"
+    }
+  ],
+  "user_profile": {
+    "active_session_id": 101,
+    "pinned": true,
+    "set_source": "AUTO_FIRST_TIME",
+    "set_at": "2024-02-01T09:00:01Z"
+  }
+}

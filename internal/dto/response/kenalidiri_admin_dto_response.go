@@ -9,7 +9,8 @@ type (
 	TestHistoryItem struct {
 		TestID         string  `json:"test_id"`
 		UserName       string  `json:"user_name"`
-		CategoryName   string  `json:"category_name"`
+		TestGoal       string  `json:"test_goal"`
+		PersonaType    string  `json:"persona_type"`
 		Status         string  `json:"status"`
 		ResultCode     string  `json:"result_code"`
 		StartedAt      string  `json:"started_at"`
@@ -20,7 +21,8 @@ type (
 	TestDetailResponse struct {
 		TestID          string                 `json:"test_id"`
 		UserName        string                 `json:"user_name"`
-		CategoryName    string                 `json:"category_name"`
+		TestGoal        string                 `json:"test_goal"`
+		PersonaType     string                 `json:"persona_type"`
 		Status          string                 `json:"status"`
 		StartedAt       string                 `json:"started_at"`
 		CompletedAt     *string                `json:"completed_at,omitempty"`

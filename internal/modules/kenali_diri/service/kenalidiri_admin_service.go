@@ -99,13 +99,14 @@ func (s *kenalidiriAdminService) GetTestHistory(ctx context.Context, req dto_req
 		limit = 10
 	}
 
-	filters := repository.KenalidiriHistoryFilters{
-		CategoryID: req.CategoryID,
-		Status:     req.Status,
-		UserName:   req.UserName,
-		SortBy:     req.SortBy,
-		Limit:      limit,
-		Offset:     (page - 1) * limit,
+	filters := repository.TestSessionFilters{
+		TestGoal:    req.TestGoal,
+		PersonaType: req.PersonaType,
+		Status:      req.Status,
+		UserName:    req.UserName,
+		SortBy:      req.SortBy,
+		Limit:       limit,
+		Offset:      (page - 1) * limit,
 	}
 
 	if req.StartDate != "" {
@@ -119,33 +120,34 @@ func (s *kenalidiriAdminService) GetTestHistory(ctx context.Context, req dto_req
 		}
 	}
 
-	histories, total, err := s.historyRepo.ListWithFilters(ctx, nil, filters)
+	sessions, total, err := s.testSessionRepo.ListWithFilters(ctx, nil, filters)
 	if err != nil {
-		return dto_response.TestHistoryListResponse{}, wrapNotFound(err, "kenalidiri history")
+		return dto_response.TestHistoryListResponse{}, wrapNotFound(err, "careerprofile test session")
 	}
 
-	items := make([]dto_response.TestHistoryItem, 0, len(histories))
-	for _, h := range histories {
+	items := make([]dto_response.TestHistoryItem, 0, len(sessions))
+	for _, sess := range sessions {
 		var resultCode string
 		var codeType string
-		if strings.EqualFold(h.Status, "completed") {
-			if r, err := s.riasecRepo.GetResultBySessionID(ctx, nil, h.DetailSessionID); err == nil {
+		if strings.EqualFold(sess.Status, "completed") || strings.EqualFold(sess.Status, "riasec_completed") {
+			if r, err := s.riasecRepo.GetResultBySessionID(ctx, nil, sess.ID); err == nil {
 				resultCode = r.RiasecCode.RiasecCode
 				codeType = r.RiasecCodeType
 			}
 		}
 
 		item := dto_response.TestHistoryItem{
-			TestID:         fmt.Sprintf("PK%d", h.ID),
-			UserName:       h.User.Fullname,
-			CategoryName:   h.TestCategory.CategoryName,
-			Status:         h.Status,
+			TestID:         fmt.Sprintf("PK%d", sess.ID),
+			UserName:       sess.User.Fullname,
+			TestGoal:       string(sess.TestGoal),
+			PersonaType:    sess.PersonaType,
+			Status:         sess.Status,
 			ResultCode:     resultCode,
-			StartedAt:      h.StartedAt.Format(timeFormatDisplay),
+			StartedAt:      sess.StartedAt.Format(timeFormatDisplay),
 			RiasecCodeType: codeType,
 		}
-		if h.CompletedAt != nil {
-			completed := h.CompletedAt.Format(timeFormatDisplay)
+		if sess.CompletedAt != nil {
+			completed := sess.CompletedAt.Format(timeFormatDisplay)
 			item.CompletedAt = &completed
 		}
 		items = append(items, item)
@@ -170,13 +172,7 @@ func (s *kenalidiriAdminService) DeleteTestData(ctx context.Context, req dto_req
 	}
 
 	for _, id := range req.TestIDs {
-		history, err := s.historyRepo.GetByID(ctx, tx, id)
-		if err != nil {
-			tx.Rollback()
-			return wrapNotFound(err, "kenalidiri history")
-		}
-
-		sessionID := history.DetailSessionID
+		// Manually delete related data to ensure data integrity, even if DB cascade is enabled.
 		relatedDeletes := []struct {
 			table interface{}
 		}{
@@ -188,17 +184,18 @@ func (s *kenalidiriAdminService) DeleteTestData(ctx context.Context, req dto_req
 			{table: &entity.IkigaiDimensionScore{}},
 			{table: &entity.IkigaiTotalScore{}},
 			{table: &entity.CareerRecommendation{}},
+			{table: &entity.UserCareerProfile{}},
 		}
 
 		for _, d := range relatedDeletes {
-			if err := tx.WithContext(ctx).Where("test_session_id = ?", sessionID).Delete(d.table).Error; err != nil {
+			if err := tx.WithContext(ctx).Where("test_session_id = ?", id).Delete(d.table).Error; err != nil {
 				tx.Rollback()
 				return err
 			}
 		}
 	}
 
-	if err := s.historyRepo.BulkDelete(ctx, tx, req.TestIDs); err != nil {
+	if err := s.testSessionRepo.BulkDelete(ctx, tx, req.TestIDs); err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -207,11 +204,12 @@ func (s *kenalidiriAdminService) DeleteTestData(ctx context.Context, req dto_req
 }
 
 func (s *kenalidiriAdminService) ExportTestHistory(ctx context.Context, req dto_request.ExportTestHistoryRequest) (dto_response.ExportFileResponse, error) {
-	filters := repository.KenalidiriHistoryFilters{
-		CategoryID: req.CategoryID,
-		Status:     req.Status,
-		Limit:      0,
-		Offset:     0,
+	filters := repository.TestSessionFilters{
+		TestGoal:    req.TestGoal,
+		PersonaType: req.PersonaType,
+		Status:      req.Status,
+		Limit:       0,
+		Offset:      0,
 	}
 
 	if req.StartDate != "" {
@@ -225,51 +223,59 @@ func (s *kenalidiriAdminService) ExportTestHistory(ctx context.Context, req dto_
 		}
 	}
 
-	histories, _, err := s.historyRepo.ListWithFilters(ctx, nil, filters)
+	sessions, _, err := s.testSessionRepo.ListWithFilters(ctx, nil, filters)
 	if err != nil {
-		return dto_response.ExportFileResponse{}, wrapNotFound(err, "kenalidiri history")
+		return dto_response.ExportFileResponse{}, wrapNotFound(err, "careerprofile test session")
 	}
 
-	if len(histories) == 0 {
-		return dto_response.ExportFileResponse{}, myerror.RecordNotFound("kenalidiri history")
+	if len(sessions) == 0 {
+		return dto_response.ExportFileResponse{}, myerror.RecordNotFound("careerprofile test session")
 	}
 
-	data := make([]map[string]interface{}, 0, len(histories))
+	data := make([]map[string]interface{}, 0, len(sessions))
 	sheets := make(map[string][]map[string]interface{})
 	sheetUsage := make(map[string]int)
-	for _, h := range histories {
+	for _, sess := range sessions {
 		var resultCode string
-		if strings.EqualFold(h.Status, "completed") {
-			if r, err := s.riasecRepo.GetResultBySessionID(ctx, nil, h.DetailSessionID); err == nil {
+		if strings.EqualFold(sess.Status, "completed") || strings.EqualFold(sess.Status, "riasec_completed") {
+			if r, err := s.riasecRepo.GetResultBySessionID(ctx, nil, sess.ID); err == nil {
 				resultCode = r.RiasecCode.RiasecCode
 			}
 		}
 
+		// Group by TestGoal or Persona
+		categoryName := string(sess.TestGoal)
+		if sess.PersonaType != "" {
+			categoryName = fmt.Sprintf("%s - %s", sess.TestGoal, sess.PersonaType)
+		}
+
 		record := map[string]interface{}{
-			"ID Tes":         fmt.Sprintf("PK%d", h.ID),
-			"Nama Pengguna":  h.User.Fullname,
-			"Email":          h.User.Email,
-			"Kategori Tes":   h.TestCategory.CategoryName,
-			"Status":         h.Status,
-			"Waktu Mulai":    h.StartedAt.Format(dateFormatExport),
+			"ID Tes":         fmt.Sprintf("PK%d", sess.ID),
+			"Nama Pengguna":  sess.User.Fullname,
+			"Email":          sess.User.Email,
+			"Tujuan Tes":     string(sess.TestGoal),
+			"Tipe Persona":   sess.PersonaType,
+			"Status":         sess.Status,
+			"Waktu Mulai":    sess.StartedAt.Format(dateFormatExport),
 			"Waktu Selesai":  "",
 			"Kode RIASEC":    resultCode,
 			"Durasi (menit)": "",
 		}
 
-		if h.CompletedAt != nil {
-			record["Waktu Selesai"] = h.CompletedAt.Format(dateFormatExport)
-			duration := h.CompletedAt.Sub(h.StartedAt).Minutes()
+		if sess.CompletedAt != nil {
+			record["Waktu Selesai"] = sess.CompletedAt.Format(dateFormatExport)
+			duration := sess.CompletedAt.Sub(sess.StartedAt).Minutes()
 			record["Durasi (menit)"] = fmt.Sprintf("%.0f", duration)
 		}
 
 		data = append(data, record)
 
-		baseName := h.TestCategory.CategoryName
+		baseName := categoryName
 		if strings.TrimSpace(baseName) == "" {
-			baseName = fmt.Sprintf("Kategori %d", h.TestCategory.ID)
+			baseName = "Uncategorized"
 		}
-		sheetName := buildSheetName(baseName, h.TestCategory.ID, sheetUsage)
+		// Generate safe sheet name (max 31 chars)
+		sheetName := buildSheetName(baseName, 0, sheetUsage)
 		sheets[sheetName] = append(sheets[sheetName], record)
 	}
 
@@ -298,26 +304,26 @@ func (s *kenalidiriAdminService) ExportTestHistory(ctx context.Context, req dto_
 	}, nil
 }
 
-func (s *kenalidiriAdminService) GetTestDetail(ctx context.Context, historyID int64) (dto_response.TestDetailResponse, error) {
-	history, err := s.historyRepo.GetByID(ctx, nil, historyID)
+func (s *kenalidiriAdminService) GetTestDetail(ctx context.Context, sessionID int64) (dto_response.TestDetailResponse, error) {
+	sess, err := s.testSessionRepo.GetByID(ctx, nil, sessionID)
 	if err != nil {
-		return dto_response.TestDetailResponse{}, wrapNotFound(err, "kenalidiri history")
+		return dto_response.TestDetailResponse{}, wrapNotFound(err, "careerprofile test session")
 	}
 
-	sessionID := history.DetailSessionID
 	resp := dto_response.TestDetailResponse{
-		TestID:       fmt.Sprintf("PK%d", history.ID),
-		UserName:     history.User.Fullname,
-		CategoryName: history.TestCategory.CategoryName,
-		Status:       history.Status,
-		StartedAt:    history.StartedAt.Format(timeFormatDisplay),
+		TestID:      fmt.Sprintf("PK%d", sess.ID),
+		UserName:    sess.User.Fullname,
+		TestGoal:    string(sess.TestGoal),
+		PersonaType: sess.PersonaType,
+		Status:      sess.Status,
+		StartedAt:   sess.StartedAt.Format(timeFormatDisplay),
 	}
-	if history.CompletedAt != nil {
-		completed := history.CompletedAt.Format(timeFormatDisplay)
+	if sess.CompletedAt != nil {
+		completed := sess.CompletedAt.Format(timeFormatDisplay)
 		resp.CompletedAt = &completed
 	}
 
-	if riasec, err := s.riasecRepo.GetResultBySessionID(ctx, nil, sessionID); err == nil {
+	if riasec, err := s.riasecRepo.GetResultBySessionID(ctx, nil, sess.ID); err == nil {
 		resp.RiasecResult = &dto_response.RiasecResultDetail{
 			ScoreR:             riasec.ScoreR,
 			ScoreI:             riasec.ScoreI,
@@ -332,12 +338,12 @@ func (s *kenalidiriAdminService) GetTestDetail(ctx context.Context, historyID in
 		}
 	}
 
-	if ikigai, err := s.ikigaiRepo.GetTotalScores(ctx, nil, sessionID); err == nil {
+	if ikigai, err := s.ikigaiRepo.GetTotalScores(ctx, nil, sess.ID); err == nil {
 		resp.IkigaiResult = buildIkigaiResult(ikigai)
 		resp.Recommendations = append(resp.Recommendations, buildRecommendations(ikigai)...)
 	}
 
-	if rec, err := s.recommendationRepo.GetBySessionID(ctx, nil, sessionID); err == nil {
+	if rec, err := s.recommendationRepo.GetBySessionID(ctx, nil, sess.ID); err == nil {
 		resp.Recommendations = mergeRecommendationNarratives(resp.Recommendations, rec)
 	}
 
@@ -647,7 +653,7 @@ func buildRecommendations(total entity.IkigaiTotalScore) []dto_response.Recommen
 			MatchPercentage: p.MatchPercentage,
 			MatchReasoning:  p.Reasoning,
 		})
-		if idx == 1 { // only top 2
+		if idx == 1 { // Limit to top 2 recommendations
 			break
 		}
 	}
