@@ -29,7 +29,7 @@
         "benefits": ["Semua benefit Pro", "40 token/bulan", "Akses penuh semua modul & fitur", "Unlimited Portofolio AI Check", "Priority support"]
     },
     {
-        "plan_name": "Non-Member",
+        "plan_name": "Standard",
         "monthly_token": 0,
         "base_monthly_price": 0,
         "description": "Paket dasar untuk mahasiswa yang baru memulai persiapan karier",

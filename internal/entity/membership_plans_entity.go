@@ -11,11 +11,11 @@ import (
 type EnumPlanName string
 
 const (
-	PLANSTARTER   EnumPlanName = "Starter"
-	PLANBASIC     EnumPlanName = "Basic"
-	PLANPRO       EnumPlanName = "Pro"
-	PLANMAX       EnumPlanName = "Max"
-	PLANNONMEMBER EnumPlanName = "Non-Member"
+	PLANSTARTER  EnumPlanName = "Starter"
+	PLANBASIC    EnumPlanName = "Basic"
+	PLANPRO      EnumPlanName = "Pro"
+	PLANMAX      EnumPlanName = "Max"
+	PLANSTANDARD EnumPlanName = "Standard"
 )
 
 type MembershipPlans struct {

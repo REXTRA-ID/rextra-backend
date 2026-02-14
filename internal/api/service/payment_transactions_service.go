@@ -164,6 +164,10 @@ func (s *paymentTransactionService) MakeNewTransactionMembership(ctx context.Con
 			return dto_response.MakeNewTransactionResponse{}, errors.New("discount is not applicable")
 		}
 
+		if !promo.IsValid() {
+			return dto_response.MakeNewTransactionResponse{}, errors.New("promo code is invalid")
+		}
+
 		if promo.CurrentUsage > 0 {
 			used, err := s.promoCodeUsageRepository.IsPromoCodeUsedByUserID(ctx, nil, uuidUserID)
 			if err != nil {
@@ -317,7 +321,7 @@ func (s *paymentTransactionService) updateTokenTransaction(ctx context.Context, 
 
 	tokenQuntity := transaction.TokenQuantity
 
-	if userMembership.MembershipStatus == entity.PLANNONMEMBER {
+	if userMembership.MembershipStatus == entity.PLANSTANDARD {
 		plan, err := s.membershipPlanRepository.GetByPlanName(ctx, nil, string(entity.PLANSTARTER))
 		if err != nil {
 			return err

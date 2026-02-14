@@ -29,7 +29,7 @@ func NewMembershipService(membershipRepository repository.MembershipRepository,
 func (s *membershipService) CheckExpiredMemberships() error {
 	ctx := context.Background()
 
-	planNonMember, err := s.membershipPlanRepository.GetByPlanName(ctx, nil, string(entity.PLANNONMEMBER))
+	planNonMember, err := s.membershipPlanRepository.GetByPlanName(ctx, nil, string(entity.PLANSTANDARD))
 	if err != nil {
 		return err
 	}
