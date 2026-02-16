@@ -1,9 +1,9 @@
 [
   {
     "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
-    "user_id": "a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1",
+    "user_email": "user@email.com",
     "type": "BUNDLE",
-    "bundle_package_id": "b1b1b1b1-b1b1-b1b1-b1b1-b1b1b1b1b1b1",
+    "bundle_name": "Starter 50 Token",
     "token_amount": 50,
     "total_price_rp": 25000,
     "status": "SUCCESS",
@@ -11,15 +11,16 @@
     "provider": "XENDIT",
     "paid_at": "2024-05-20T10:00:00Z",
     "expired_at": null,
-    "ledger_id": "c1c1c1c1-c1c1-c1c1-c1c1-c1c1c1c1c1c1",
+    "ledger_id": null,
     "metadata": {
       "payment_method": "BCA_VIRTUAL_ACCOUNT"
     }
   },
   {
     "id": "b2c3d4e5-f6a7-8901-2345-67890abcdef0",
-    "user_id": "a2a2a2a2-a2a2-a2a2-a2a2-a2a2a2a2a2a2",
+    "user_email": "user@email.com",
     "type": "CUSTOM",
+    "bundle_name": null,
     "bundle_package_id": null,
     "token_amount": 75,
     "total_price_rp": 37500,
@@ -35,9 +36,9 @@
   },
   {
     "id": "c3d4e5f6-a7b8-9012-3456-7890abcdef01",
-    "user_id": "a3a3a3a3-a3a3-a3a3-a3a3-a3a3a3a3a3a3",
+    "user_email": "expert@email.com",
     "type": "BUNDLE",
-    "bundle_package_id": "b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2",
+    "bundle_name": "Hemat 120 Token",
     "token_amount": 120,
     "total_price_rp": 50000,
     "status": "FAILED",
@@ -52,8 +53,9 @@
   },
   {
     "id": "d4e5f6a7-b8c9-0123-4567-890abcdef012",
-    "user_id": "a2a2a2a2-a2a2-a2a2-a2a2-a2a2a2a2a2a2",
+    "user_email": "user@email.com",
     "type": "CUSTOM",
+    "bundle_name": null,
     "bundle_package_id": null,
     "token_amount": 10,
     "total_price_rp": 5000,

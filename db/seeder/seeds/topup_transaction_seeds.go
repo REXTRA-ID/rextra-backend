@@ -14,9 +14,11 @@ import (
 
 type tempTopupTransaction struct {
 	ID              uuid.UUID          `json:"id"`
+	UserEmail       string             `json:"user_email"`
 	UserID          uuid.UUID          `json:"user_id"`
 	Type            entity.TopupType   `json:"type"`
 	BundlePackageID *uuid.UUID         `json:"bundle_package_id"`
+	BundleName      *string            `json:"bundle_name"`
 	TokenAmount     int64              `json:"token_amount"`
 	TotalPriceRp    int64              `json:"total_price_rp"`
 	Status          entity.TopupStatus `json:"status"`
@@ -44,11 +46,35 @@ func SeedTopupTransactions(db *gorm.DB) error {
 
 	var mapsToCreate []map[string]interface{}
 	for _, seed := range tempSeeds {
+		// Resolve user_id from email if provided
+		userID := seed.UserID
+		if seed.UserEmail != "" {
+			var user entity.User
+			if err := db.Where("email = ?", seed.UserEmail).First(&user).Error; err != nil {
+				mylog.Errorf("User with email %s not found, skipping transaction %s", seed.UserEmail, seed.InvoiceID)
+				continue
+			}
+			userID = user.ID
+		}
+
+		// Resolve bundle_package_id from name if provided
+		var bundlePackageID *uuid.UUID
+		if seed.BundleName != nil && *seed.BundleName != "" {
+			var pkg entity.TokenBundlePackage
+			if err := db.Where("name = ?", *seed.BundleName).First(&pkg).Error; err != nil {
+				mylog.Errorf("Bundle package %s not found, setting to nil", *seed.BundleName)
+			} else {
+				bundlePackageID = &pkg.ID
+			}
+		} else {
+			bundlePackageID = seed.BundlePackageID
+		}
+
 		mapsToCreate = append(mapsToCreate, map[string]interface{}{
 			"id":                seed.ID,
-			"user_id":           seed.UserID,
+			"user_id":           userID,
 			"type":              seed.Type,
-			"bundle_package_id": seed.BundlePackageID,
+			"bundle_package_id": bundlePackageID,
 			"token_amount":      seed.TokenAmount,
 			"total_price_rp":    seed.TotalPriceRp,
 			"status":            seed.Status,

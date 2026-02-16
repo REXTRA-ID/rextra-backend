@@ -32,7 +32,7 @@ func SeederUser(db *gorm.DB) error {
 
 	err = db.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "email"}},
-		DoUpdates: clause.AssignmentColumns([]string{"username", "phone_number", "role", "is_verified", "updated_at"}),
+		DoUpdates: clause.AssignmentColumns([]string{"fullname", "phone_number", "role", "is_verified", "updated_at"}),
 	}).Create(&listEntity).Error
 
 	if err != nil {

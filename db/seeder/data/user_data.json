@@ -1,6 +1,6 @@
 [
   {
-    "username": "admin youngtive",
+    "fullname": "admin youngtive",
     "email": "admin@email.com",
     "password": "Password.1",
     "is_verified": true,
@@ -8,7 +8,7 @@
     "role": "ADMIN"
   },
   {
-    "username": "user youngtive",
+    "fullname": "user youngtive",
     "email": "user@email.com",
     "password": "Password.2",
     "is_verified": true,
@@ -16,7 +16,7 @@
     "role": "USER"
   },
   {
-    "username": "expert youngtive",
+    "fullname": "expert youngtive",
     "email": "expert@email.com",
     "password": "Password.3",
     "is_verified": true,
