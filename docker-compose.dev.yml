@@ -14,6 +14,10 @@ services:
   db:
     image: postgres:16
     container_name: rextra-backend-db-dev
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASS:-password}
+      POSTGRES_DB: ${DB_NAME:-rextra}
     env_file:
       - ./.env.dev
     volumes:
