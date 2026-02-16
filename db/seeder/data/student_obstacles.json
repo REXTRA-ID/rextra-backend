@@ -1,0 +1,65 @@
+[
+  {
+    "id": 1,
+    "key": "NO_ISSUE",
+    "label": "Tidak ada kendala",
+    "is_no_issue": true,
+    "is_other": false,
+    "sort_order": 1,
+    "is_active": true
+  },
+  {
+    "id": 2,
+    "key": "DURATION_TOO_LONG",
+    "label": "Durasi tes terasa terlalu lama",
+    "is_no_issue": false,
+    "is_other": false,
+    "sort_order": 2,
+    "is_active": true
+  },
+  {
+    "id": 3,
+    "key": "QUESTIONS_CONFUSING",
+    "label": "Ada pertanyaan yang membingungkan",
+    "is_no_issue": false,
+    "is_other": false,
+    "sort_order": 3,
+    "is_active": true
+  },
+  {
+    "id": 4,
+    "key": "BUG_ERROR",
+    "label": "Mengalami error/bug",
+    "is_no_issue": false,
+    "is_other": false,
+    "sort_order": 4,
+    "is_active": true
+  },
+  {
+    "id": 5,
+    "key": "RESULT_EXPLANATION_TOO_LONG",
+    "label": "Penjelasan hasil tes terlalu panjang atau sulit dipahami",
+    "is_no_issue": false,
+    "is_other": false,
+    "sort_order": 5,
+    "is_active": true
+  },
+  {
+    "id": 6,
+    "key": "UI_NAV_CONFUSING",
+    "label": "Tampilan atau navigasi membingungkan",
+    "is_no_issue": false,
+    "is_other": false,
+    "sort_order": 6,
+    "is_active": true
+  },
+  {
+    "id": 7,
+    "key": "OTHER",
+    "label": "Lainnya",
+    "is_no_issue": false,
+    "is_other": true,
+    "sort_order": 7,
+    "is_active": true
+  }
+]

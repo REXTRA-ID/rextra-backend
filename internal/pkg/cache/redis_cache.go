@@ -61,7 +61,6 @@ func (c *redisCache) Get(ctx context.Context, key string) (interface{}, error) {
 		return nil, fmt.Errorf("redis get error: %w", err)
 	}
 
-	// Unmarshal JSON to ensure data consistency
 	var result interface{}
 	if err := json.Unmarshal([]byte(val), &result); err != nil {
 		return nil, fmt.Errorf("redis json unmarshal error: %w", err)
@@ -69,7 +68,6 @@ func (c *redisCache) Get(ctx context.Context, key string) (interface{}, error) {
 	return result, nil
 }
 
-// Set stores a value in Redis cache with TTL support.
 func (c *redisCache) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
 	if c.client == nil {
 		return errors.New("redis client not initialized")
@@ -87,7 +85,6 @@ func (c *redisCache) Set(ctx context.Context, key string, value interface{}, exp
 	return c.client.Set(ctx, key, data, expiration).Err()
 }
 
-// Delete removes a key from Redis cache.
 func (c *redisCache) Delete(ctx context.Context, key string) error {
 	if c.client == nil {
 		return errors.New("redis client not initialized")
@@ -96,8 +93,6 @@ func (c *redisCache) Delete(ctx context.Context, key string) error {
 	return c.client.Del(ctx, key).Err()
 }
 
-// Clear removes all keys matching a pattern from Redis cache.
-// Uses SCAN with pattern matching for safe deletion.
 func (c *redisCache) Clear(ctx context.Context, pattern string) error {
 	if c.client == nil {
 		return errors.New("redis client not initialized")
@@ -107,13 +102,11 @@ func (c *redisCache) Clear(ctx context.Context, pattern string) error {
 	var keysDeleted int64
 
 	for {
-		// Use SCAN to find keys matching pattern
 		keys, newCursor, err := c.client.Scan(ctx, cursor, pattern, 100).Result()
 		if err != nil {
 			return fmt.Errorf("redis scan error: %w", err)
 		}
 
-		// Delete found keys in batches
 		if len(keys) > 0 {
 			deleted, err := c.client.Del(ctx, keys...).Result()
 			if err != nil {
@@ -138,22 +131,18 @@ func (c *redisCache) Close() error {
 	return c.client.Close()
 }
 
-// HealthCheck verifies Redis connection is healthy
 func (c *redisCache) HealthCheck(ctx context.Context) error {
 	if c.client == nil {
 		return errors.New("redis client not initialized")
 	}
 
-	// Respect caller's context timeout if available
 	return c.client.Ping(ctx).Err()
 }
 
-// SetWithTTL sets a value with custom TTL (convenience method)
 func (c *redisCache) SetWithTTL(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
 	return c.Set(ctx, key, value, ttl)
 }
 
-// GetMany retrieves multiple values from Redis (batch operation)
 func (c *redisCache) GetMany(ctx context.Context, keys []string) (map[string]interface{}, error) {
 	if c.client == nil {
 		return nil, errors.New("redis client not initialized")
@@ -187,7 +176,6 @@ func (c *redisCache) GetMany(ctx context.Context, keys []string) (map[string]int
 	return result, nil
 }
 
-// DeleteMany removes multiple keys from Redis (batch operation)
 func (c *redisCache) DeleteMany(ctx context.Context, keys []string) error {
 	if c.client == nil {
 		return errors.New("redis client not initialized")
@@ -200,7 +188,6 @@ func (c *redisCache) DeleteMany(ctx context.Context, keys []string) error {
 	return c.client.Del(ctx, keys...).Err()
 }
 
-// GetWithTTL retrieves a value and its remaining TTL
 func (c *redisCache) GetWithTTL(ctx context.Context, key string) (interface{}, time.Duration, error) {
 	if c.client == nil {
 		return nil, 0, errors.New("redis client not initialized")
@@ -219,7 +206,6 @@ func (c *redisCache) GetWithTTL(ctx context.Context, key string) (interface{}, t
 	return val, ttl, nil
 }
 
-// Exists checks if a key exists in Redis
 func (c *redisCache) Exists(ctx context.Context, key string) (bool, error) {
 	if c.client == nil {
 		return false, errors.New("redis client not initialized")
@@ -233,7 +219,6 @@ func (c *redisCache) Exists(ctx context.Context, key string) (bool, error) {
 	return result > 0, nil
 }
 
-// Keys returns all keys matching a pattern using SCAN (safe for large databases)
 func (c *redisCache) Keys(ctx context.Context, pattern string) ([]string, error) {
 	if c.client == nil {
 		return nil, errors.New("redis client not initialized")
@@ -257,7 +242,6 @@ func (c *redisCache) Keys(ctx context.Context, pattern string) ([]string, error)
 	return allKeys, nil
 }
 
-// Increment increments a numeric value in Redis with default TTL
 func (c *redisCache) Increment(ctx context.Context, key string, delta int64) (int64, error) {
 	if c.client == nil {
 		return 0, errors.New("redis client not initialized")
@@ -275,7 +259,6 @@ func (c *redisCache) Increment(ctx context.Context, key string, delta int64) (in
 	return val, nil
 }
 
-// Stats returns cache statistics
 func (c *redisCache) Stats(ctx context.Context) (map[string]string, error) {
 	if c.client == nil {
 		return nil, errors.New("redis client not initialized")

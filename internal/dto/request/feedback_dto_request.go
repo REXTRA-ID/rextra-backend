@@ -1,6 +1,5 @@
 package dto_request
 
-// GetFeedbackListRequest captures student feedback list filters.
 type GetFeedbackListRequest struct {
 	Page         int     `form:"page" json:"page" binding:"omitempty,min=1"`
 	Limit        int     `form:"limit" json:"limit" binding:"omitempty,min=1,max=100"`
@@ -10,7 +9,6 @@ type GetFeedbackListRequest struct {
 	SortBy       string  `form:"sort_by" json:"sort_by"`
 }
 
-// GetExpertFeedbackListRequest captures expert feedback list filters.
 type GetExpertFeedbackListRequest struct {
 	Page       int     `form:"page" json:"page" binding:"omitempty,min=1"`
 	Limit      int     `form:"limit" json:"limit" binding:"omitempty,min=1,max=100"`

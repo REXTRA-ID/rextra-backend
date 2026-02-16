@@ -11,14 +11,16 @@ import (
 	mylog "rextra-backend/internal/pkg/logger"
 )
 
-// SeederKenaliDiri seeds core Kenali Diri data to simplify endpoint testing.
 func SeederKenaliDiri(db *gorm.DB) error {
 	mylog.Infof("[PROCESS] Seeding Kenali Diri fixtures...")
 	return db.Transaction(func(tx *gorm.DB) error {
-		// Clean dependent tables to keep IDs stable for tests.
 		tables := []string{
-			"expert_feedback",
-			"student_feedback",
+			"careerprofile_feedback_expert_obstacles",
+			"careerprofile_feedback_obstacles",
+			"careerprofile_feedback_expert",
+			"careerprofile_feedback_student",
+			"kenalidiri_feedback",
+			"user_career_profiles",
 			"career_recommendations",
 			"ikigai_total_scores",
 			"riasec_results",
@@ -32,7 +34,6 @@ func SeederKenaliDiri(db *gorm.DB) error {
 			}
 		}
 
-		// get user ID where email is "user@example.com"
 		var user entity.User
 		if err := tx.Where("email = ?", "user@email.com").First(&user).Error; err != nil {
 			return err
@@ -56,6 +57,14 @@ func SeederKenaliDiri(db *gorm.DB) error {
 				DetailTableName: "careerprofile_test_sessions",
 				IsActive:        true,
 			},
+			{
+				ID:              3,
+				CategoryCode:    "CAREER_PROFILE",
+				CategoryName:    "Tes Profil Karier",
+				Description:     ptrString("Tes profil karier lengkap"),
+				DetailTableName: "careerprofile_test_sessions",
+				IsActive:        true,
+			},
 		}
 		for _, c := range categories {
 			if err := tx.Create(&c).Error; err != nil {
@@ -64,23 +73,37 @@ func SeederKenaliDiri(db *gorm.DB) error {
 		}
 
 		session := entity.CareerProfileTestSession{
-			ID:                1,
-			UserID:            userID,
-			SessionToken:      "session-kenalidiri-1",
-			Status:            "completed",
-			StartedAt:         mustTime("2024-01-02T10:00:00Z"),
-			CompletedAt:       ptrTime("2024-01-02T10:30:00Z"),
-			RiasecCompletedAt: ptrTime("2024-01-02T10:15:00Z"),
-			IkigaiCompletedAt: ptrTime("2024-01-02T10:30:00Z"),
+			UserID:             userID,
+			SessionToken:       "session-kenalidiri-1",
+			PersonaType:        "pathfinder",
+			TestGoal:           entity.TestGoalRecommendation,
+			UsesIkigai:         true,
+			Status:             "completed",
+			StartedAt:          mustTime("2024-01-02T10:00:00Z"),
+			CompletedAt:        ptrTime("2024-01-02T10:30:00Z"),
+			RiasecCompletedAt:  ptrTime("2024-01-02T10:15:00Z"),
+			IkigaiCompletedAt:  ptrTime("2024-01-02T10:30:00Z"),
+			AlgorithmVersion:   ptrString("v1.0.0"),
+			QuestionSetVersion: ptrString("2024-Q1"),
 		}
 		if err := tx.Create(&session).Error; err != nil {
 			return err
 		}
 
-		history := entity.KenaliDiriHistory{
-			ID:              1,
+		userProfile := entity.UserCareerProfile{
 			UserID:          userID,
-			TestCategoryID:  1,
+			ActiveSessionID: session.ID,
+			Pinned:          true,
+			SetSource:       entity.SetSourceAutoFirstTime,
+			SetAt:           mustTime("2024-01-02T10:30:00Z"),
+		}
+		if err := tx.Create(&userProfile).Error; err != nil {
+			return err
+		}
+
+		history := entity.KenaliDiriHistory{
+			UserID:          userID,
+			TestCategoryID:  3,
 			DetailSessionID: session.ID,
 			Status:          "completed",
 			StartedAt:       mustTime("2024-01-02T10:00:00Z"),
@@ -91,7 +114,6 @@ func SeederKenaliDiri(db *gorm.DB) error {
 		}
 
 		riasecResult := entity.RiasecResult{
-			ID:                    1,
 			TestSessionID:         session.ID,
 			ScoreR:                12,
 			ScoreI:                14,
@@ -109,7 +131,6 @@ func SeederKenaliDiri(db *gorm.DB) error {
 		}
 
 		ikigaiScores := entity.IkigaiTotalScore{
-			ID:            1,
 			TestSessionID: session.ID,
 			ScoresData: mustJSON(map[string]interface{}{
 				"love_narrative":        "Kamu menikmati pemecahan masalah teknis.",
@@ -130,11 +151,13 @@ func SeederKenaliDiri(db *gorm.DB) error {
 		}
 
 		recommendation := entity.CareerRecommendation{
-			ID:            1,
 			TestSessionID: session.ID,
 			RecommendationsData: mustJSON([]map[string]interface{}{
 				{"profession_id": 101, "profession_name": "Data Analyst", "match_percentage": 92, "reasoning": "Kuat di analisis dan insight bisnis"},
 				{"profession_id": 102, "profession_name": "Business Intelligence", "match_percentage": 86, "reasoning": "Mampu menyampaikan data ke stakeholder"},
+				{"profession_id": 103, "profession_name": "Data Scientist", "match_percentage": 84, "reasoning": "Kombinasi analisis dan machine learning"},
+				{"profession_id": 104, "profession_name": "Data Engineer", "match_percentage": 80, "reasoning": "Keahlian teknis dalam infrastruktur data"},
+				{"profession_id": 105, "profession_name": "Product Analyst", "match_percentage": 78, "reasoning": "Analisis untuk keputusan produk"},
 			}),
 			TopProfession1ID: ptrInt64(101),
 			TopProfession2ID: ptrInt64(102),
@@ -145,41 +168,64 @@ func SeederKenaliDiri(db *gorm.DB) error {
 			return err
 		}
 
-		studentFeedback := entity.StudentFeedback{
-			ID:                1,
-			UserID:            userID,
-			TestCategoryID:    1,
-			EaseOfUseScore:    6,
-			RelevanceScore:    7,
-			SatisfactionScore: 6,
-			Obstacles:         mustJSON([]string{"UI sedikit lambat"}),
-			SubmittedAt:       mustTime("2024-01-05T09:00:00Z"),
+		studentFeedbackHeader := entity.KenaliDiriFeedback{
+			TestCategory:     "CAREER_PROFILE",
+			TestSessionID:    session.ID,
+			RespondentType:   entity.RespondentTypeStudent,
+			RespondentUserID: userID,
+			SubmittedAt:      mustTime("2024-01-05T09:00:00Z"),
 		}
-		if err := tx.Create(&studentFeedback).Error; err != nil {
+		if err := tx.Create(&studentFeedbackHeader).Error; err != nil {
 			return err
 		}
 
-		expertFeedback := entity.ExpertFeedback{
-			ID:                 1,
-			TestSessionID:      session.ID,
-			TestCategoryID:     1,
-			ExpertName:         "Dr. Hana",
-			Profession:         "Data Analyst",
-			Degree:             "M.T.",
-			Experience:         "5 tahun",
-			Education:          "Magister Teknik Industri",
-			University:         "ITB",
-			StudyProgram:       "Teknik Industri",
-			CategoryTest:       "RIASEC",
-			TopFiveProfessions: mustJSON([]string{"Data Analyst", "BI Analyst", "Data Engineer", "Product Analyst", "Researcher"}),
-			AccuracyScore:      6,
-			LogicScore:         6,
-			BenefitScore:       5,
-			Obstacles:          mustJSON([]string{"Perlu data project nyata"}),
-			Suggestions:        ptrString("Tambahkan studi kasus lokal."),
-			SubmittedAt:        mustTime("2024-01-06T10:00:00Z"),
+		studentFeedbackDetail := entity.CareerProfileFeedbackStudent{
+			FeedbackID:        studentFeedbackHeader.ID,
+			EaseScore:         6,
+			RelevanceScore:    7,
+			SatisfactionScore: 6,
+			MessageToTeam:     ptrString("Pengalaman cukup baik secara keseluruhan"),
 		}
-		if err := tx.Create(&expertFeedback).Error; err != nil {
+		if err := tx.Create(&studentFeedbackDetail).Error; err != nil {
+			return err
+		}
+
+		expertFeedbackHeader := entity.KenaliDiriFeedback{
+			TestCategory:     "CAREER_PROFILE",
+			TestSessionID:    session.ID,
+			RespondentType:   entity.RespondentTypeExpert,
+			RespondentUserID: userID,
+			SubmittedAt:      mustTime("2024-01-06T10:00:00Z"),
+		}
+		if err := tx.Create(&expertFeedbackHeader).Error; err != nil {
+			return err
+		}
+
+		expertFeedbackDetail := entity.CareerProfileFeedbackExpert{
+			FeedbackID:      expertFeedbackHeader.ID,
+			AccuracyScore:   6,
+			LogicScore:      6,
+			UsefulnessScore: 5,
+
+			ExpertName:            "Dr. Hana Wijaya",
+			ExpertProfession:      "Data Analyst",
+			ExpertDegree:          "M.T.",
+			ExpertExperienceYears: ptrInt32(5),
+			ExpertEducationLevel:  "Magister",
+			ExpertUniversity:      "ITB",
+			ExpertStudyProgram:    "Teknik Industri",
+
+			ExpertProfessionID: ptrInt64(101),
+			Top5RecommendationsJSON: mustJSON([]map[string]interface{}{
+				{"rank": 1, "profession_id": 101, "profession_name": "Data Analyst"},
+				{"rank": 2, "profession_id": 102, "profession_name": "Business Intelligence"},
+				{"rank": 3, "profession_id": 103, "profession_name": "Data Scientist"},
+				{"rank": 4, "profession_id": 104, "profession_name": "Data Engineer"},
+				{"rank": 5, "profession_id": 105, "profession_name": "Product Analyst"},
+			}),
+			SuggestionText: ptrString("Tambahkan studi kasus lokal untuk konteks Indonesia."),
+		}
+		if err := tx.Create(&expertFeedbackDetail).Error; err != nil {
 			return err
 		}
 
@@ -189,6 +235,10 @@ func SeederKenaliDiri(db *gorm.DB) error {
 
 func ptrString(s string) *string {
 	return &s
+}
+
+func ptrInt32(v int32) *int32 {
+	return &v
 }
 
 func ptrInt64(v int64) *int64 {

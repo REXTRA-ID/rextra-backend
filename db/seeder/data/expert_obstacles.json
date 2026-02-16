@@ -1,0 +1,56 @@
+[
+  {
+    "id": 1,
+    "key": "NO_ISSUE",
+    "label": "Tidak ada kendala (lancar)",
+    "is_no_issue": true,
+    "is_other": false,
+    "sort_order": 1,
+    "is_active": true
+  },
+  {
+    "id": 2,
+    "key": "IRRELEVANT_RECOMMENDATIONS",
+    "label": "Rekomendasi sangat tidak relevan",
+    "is_no_issue": false,
+    "is_other": false,
+    "sort_order": 2,
+    "is_active": true
+  },
+  {
+    "id": 3,
+    "key": "CONFUSING_TERMS",
+    "label": "Istilah/kalimat membingungkan",
+    "is_no_issue": false,
+    "is_other": false,
+    "sort_order": 3,
+    "is_active": true
+  },
+  {
+    "id": 4,
+    "key": "TOO_GENERIC",
+    "label": "Penjelasan terlalu umum",
+    "is_no_issue": false,
+    "is_other": false,
+    "sort_order": 4,
+    "is_active": true
+  },
+  {
+    "id": 5,
+    "key": "TECHNICAL_BUG",
+    "label": "Bug teknis (error/loading/tombol tidak berfungsi)",
+    "is_no_issue": false,
+    "is_other": false,
+    "sort_order": 5,
+    "is_active": true
+  },
+  {
+    "id": 6,
+    "key": "OTHER",
+    "label": "Lainnya",
+    "is_no_issue": false,
+    "is_other": true,
+    "sort_order": 6,
+    "is_active": true
+  }
+]

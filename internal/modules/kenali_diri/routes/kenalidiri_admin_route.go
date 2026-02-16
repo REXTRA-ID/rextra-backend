@@ -20,10 +20,7 @@ func ServeKenalidiriAdmin(
 		adminRoutes.DELETE("/history", adminController.DeleteTestData)
 		adminRoutes.POST("/history/export", adminController.ExportTestHistory)
 
-		adminRoutes.GET("/feedback/student", adminController.GetStudentFeedbackList)
-		adminRoutes.GET("/feedback/student/stats", adminController.GetStudentFeedbackStats)
-		adminRoutes.GET("/feedback/expert", adminController.GetExpertFeedbackList)
-		adminRoutes.GET("/feedback/expert/:id", adminController.GetExpertFeedbackDetail)
+
 
 		adminRoutes.GET("/riasec-codes", adminController.GetRiasecCodeList)
 		adminRoutes.GET("/riasec-codes/:id", adminController.GetRiasecCodeDetail)

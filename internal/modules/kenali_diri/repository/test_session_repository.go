@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"strings"
+	"time"
 
 	"rextra-backend/internal/entity"
 
@@ -9,12 +11,26 @@ import (
 )
 
 type (
+	TestSessionFilters struct {
+		TestGoal    string
+		PersonaType string
+		Status      string
+		UserName    string
+		StartDate   *time.Time
+		EndDate     *time.Time
+		SortBy      string
+		Limit       int
+		Offset      int
+	}
+
 	TestSessionRepository interface {
 		Create(ctx context.Context, tx *gorm.DB, session entity.CareerProfileTestSession) (entity.CareerProfileTestSession, error)
 		GetByID(ctx context.Context, tx *gorm.DB, id int64) (entity.CareerProfileTestSession, error)
 		GetByToken(ctx context.Context, tx *gorm.DB, token string) (entity.CareerProfileTestSession, error)
 		UpdateStatus(ctx context.Context, tx *gorm.DB, id int64, status string, timestamps map[string]interface{}) error
 		GetUserSessions(ctx context.Context, tx *gorm.DB, userID string) ([]entity.CareerProfileTestSession, error)
+		ListWithFilters(ctx context.Context, tx *gorm.DB, filters TestSessionFilters) ([]entity.CareerProfileTestSession, int64, error)
+		BulkDelete(ctx context.Context, tx *gorm.DB, ids []int64) error
 	}
 
 	testSessionRepository struct {
@@ -96,4 +112,77 @@ func (r *testSessionRepository) GetUserSessions(ctx context.Context, tx *gorm.DB
 	}
 
 	return sessions, nil
+}
+func (r *testSessionRepository) ListWithFilters(ctx context.Context, tx *gorm.DB, filters TestSessionFilters) ([]entity.CareerProfileTestSession, int64, error) {
+	if tx == nil {
+		tx = r.db
+	}
+
+	query := tx.WithContext(ctx).Model(&entity.CareerProfileTestSession{})
+
+	needJoinUser := filters.UserName != "" || strings.HasPrefix(filters.SortBy, "name")
+	if needJoinUser {
+		query = query.Joins("JOIN users ON users.id = careerprofile_test_sessions.user_id")
+	}
+
+	if filters.TestGoal != "" {
+		query = query.Where("test_goal = ?", filters.TestGoal)
+	}
+	if filters.PersonaType != "" {
+		query = query.Where("persona_type = ?", filters.PersonaType)
+	}
+	if filters.Status != "" {
+		query = query.Where("status = ?", filters.Status)
+	}
+	if filters.UserName != "" {
+		query = query.Where("LOWER(users.fullname) LIKE ?", "%"+strings.ToLower(filters.UserName)+"%")
+	}
+	if filters.StartDate != nil {
+		query = query.Where("started_at >= ?", *filters.StartDate)
+	}
+	if filters.EndDate != nil {
+		query = query.Where("started_at <= ?", *filters.EndDate)
+	}
+
+	switch filters.SortBy {
+	case "name_asc":
+		query = query.Order("users.fullname ASC")
+	case "name_desc":
+		query = query.Order("users.fullname DESC")
+	case "date_asc":
+		query = query.Order("started_at ASC")
+	case "date_desc":
+		query = query.Order("started_at DESC")
+	default:
+		query = query.Order("started_at DESC")
+	}
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if filters.Limit > 0 {
+		query = query.Limit(filters.Limit)
+	}
+	if filters.Offset > 0 {
+		query = query.Offset(filters.Offset)
+	}
+
+	var sessions []entity.CareerProfileTestSession
+	if err := query.Preload("User").Find(&sessions).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return sessions, total, nil
+}
+
+func (r *testSessionRepository) BulkDelete(ctx context.Context, tx *gorm.DB, ids []int64) error {
+	if tx == nil {
+		tx = r.db
+	}
+
+	return tx.WithContext(ctx).
+		Where("id IN ?", ids).
+		Delete(&entity.CareerProfileTestSession{}).Error
 }
