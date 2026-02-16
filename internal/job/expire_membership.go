@@ -1,6 +1,6 @@
 package job
 
-import "rextra-backend/internal/api/service"
+import "rextra-backend/internal/modules/membership/service"
 
 type ExpireMembershipJob struct {
 	MembershipService service.MembershipService

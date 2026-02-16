@@ -3,10 +3,11 @@ package auth
 import (
 	"rextra-backend/internal/middleware"
 	"rextra-backend/internal/modules/auth/controller"
-	"rextra-backend/internal/modules/auth/repository"
+	auth "rextra-backend/internal/modules/auth/repository"
 	"rextra-backend/internal/modules/auth/routes"
 	"rextra-backend/internal/modules/auth/service"
 	membershipRepo "rextra-backend/internal/modules/membership/repository"
+	user "rextra-backend/internal/modules/user/repository"
 	mailer "rextra-backend/internal/pkg/email"
 
 	"github.com/gin-gonic/gin"
@@ -15,8 +16,8 @@ import (
 
 func InitModule(server *gin.Engine, db *gorm.DB, middleware middleware.Middleware, mailerService mailer.Mailer) {
 	// Repositories
-	userRepository := repository.NewUser(db)
-	sessionRepository := repository.NewSession(db)
+	userRepository := user.NewUser(db)
+	sessionRepository := auth.NewSession(db)
 
 	// Membership repositories (cross-module dependency)
 	membershipRepository := membershipRepo.NewMembershipRepository(db)
@@ -40,5 +41,4 @@ func InitModule(server *gin.Engine, db *gorm.DB, middleware middleware.Middlewar
 
 	// Routes
 	routes.ServeAuth(server, authController, middleware)
-	routes.ServeUser(server, authController, middleware)
 }

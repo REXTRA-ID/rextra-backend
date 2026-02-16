@@ -2,8 +2,8 @@ package user
 
 import (
 	"rextra-backend/internal/middleware"
-	authRepo "rextra-backend/internal/modules/auth/repository"
 	"rextra-backend/internal/modules/user/controller"
+	userRepo "rextra-backend/internal/modules/user/repository"
 	"rextra-backend/internal/modules/user/service"
 
 	"github.com/gin-gonic/gin"
@@ -12,7 +12,7 @@ import (
 
 func InitModule(server *gin.Engine, db *gorm.DB, middleware middleware.Middleware) {
 	// Repository (shared with auth module)
-	userRepository := authRepo.NewUser(db)
+	userRepository := userRepo.NewUser(db)
 
 	// Service
 	userService := service.NewUser(userRepository, db)

@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 
-	"rextra-backend/internal/modules/auth/repository"
 	dto_request "rextra-backend/internal/dto/request"
 	dto_response "rextra-backend/internal/dto/response"
 	"rextra-backend/internal/entity"
+	authen "rextra-backend/internal/modules/auth/repository"
+	membership "rextra-backend/internal/modules/membership/repository"
+	user "rextra-backend/internal/modules/user/repository"
 	mailer "rextra-backend/internal/pkg/email"
 	myerror "rextra-backend/internal/pkg/error"
 	myjwt "rextra-backend/internal/pkg/jwt"
@@ -35,22 +37,22 @@ type (
 	}
 
 	authService struct {
-		userRepository               repository.UserRepository
-		membershipRepository         repository.MembershipRepository
-		membershipDurationRepository repository.MembershipDurationRepository
-		membershipPlanRepository     repository.MembershipPlanRepository
-		sessionRepository            repository.SessionRepository
+		userRepository               user.UserRepository
+		membershipRepository         membership.MembershipRepository
+		membershipDurationRepository membership.MembershipDurationRepository
+		membershipPlanRepository     membership.MembershipPlanRepository
+		sessionRepository            authen.SessionRepository
 		mailService                  mailer.Mailer
 		// firebaseClient               *auth.Client
 		db *gorm.DB
 	}
 )
 
-func NewAuth(userRepository repository.UserRepository,
-	membershipRepository repository.MembershipRepository,
-	membershipDurationRepository repository.MembershipDurationRepository,
-	membershipPlanRepository repository.MembershipPlanRepository,
-	sessionRepository repository.SessionRepository,
+func NewAuth(userRepository user.UserRepository,
+	membershipRepository membership.MembershipRepository,
+	membershipDurationRepository membership.MembershipDurationRepository,
+	membershipPlanRepository membership.MembershipPlanRepository,
+	sessionRepository authen.SessionRepository,
 	mailService mailer.Mailer,
 	firebaseClient *auth.Client,
 	db *gorm.DB) AuthService {
