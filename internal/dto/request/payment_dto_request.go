@@ -6,6 +6,7 @@ type MakeNewTransactionTokenRequest struct {
 	GrossAmount   float64 `json:"gross_amount"`
 	Description   string  `json:"description"`
 	PromoCode     *string `json:"promo_code"`
+	Method        string  `json:"method"`
 }
 
 type MakeNewTransactionMembershipRequest struct {

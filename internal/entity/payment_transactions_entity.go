@@ -15,6 +15,19 @@ type (
 	PaymentType string
 
 	PaymentServiceStatus string
+
+	PaymentChannel struct {
+		Code    string `json:"code"`
+		Name    string `json:"name"`
+		IconUrl string `json:"icon_url"`
+	}
+
+	TransactionResponse struct {
+		Reference    string
+		MerchantReff string
+		CheckoutUrl  string
+		Status       string
+	}
 )
 
 const (
@@ -51,6 +64,10 @@ type PaymentTransactions struct {
 
 	TokenQuantity int `json:"token_quantity" gorm:"default:0"`
 
+	CheckoutUrl string `json:"checkout_url"`
+	Reference   string `json:"reference"`
+	MerchanRef  string `json:"merchant_reference"`
+
 	GrossAmount         float64        `json:"gross_amount"`
 	FinalAmount         float64        `json:"final_amount"`
 	PromoCode           *string        `json:"promo_code"`
@@ -71,9 +88,18 @@ func NewPaymenTransaction(userId uuid.UUID,
 	paymentType string,
 	planId, durationId *uuid.UUID,
 	grossAmount float64,
-	tokenQuantity int) PaymentTransactions {
+	tokenQuantity int,
+	paymentResponse *TransactionResponse) PaymentTransactions {
 
 	payemntExternalId := utils.PaymentExternalID(paymentType, userId.String())
+
+	var checkoutUrl, ref, merchantRef string
+
+	if paymentResponse == nil {
+		checkoutUrl = ""
+		ref = ""
+		merchantRef = ""
+	}
 
 	return PaymentTransactions{
 		UserID:            userId,
@@ -81,15 +107,14 @@ func NewPaymenTransaction(userId uuid.UUID,
 		DurationID:        durationId,
 		TokenQuantity:     tokenQuantity,
 		PaymentType:       PaymentType(paymentType),
+		CheckoutUrl:       checkoutUrl,
+		Reference:         ref,
+		MerchanRef:        merchantRef,
 		PaymentStatus:     PENDING,
 		GrossAmount:       grossAmount,
 		FinalAmount:       grossAmount,
 		PaymentExternalID: payemntExternalId,
 	}
-}
-
-func (p *PaymentTransactions) SetInvoice(invoiceId string) {
-	p.PaymentInvoiceID = invoiceId
 }
 
 func (p *PaymentTransactions) UpdateXenditTransaction(paymentStatus string, paymentCallback []byte) bool {
