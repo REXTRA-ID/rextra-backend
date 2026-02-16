@@ -226,9 +226,10 @@ func (s *authService) Login(ctx context.Context, req dto_request.LoginRequest) (
 	}
 
 	accessToken, err := myjwt.GenerateToken(map[string]string{
-		"user_id": user.ID.String(),
-		"email":   user.Email,
-		"role":    string(user.Role),
+		"user_id":    user.ID.String(),
+		"email":      user.Email,
+		"role":       string(user.Role),
+		"membership": string(user.Membership.Plan.PlanName),
 	}, 24*time.Hour)
 	if err != nil {
 		return dto_response.LoginResponse{}, err

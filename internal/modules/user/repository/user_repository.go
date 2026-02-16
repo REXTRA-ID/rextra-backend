@@ -55,7 +55,7 @@ func (r *userRepository) GetByEmail(ctx context.Context, tx *gorm.DB, email stri
 	}
 
 	var user entity.User
-	if err := tx.WithContext(ctx).Take(&user, "email = ?", email).Error; err != nil {
+	if err := tx.WithContext(ctx).Preload("Membership.Plan").Take(&user, "email = ?", email).Error; err != nil {
 		return entity.User{}, err
 	}
 

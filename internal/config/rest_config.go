@@ -16,6 +16,8 @@ import (
 	"rextra-backend/internal/modules/poin"
 	"rextra-backend/internal/modules/riasec"
 	"rextra-backend/internal/modules/token"
+	tokenRepo "rextra-backend/internal/modules/token/repository"
+	tokenService "rextra-backend/internal/modules/token/service"
 	mailer "rextra-backend/internal/pkg/email"
 	"rextra-backend/internal/pkg/tripay"
 
@@ -60,20 +62,22 @@ func NewRest() RestConfig {
 	membershipSvc := membershipService.NewMembershipService(membershipRepository, membershipPlanRepository)
 
 	// Note: Cronjobs are temporarily disabled until we refactor job package to use module services
-	// tokenTransactionRepository := tokenRepo.NewTokenTransactionRepository(db)
-	// tokenUsageHistoryRepository := tokenRepo.NewTokenUsageHistoryRepository(db)
-	// tokenTransactionSvc := tokenService.NewTokenTransactionService(membershipRepository, tokenTransactionRepository, tokenUsageHistoryRepository, db)
+	tokenTransactionRepository := tokenRepo.NewTokenTransactionRepository(db)
+	tokenUsageHistoryRepository := tokenRepo.NewTokenUsageHistoryRepository(db)
+	tokenTransactionSvc := tokenService.NewTokenTransactionService(membershipRepository, tokenTransactionRepository, tokenUsageHistoryRepository, db)
 
 	expireMembershipjob := &job.ExpireMembershipJob{
 		MembershipService: membershipSvc,
 	}
 
-	// refillTokenJob := &job.RefillTokenJob{
-	// 	TokenTransactionService: tokenTransactionSvc,
-	// }
+	refillTokenJob := &job.RefillTokenJob{
+		TokenTransactionService: tokenTransactionSvc,
+	}
 
 	// c.AddJob("0 0 1 * *", refillTokenJob)
 	c.AddJob("0 0 * * *", expireMembershipjob)
+
+	c.AddJob("0 0 * * *", refillTokenJob)
 
 	c.Start()
 
