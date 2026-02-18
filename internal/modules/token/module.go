@@ -25,6 +25,7 @@ func InitModule(server *gin.Engine, db *gorm.DB, middleware middleware.Middlewar
 		topUpService         service.TopupTransactionService = service.NewTopupTransactionService(topUpRepository, db)
 		tokenLedgerService   service.TokenLedgerService      = service.NewTokenLedgerService(tokenLedgerRepository, db)
 		summaryService       service.TokenSummaryService     = service.NewTokenSummaryService(tokenLedgerRepository, topUpRepository, db)
+		paymentService       service.PaymentService          = service.NewPaymentService(topUpRepository, tokenLedgerRepository)
 
 		tokenBundleController   controller.TokenBundleController      = controller.NewTokenBundleController(bundleService)
 		tokenWalletController   controller.TokenWalletController      = controller.NewTokenWalletController(walletService)
@@ -32,7 +33,9 @@ func InitModule(server *gin.Engine, db *gorm.DB, middleware middleware.Middlewar
 		topUpController         controller.TopupTransactionController = controller.NewTopupTransactionController(topUpService)
 		tokenLedgerController   controller.TokenLedgerController      = controller.NewTokenLedgerController(tokenLedgerService)
 		tokenSummaryController  controller.SummaryController          = controller.NewSummaryController(summaryService)
+		paymentController       controller.PaymentController          = controller.NewPaymentController(paymentService)
 	)
 
-	routes.ServeToken(server, tokenWalletController, tokenBundleController, customPricingController, topUpController, tokenLedgerController, tokenSummaryController, middleware)
+	routes.ServeToken(server, tokenWalletController, tokenBundleController, paymentController, middleware)
+	routes.ServeTokenAdmin(server, tokenBundleController, customPricingController, topUpController, tokenLedgerController, tokenSummaryController, middleware)
 }
