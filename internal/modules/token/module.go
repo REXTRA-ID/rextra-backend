@@ -2,6 +2,7 @@ package persona
 
 import (
 	"rextra-backend/internal/middleware"
+	authrepo "rextra-backend/internal/modules/auth/repository"
 	"rextra-backend/internal/modules/token/controller"
 	"rextra-backend/internal/modules/token/repository"
 	"rextra-backend/internal/modules/token/routes"
@@ -19,13 +20,15 @@ func InitModule(server *gin.Engine, db *gorm.DB, middleware middleware.Middlewar
 		customPricingRepository repository.CustomPricingRepository      = repository.NewCustomPricingRepository(db)
 		topUpRepository         repository.TopupTransactionRepository   = repository.NewTopupTransactionRepository(db)
 
+		userRepository authrepo.UserRepository = authrepo.NewUser(db)
+
 		walletService        service.WalletService           = service.NewWalletService(tokenWalletRepository, tokenLedgerRepository, db)
 		bundleService        service.BundleService           = service.NewBundleService(tokenBundleRepository, db)
 		customPricingService service.CustomPricingService    = service.NewCustomPricingService(customPricingRepository, db)
 		topUpService         service.TopupTransactionService = service.NewTopupTransactionService(topUpRepository, db)
 		tokenLedgerService   service.TokenLedgerService      = service.NewTokenLedgerService(tokenLedgerRepository, db)
 		summaryService       service.TokenSummaryService     = service.NewTokenSummaryService(tokenLedgerRepository, topUpRepository, db)
-		paymentService       service.PaymentService          = service.NewPaymentService(topUpRepository, tokenLedgerRepository)
+		paymentService       service.PaymentService          = service.NewPaymentService(topUpRepository, tokenLedgerRepository, userRepository, tokenBundleRepository)
 
 		tokenBundleController   controller.TokenBundleController      = controller.NewTokenBundleController(bundleService)
 		tokenWalletController   controller.TokenWalletController      = controller.NewTokenWalletController(walletService)

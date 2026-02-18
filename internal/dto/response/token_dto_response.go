@@ -118,3 +118,12 @@ type TokenSourceTrendDTOResponse struct {
 	Date  string `json:"date"`
 	Value int    `json:"value"`
 }
+
+type CreateTransactionDTOResponse struct {
+	ID        string                 `json:"id"`
+	Amount    int                    `json:"amount"`
+	Invoice   string                 `json:"invoice"`
+	ExpiredAt time.Time              `json:"expired_at"`
+	Status    string                 `json:"status"`
+	Metadata  map[string]interface{} `json:"metadata"`
+}

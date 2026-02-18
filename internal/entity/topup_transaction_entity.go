@@ -41,7 +41,14 @@ func (m *TopupMetadata) Scan(value any) error {
 
 // Value implements driver.Valuer
 func (m TopupMetadata) Value() (driver.Value, error) {
-	return json.Marshal(m)
+	if m == nil {
+		return "{}", nil
+	}
+	b, err := json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	return string(b), nil
 }
 
 type TopupTransaction struct {

@@ -27,3 +27,10 @@ type KPIDTORequest struct {
 	StartDate string `json:"start_date" binding:"required"`
 	EndDate   string `json:"end_date" binding:"required"`
 }
+
+type CreateTokenTransactionDTORequest struct {
+	TopupType     string `json:"topup_type" binding:"required,oneof=BUNDLE CUSTOM"`
+	BundleID      string `json:"bundle_id,omitempty"`
+	Amount        int    `json:"amount,omitempty" binding:"gte=1"`
+	PaymentMethod string `json:"payment_method" binding:"required"`
+}
