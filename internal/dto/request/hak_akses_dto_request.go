@@ -3,7 +3,7 @@ package dto_request
 type (
 	MakeHakAksesRequest struct {
 		MembershipPlanId string `json:"membership_plan_id"`
-		Feature          string `json:"feature"`
+		FeatureID        string `json:"feature_id"`
 		Action           string `json:"action"`
 	}
 

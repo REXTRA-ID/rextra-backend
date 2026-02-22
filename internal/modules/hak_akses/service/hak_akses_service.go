@@ -32,7 +32,7 @@ func NewHakAksesService(hakAksesRepo repository.HakAksesRepository, db *gorm.DB)
 
 func (s *hakAksesService) MakeHakAkses(ctx context.Context, dto dto_request.MakeHakAksesRequest) (dto_response.MakeHakAksesResponse, error) {
 
-	hakAkses := entity.NewHakAkses(uuid.MustParse(dto.MembershipPlanId), dto.Feature, dto.Action)
+	hakAkses := entity.NewHakAkses(uuid.MustParse(dto.MembershipPlanId), uuid.MustParse(dto.FeatureID), dto.Action)
 
 	newHakAkses, err := s.hakAksesRepository.Create(ctx, nil, hakAkses)
 	if err != nil {
@@ -41,8 +41,8 @@ func (s *hakAksesService) MakeHakAkses(ctx context.Context, dto dto_request.Make
 
 	return dto_response.MakeHakAksesResponse{
 		Id:               newHakAkses.ID.String(),
-		MembershipPlanId: newHakAkses.MembershipPlanId.String(),
-		Feature:          string(newHakAkses.Feature),
+		MembershipPlanId: newHakAkses.MembershipPlanID.String(),
+		FeatureId:        newHakAkses.FeatureID.String(),
 		Action:           string(newHakAkses.Action),
 	}, nil
 }
