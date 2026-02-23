@@ -19,15 +19,23 @@ type Feature struct {
 	Name   string        `json:"name"`
 	Slug   string        `json:"slug"`
 	Status FeatureStatus `json:"status"`
+	Type   FeatureType   `json:"type"`
 
 	ParentID *uuid.UUID `json:"parent_id"`
 	Parent   *Feature   `gorm:"foreignKey:ParentID"`
 }
 
-func NewFeature(name, slug string, parentId *uuid.UUID) Feature {
+func NewFeature(name, slug string, parentId *uuid.UUID, status string) Feature {
+	var fType FeatureType = MAINFEATURE
+	if parentId != nil {
+		fType = SUBFEATURE
+	}
+
 	return Feature{
 		Name:     name,
 		Slug:     slug,
 		ParentID: parentId,
+		Status:   FeatureStatus(status),
+		Type:     fType,
 	}
 }
