@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
-	"rextra-backend/internal/modules/membership/repository"
 	dto_response "rextra-backend/internal/dto/response"
 	"rextra-backend/internal/entity"
+	"rextra-backend/internal/modules/membership/repository"
 
 	"gorm.io/gorm"
 )
@@ -40,6 +40,10 @@ func MapMembershipPlanResponse(plans []entity.MembershipPlans) []dto_response.Ge
 	var res []dto_response.GetMembershipPlanResponse
 
 	for _, plan := range plans {
+		planBenefits, err := plan.GetBenefits()
+		if err != nil {
+			planBenefits = nil
+		}
 		res = append(res,
 			dto_response.GetMembershipPlanResponse{
 				ID:               plan.ID.String(),
@@ -47,7 +51,7 @@ func MapMembershipPlanResponse(plans []entity.MembershipPlans) []dto_response.Ge
 				MonthlyToken:     plan.MonthlyToken,
 				BaseMonthlyPrice: plan.BaseMonthlyPrice,
 				Description:      plan.Description,
-				Benefits:         plan.Benefits,
+				Benefits:         planBenefits,
 				IsActive:         plan.IsActive,
 			},
 		)

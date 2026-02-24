@@ -146,7 +146,6 @@ func (s *authService) Verify(ctx context.Context, token string) error {
 	}
 
 	user.IsVerified = true
-	user.Membership = userMembership
 
 	_, err = s.userRepository.Update(ctx, nil, user)
 	if err != nil {

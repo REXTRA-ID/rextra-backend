@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -45,6 +46,14 @@ func NewMembershipPlans(planName string, MonthlyToken int,
 		Description:      description,
 		Benefits:         benefits,
 	}
+}
+
+func (m *MembershipPlans) GetBenefits() ([]string, error) {
+	var benefits []string
+	if err := json.Unmarshal(m.Benefits, &benefits); err != nil {
+		return nil, err
+	}
+	return benefits, nil
 }
 
 func (m *MembershipPlans) BeforeCreate(tx *gorm.DB) (err error) {

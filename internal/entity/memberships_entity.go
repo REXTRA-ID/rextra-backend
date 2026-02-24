@@ -21,7 +21,7 @@ type Memberships struct {
 	CurrentPoinBalance  int        `json:"current_poin_balance" gorm:"default:0"`
 	StartedAt           *time.Time `json:"started_at"`
 	ExpiredAt           *time.Time `json:"expired_at"`
-	IsActive            bool       `json:"is_active"`
+	IsActive            bool       `json:"is_active" gorm:"default:true"`
 	AutoRenew           bool       `json:"auto_renew" gorm:"default:false"`
 
 	Timestamp

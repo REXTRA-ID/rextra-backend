@@ -47,7 +47,7 @@ func (r *membershipDurationRepository) GetByDurationMonth(ctx context.Context, t
 	}
 
 	var membershipDuration entity.MembershipDuration
-	if err := tx.WithContext(ctx).First(&membershipDuration, "duration_months = ?", duration).Error; err != nil {
+	if err := tx.WithContext(ctx).First(&membershipDuration, "duration_month = ?", duration).Error; err != nil {
 		return entity.MembershipDuration{}, err
 	}
 

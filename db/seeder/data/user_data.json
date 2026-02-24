@@ -6,5 +6,13 @@
         "is_verified": true,
         "phone_number": "0888888888",
         "role":"ADMIN"
+    },
+    {
+        "username": "aldoger",
+        "email": "nainggolanben12@gmail.com",
+        "password": "aldoger",
+        "is_verified": true,
+        "phone_number": "081213637771",
+        "role": "USER"
     }
 ]
