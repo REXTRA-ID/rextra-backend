@@ -22,7 +22,7 @@ type User struct {
 	PhoneNumber     string    `json:"phone_number" gorm:"not null"`
 	Role            Role      `json:"role" gorm:"default:USER;not null"`
 
-	Membership Memberships `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	Membership Memberships `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCDE;"`
 }
 
 func (u *User) TableName() string {
