@@ -27,5 +27,6 @@ func ServeToken(
 		// PAYMENT
 		routes.GET("/payment/instruction", middleware.Authenticate(), paymentController.GetInstructions)
 		routes.POST("/payment/transaction", middleware.Authenticate(), paymentController.CreateTransaction)
+		routes.POST("/payment/count-price", middleware.Authenticate(), paymentController.CountPaymentPrice)
 	}
 }

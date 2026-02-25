@@ -127,3 +127,9 @@ type CreateTransactionDTOResponse struct {
 	Status    string                 `json:"status"`
 	Metadata  map[string]interface{} `json:"metadata"`
 }
+
+type CountPaymentPriceDTOResponse struct {
+	TotalPrice int `json:"total_price"`
+	Fee        int `json:"fee"`
+	BasePrice  int `json:"base_price"`
+}

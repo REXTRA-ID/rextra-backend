@@ -13,6 +13,7 @@ type (
 	PaymentController interface {
 		GetInstructions(ctx *gin.Context)
 		CreateTransaction(ctx *gin.Context)
+		CountPaymentPrice(ctx *gin.Context)
 	}
 
 	paymentController struct {
@@ -53,4 +54,19 @@ func (c *paymentController) CreateTransaction(ctx *gin.Context) {
 		return
 	}
 	response.NewSuccess("success create transaction", res).Send(ctx)
+}
+
+func (c *paymentController) CountPaymentPrice(ctx *gin.Context) {
+	var req dto_request.CreateTokenTransactionDTORequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		response.NewFailed("failed bind request", err).Send(ctx)
+		return
+	}
+
+	res, err := c.paymentService.CountPaymentPrice(ctx, req)
+	if err != nil {
+		response.NewFailed("failed count payment price", err).Send(ctx)
+		return
+	}
+	response.NewSuccess("success count payment price", res).Send(ctx)
 }
