@@ -17,6 +17,11 @@ func Seeding(db *gorm.DB) error {
 		seeds.SeedTokenBundlePackages,
 		seeds.SeedStudentObstacleOptions,
 		seeds.SeedExpertObstacleOptions,
+		
+		// Jelajah Profesi Categories
+		seeds.SeedProfessionMainCategory,
+		seeds.SeedProfessionSubCategory,
+
 		// 2. KenaliDiri (depends: User) — TRUNCATE + recreate
 		seeds.SeederKenaliDiri,
 		// 3. Remaining entities (depends: User, KenaliDiri sessions)
