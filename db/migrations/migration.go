@@ -57,6 +57,29 @@ func Migrate(db *gorm.DB) error {
 		&entity.TopupTransaction{},
 		&entity.CustomPricingTier{},
 		&entity.CustomPricingConfig{},
+
+		// Jelajah Profesi Level 1
+		&entity.ProfessionMainCategory{},
+		&entity.Skill{},
+		&entity.Tool{},
+		&entity.StudyProgram{},
+
+		// Jelajah Profesi Level 2
+		&entity.ProfessionSubCategory{},
+
+		// Jelajah Profesi Level 3
+		&entity.Profession{},
+
+		// Jelajah Profesi Level 4
+		&entity.ProfessionAlias{},
+		&entity.ProfessionActivity{},
+		&entity.ProfessionMarketInsight{},
+		&entity.ProfessionCareerPath{},
+
+		// Jelajah Profesi Level 5
+		&entity.ProfessionSkill{},
+		&entity.ProfessionTool{},
+		&entity.ProfessionStudyProgram{},
 	); err != nil {
 		return err
 	}
@@ -70,6 +93,11 @@ func Migrate(db *gorm.DB) error {
 
 	mylog.Infof("Adding feedback constraints...")
 	if err := AddFeedbackConstraints(db); err != nil {
+		return err
+	}
+
+	mylog.Infof("Adding jelajah profesi constraints...")
+	if err := AddJelajahProfesiConstraints(db); err != nil {
 		return err
 	}
 
