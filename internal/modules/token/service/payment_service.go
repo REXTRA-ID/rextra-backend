@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	dto_request "rextra-backend/internal/dto/request"
 	dto_response "rextra-backend/internal/dto/response"
 	"rextra-backend/internal/entity"
@@ -23,19 +24,21 @@ type (
 	}
 
 	paymentService struct {
-		topUpRepository       tokenrepo.TopupTransactionRepository
-		tokenLedgerRepository tokenrepo.TokenLedgerRepository
-		tokenBundleRepository tokenrepo.TokenBundlePackageRepository
-		userRepository        authrepo.UserRepository
+		topUpRepository         tokenrepo.TopupTransactionRepository
+		tokenLedgerRepository   tokenrepo.TokenLedgerRepository
+		tokenBundleRepository   tokenrepo.TokenBundlePackageRepository
+		userRepository          authrepo.UserRepository
+		customPricingRepository tokenrepo.CustomPricingRepository
 	}
 )
 
-func NewPaymentService(topUpRepository tokenrepo.TopupTransactionRepository, tokenLedgerRepository tokenrepo.TokenLedgerRepository, userRepository authrepo.UserRepository, tokenBundleRepository tokenrepo.TokenBundlePackageRepository) PaymentService {
+func NewPaymentService(topUpRepository tokenrepo.TopupTransactionRepository, tokenLedgerRepository tokenrepo.TokenLedgerRepository, userRepository authrepo.UserRepository, tokenBundleRepository tokenrepo.TokenBundlePackageRepository, customPricingRepository tokenrepo.CustomPricingRepository) PaymentService {
 	return &paymentService{
-		topUpRepository:       topUpRepository,
-		tokenLedgerRepository: tokenLedgerRepository,
-		userRepository:        userRepository,
-		tokenBundleRepository: tokenBundleRepository,
+		topUpRepository:         topUpRepository,
+		tokenLedgerRepository:   tokenLedgerRepository,
+		userRepository:          userRepository,
+		tokenBundleRepository:   tokenBundleRepository,
+		customPricingRepository: customPricingRepository,
 	}
 }
 
@@ -136,5 +139,80 @@ func (s *paymentService) createBundleTransaction(ctx context.Context, user entit
 
 func (s *paymentService) createCustomTransaction(ctx context.Context, user entity.User, req dto_request.CreateTokenTransactionDTORequest) (dto_response.CreateTransactionDTOResponse, error) {
 	// Implement the logic to create a transaction using the provided DTO
-	return dto_response.CreateTransactionDTOResponse{}, nil
+	pricingConfig, err := s.customPricingRepository.GetCurrentConfig(ctx, nil)
+	if err != nil {
+		return dto_response.CreateTransactionDTOResponse{}, err
+	}
+
+	if req.Amount < int(pricingConfig.MinToken) || req.Amount > int(pricingConfig.MaxToken) {
+		return dto_response.CreateTransactionDTOResponse{}, myerror.New("Invalid amount", myerror.Error_InvalidRequest)
+	}
+
+	unitPrice := int(pricingConfig.RecommendedPricePerToken)
+	for _, tier := range pricingConfig.Tiers {
+		if req.Amount >= int(tier.FromToken) && req.Amount <= int(tier.ToToken) {
+			unitPrice = unitPrice * (100 - int(tier.DiscountPct)) / 100
+			break
+		}
+	}
+	totalPrice := req.Amount * unitPrice
+
+	fmt.Println("unitPrice", unitPrice, "totalPrice", totalPrice)
+
+	payload := tripay.TransactionPayload{
+		Method:        req.PaymentMethod,
+		Amount:        totalPrice,
+		CustomerName:  user.Fullname,
+		CustomerEmail: user.Email,
+		CustomerPhone: user.PhoneNumber,
+	}
+
+	orderItems := []tripay.OrderItem{
+		{
+			"name":      "custom",
+			"price":     unitPrice,
+			"quantity":  req.Amount,
+			"bundle_id": "",
+		},
+	}
+
+	paymentRes, err := tripay.CreateTransaction(payload, orderItems)
+	if err != nil {
+		return dto_response.CreateTransactionDTOResponse{}, err
+	}
+
+	expiredTime := time.Unix(paymentRes.ExpiredTime, 0)
+	topup, err := s.topUpRepository.Create(ctx, nil, &entity.TopupTransaction{
+		UserID:       user.ID,
+		Type:         "CUSTOM",
+		TokenAmount:  int64(req.Amount),
+		TotalPriceRp: int64(paymentRes.Amount) + int64(paymentRes.TotalFee),
+		Status:       "PENDING",
+		InvoiceID:    paymentRes.Reference,
+		Provider:     &paymentRes.PaymentMethod,
+		ExpiredAt:    &expiredTime,
+		Metadata: entity.TopupMetadata{
+			"callback_url": paymentRes.CallbackURL,
+			"return_url":   paymentRes.ReturnURL,
+			"amount":       totalPrice,
+			"fee_merchant": paymentRes.FeeMerchant,
+			"fee_customer": paymentRes.FeeCustomer,
+			"pay_code":     paymentRes.PayCode,
+			"pay_url":      paymentRes.PayURL,
+			"checkout_url": paymentRes.CheckoutURL,
+		},
+	})
+
+	if err != nil {
+		return dto_response.CreateTransactionDTOResponse{}, err
+	}
+
+	return dto_response.CreateTransactionDTOResponse{
+		ID:        topup.ID.String(),
+		Amount:    int(topup.TotalPriceRp),
+		Invoice:   topup.InvoiceID,
+		ExpiredAt: *topup.ExpiredAt,
+		Status:    string(topup.Status),
+		Metadata:  topup.Metadata,
+	}, nil
 }

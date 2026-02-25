@@ -28,7 +28,7 @@ func InitModule(server *gin.Engine, db *gorm.DB, middleware middleware.Middlewar
 		topUpService         service.TopupTransactionService = service.NewTopupTransactionService(topUpRepository, db)
 		tokenLedgerService   service.TokenLedgerService      = service.NewTokenLedgerService(tokenLedgerRepository, db)
 		summaryService       service.TokenSummaryService     = service.NewTokenSummaryService(tokenLedgerRepository, topUpRepository, db)
-		paymentService       service.PaymentService          = service.NewPaymentService(topUpRepository, tokenLedgerRepository, userRepository, tokenBundleRepository)
+		paymentService       service.PaymentService          = service.NewPaymentService(topUpRepository, tokenLedgerRepository, userRepository, tokenBundleRepository, customPricingRepository)
 
 		tokenBundleController   controller.TokenBundleController      = controller.NewTokenBundleController(bundleService)
 		tokenWalletController   controller.TokenWalletController      = controller.NewTokenWalletController(walletService)
