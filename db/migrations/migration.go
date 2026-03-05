@@ -80,6 +80,9 @@ func Migrate(db *gorm.DB) error {
 		&entity.ProfessionSkill{},
 		&entity.ProfessionTool{},
 		&entity.ProfessionStudyProgram{},
+
+		// Jelajah Profesi Level 6 (User Relations)
+		&entity.UserFavoriteProfession{},
 	); err != nil {
 		return err
 	}

@@ -57,5 +57,15 @@ func AddJelajahProfesiConstraints(db *gorm.DB) error {
 		return err
 	}
 
+	// Unique favorite per user-profession pair
+	if err := db.Exec(`
+		ALTER TABLE user_favorite_professions
+		DROP CONSTRAINT IF EXISTS uq_user_favorite_profession;
+		ALTER TABLE user_favorite_professions
+		ADD CONSTRAINT uq_user_favorite_profession UNIQUE (user_id, profession_id);
+	`).Error; err != nil {
+		return err
+	}
+
 	return nil
 }

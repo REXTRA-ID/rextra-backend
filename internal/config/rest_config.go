@@ -7,6 +7,7 @@ import (
 	"rextra-backend/db"
 	"rextra-backend/internal/middleware"
 	auth "rextra-backend/internal/modules/auth"
+	jelajahprofesi "rextra-backend/internal/modules/jelajah_profesi"
 	kenalidiri "rextra-backend/internal/modules/kenali_diri"
 	persona "rextra-backend/internal/modules/persona"
 	token "rextra-backend/internal/modules/token"
@@ -47,6 +48,7 @@ func NewRest() RestConfig {
 	persona.InitModule(server, db, middleware)
 	kenalidiri.InitModule(server, db, middleware, cacheService, exportService)
 	token.InitModule(server, db, middleware)
+	jelajahprofesi.InitModule(server, db, middleware)
 
 	return RestConfig{
 		server:       server,
