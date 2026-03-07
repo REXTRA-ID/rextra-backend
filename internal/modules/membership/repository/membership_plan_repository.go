@@ -10,12 +10,14 @@ import (
 
 type (
 	MembershipPlanRepository interface {
-		Create(ctx context.Context, tx *gorm.DB, membershipPlan entity.MembershipPlans) (entity.MembershipPlans, error)
-		GetByID(ctx context.Context, tx *gorm.DB, membershipPlanId uuid.UUID) (entity.MembershipPlans, error)
-		GetByPlanName(ctx context.Context, tx *gorm.DB, planName string) (entity.MembershipPlans, error)
+		Create(ctx context.Context, tx *gorm.DB, model entity.MembershipPlans) (entity.MembershipPlans, error)
 		GetAll(ctx context.Context, tx *gorm.DB) ([]entity.MembershipPlans, error)
-		Update(ctx context.Context, tx *gorm.DB, membershipPlan entity.MembershipPlans) (entity.MembershipPlans, error)
-		Delete(ctx context.Context, tx *gorm.DB, membershipPlanId uuid.UUID) (entity.MembershipPlans, error)
+		GetAllWithDurations(ctx context.Context, tx *gorm.DB) ([]entity.MembershipPlans, error)
+		GetByID(ctx context.Context, tx *gorm.DB, id uuid.UUID) (entity.MembershipPlans, error)
+		GetByPlanName(ctx context.Context, tx *gorm.DB, planName entity.EnumPlanName) (entity.MembershipPlans, error)
+		Update(ctx context.Context, tx *gorm.DB, model entity.MembershipPlans) (entity.MembershipPlans, error)
+		Delete(ctx context.Context, tx *gorm.DB, id uuid.UUID) error
+		CountActiveMembers(ctx context.Context, tx *gorm.DB, id uuid.UUID) (int64, error)
 	}
 
 	membershipPlanRepository struct {
@@ -24,83 +26,103 @@ type (
 )
 
 func NewMembershipPlanRepository(db *gorm.DB) MembershipPlanRepository {
-	return &membershipPlanRepository{
-		db: db,
-	}
+	return &membershipPlanRepository{db: db}
 }
 
-func (r *membershipPlanRepository) Create(ctx context.Context, tx *gorm.DB, membershipPlan entity.MembershipPlans) (entity.MembershipPlans, error) {
+func (r *membershipPlanRepository) Create(ctx context.Context, tx *gorm.DB, model entity.MembershipPlans) (entity.MembershipPlans, error) {
 	if tx == nil {
 		tx = r.db
 	}
-
-	if err := tx.WithContext(ctx).Create(&membershipPlan).Error; err != nil {
+	if err := tx.WithContext(ctx).Create(&model).Error; err != nil {
 		return entity.MembershipPlans{}, err
 	}
-
-	return membershipPlan, nil
-}
-
-func (r *membershipPlanRepository) GetByID(ctx context.Context, tx *gorm.DB, membershipPlanId uuid.UUID) (entity.MembershipPlans, error) {
-	if tx == nil {
-		tx = r.db
-	}
-
-	var membershipPlan entity.MembershipPlans
-	if err := tx.WithContext(ctx).First(&membershipPlan, "id = ?", membershipPlanId).Error; err != nil {
-		return entity.MembershipPlans{}, err
-	}
-
-	return membershipPlan, nil
-}
-
-func (r *membershipPlanRepository) GetByPlanName(ctx context.Context, tx *gorm.DB, planName string) (entity.MembershipPlans, error) {
-	if tx == nil {
-		tx = r.db
-	}
-
-	var membershipPlan entity.MembershipPlans
-	if err := tx.WithContext(ctx).First(&membershipPlan, "plan_name = ?", entity.PLANSTARTER).Error; err != nil {
-		return entity.MembershipPlans{}, err
-	}
-
-	return membershipPlan, nil
+	return model, nil
 }
 
 func (r *membershipPlanRepository) GetAll(ctx context.Context, tx *gorm.DB) ([]entity.MembershipPlans, error) {
 	if tx == nil {
 		tx = r.db
 	}
-
-	var membershipPlans []entity.MembershipPlans
-	if err := tx.WithContext(ctx).Find(&membershipPlans).Error; err != nil {
-		return []entity.MembershipPlans{}, err
+	var models []entity.MembershipPlans
+	if err := tx.WithContext(ctx).Order("created_at ASC").Find(&models).Error; err != nil {
+		return nil, err
 	}
-
-	return membershipPlans, nil
+	return models, nil
 }
 
-func (r *membershipPlanRepository) Update(ctx context.Context, tx *gorm.DB, membershipPlan entity.MembershipPlans) (entity.MembershipPlans, error) {
+// GetAllWithDurations mengambil semua plan beserta PlanDurations-nya (preload).
+// Dipakai untuk halaman katalog admin yang perlu tampilkan harga per durasi sekaligus.
+func (r *membershipPlanRepository) GetAllWithDurations(ctx context.Context, tx *gorm.DB) ([]entity.MembershipPlans, error) {
 	if tx == nil {
 		tx = r.db
 	}
-
-	if err := tx.WithContext(ctx).Save(&membershipPlan).Error; err != nil {
-		return entity.MembershipPlans{}, err
+	var models []entity.MembershipPlans
+	if err := tx.WithContext(ctx).
+		Preload("PlanDurations", "is_active = ?", true).
+		Order("created_at ASC").
+		Find(&models).Error; err != nil {
+		return nil, err
 	}
-
-	return membershipPlan, nil
+	return models, nil
 }
 
-func (r *membershipPlanRepository) Delete(ctx context.Context, tx *gorm.DB, membershipPlanId uuid.UUID) (entity.MembershipPlans, error) {
+func (r *membershipPlanRepository) GetByID(ctx context.Context, tx *gorm.DB, id uuid.UUID) (entity.MembershipPlans, error) {
 	if tx == nil {
 		tx = r.db
 	}
-
-	var membershipPlan entity.MembershipPlans
-	if err := tx.WithContext(ctx).First(&membershipPlan, "id = ?", membershipPlanId).Delete(&membershipPlan, "id = ?", membershipPlanId).Error; err != nil {
+	var model entity.MembershipPlans
+	if err := tx.WithContext(ctx).
+		Preload("PlanDurations", func(db *gorm.DB) *gorm.DB {
+			return db.Order("duration_months ASC")
+		}).
+		First(&model, "id = ?", id).Error; err != nil {
 		return entity.MembershipPlans{}, err
 	}
+	return model, nil
+}
 
-	return membershipPlan, nil
+func (r *membershipPlanRepository) GetByPlanName(ctx context.Context, tx *gorm.DB, planName entity.EnumPlanName) (entity.MembershipPlans, error) {
+	if tx == nil {
+		tx = r.db
+	}
+	var model entity.MembershipPlans
+	if err := tx.WithContext(ctx).First(&model, "plan_name = ?", planName).Error; err != nil {
+		return entity.MembershipPlans{}, err
+	}
+	return model, nil
+}
+
+func (r *membershipPlanRepository) Update(ctx context.Context, tx *gorm.DB, model entity.MembershipPlans) (entity.MembershipPlans, error) {
+	if tx == nil {
+		tx = r.db
+	}
+	if err := tx.WithContext(ctx).Save(&model).Error; err != nil {
+		return entity.MembershipPlans{}, err
+	}
+	return model, nil
+}
+
+func (r *membershipPlanRepository) Delete(ctx context.Context, tx *gorm.DB, id uuid.UUID) error {
+	if tx == nil {
+		tx = r.db
+	}
+	if err := tx.WithContext(ctx).Delete(&entity.MembershipPlans{}, "id = ?", id).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// CountActiveMembers menghitung jumlah Memberships aktif yang menggunakan plan ini.
+// Guard sebelum Delete plan dan sebelum ubah PlanName/Category/DurationMode.
+func (r *membershipPlanRepository) CountActiveMembers(ctx context.Context, tx *gorm.DB, id uuid.UUID) (int64, error) {
+	if tx == nil {
+		tx = r.db
+	}
+	var count int64
+	if err := tx.WithContext(ctx).Model(&entity.Memberships{}).
+		Where("plan_id = ? AND is_active = true", id).
+		Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
 }

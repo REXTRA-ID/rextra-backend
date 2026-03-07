@@ -322,12 +322,12 @@ func (s *paymentTransactionService) updateTokenTransaction(ctx context.Context, 
 	tokenQuntity := transaction.TokenQuantity
 
 	if userMembership.MembershipStatus == entity.PLANSTANDARD {
-		plan, err := s.membershipPlanRepository.GetByPlanName(ctx, nil, string(entity.PLANSTARTER))
+		plan, err := s.membershipPlanRepository.GetByPlanName(ctx, nil, entity.PLANSTARTER)
 		if err != nil {
 			return err
 		}
 
-		duration, err := s.membershipDurationRepository.GetByDurationMonth(ctx, nil, 30)
+		duration, err := s.membershipDurationRepository.GetByPlanAndMonths(ctx, nil, plan.ID, 1)
 		if err != nil {
 			return err
 		}

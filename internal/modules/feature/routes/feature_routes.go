@@ -2,16 +2,35 @@ package routes
 
 import (
 	"rextra-backend/internal/middleware"
-	"rextra-backend/internal/modules/feature/controller"
+	fc "rextra-backend/internal/modules/feature/controller"
+	sfc "rextra-backend/internal/modules/sub_feature/controller"
 
 	"github.com/gin-gonic/gin"
 )
 
-func ServeFeature(app *gin.Engine, featureController controller.FeatureController, middleware middleware.Middleware) {
-	routes := app.Group("/api/v1/feature")
+func ServeFeature(
+	app *gin.Engine,
+	featureController fc.FeatureController,
+	subFeatureController sfc.SubFeatureController,
+	middleware middleware.Middleware,
+) {
+	feature := app.Group("/api/v1/feature")
+	feature.Use(middleware.Authenticate())
 	{
-		routes.GET("", middleware.Authenticate(), featureController.GetAll)
-		routes.GET("/:featureId", middleware.Authenticate(), featureController.GetById)
-		routes.POST("", middleware.Authenticate(), featureController.Create)
+		feature.GET("", featureController.GetAll)
+		feature.GET("/:featureId", featureController.GetById)
+		feature.POST("", featureController.Create)
+		feature.PUT("/:featureId", featureController.Update)
+		feature.DELETE("/:featureId", featureController.Delete)
+
+		// SubFeature — nested di bawah feature
+		subFeature := feature.Group("/:featureId/sub-feature")
+		{
+			subFeature.GET("", subFeatureController.GetAll)
+			subFeature.GET("/:subFeatureId", subFeatureController.GetById)
+			subFeature.POST("", subFeatureController.Create)
+			subFeature.PUT("/:subFeatureId", subFeatureController.Update)
+			subFeature.DELETE("/:subFeatureId", subFeatureController.Delete)
+		}
 	}
 }

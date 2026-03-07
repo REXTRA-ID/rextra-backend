@@ -126,14 +126,14 @@ func (s *authService) Verify(ctx context.Context, token string) error {
 		return err
 	}
 
-	starterPlan, err := s.membershipPlanRepository.GetByPlanName(ctx, nil, string(entity.PLANSTARTER))
+	starterPlan, err := s.membershipPlanRepository.GetByPlanName(ctx, nil, entity.PLANSTARTER)
 	if err != nil {
 		return err
 	}
 
-	const DURATION_STARTER = 30
+	const DURATION_STARTER = 1
 
-	membershipDuration, err := s.membershipDurationRepository.GetByDurationMonth(ctx, nil, DURATION_STARTER)
+	membershipDuration, err := s.membershipDurationRepository.GetByPlanAndMonths(ctx, nil, starterPlan.ID, 1)
 	if err != nil {
 		return err
 	}

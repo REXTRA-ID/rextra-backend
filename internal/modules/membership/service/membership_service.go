@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
-	"rextra-backend/internal/modules/membership/repository"
 	"rextra-backend/internal/entity"
+	"rextra-backend/internal/modules/membership/repository"
 	mylog "rextra-backend/internal/pkg/logger"
 )
 
@@ -29,7 +29,7 @@ func NewMembershipService(membershipRepository repository.MembershipRepository,
 func (s *membershipService) CheckExpiredMemberships() error {
 	ctx := context.Background()
 
-	planNonMember, err := s.membershipPlanRepository.GetByPlanName(ctx, nil, string(entity.PLANSTANDARD))
+	planNonMember, err := s.membershipPlanRepository.GetByPlanName(ctx, nil, entity.PLANSTANDARD)
 	if err != nil {
 		return err
 	}

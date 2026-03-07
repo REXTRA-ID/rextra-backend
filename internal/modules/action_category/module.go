@@ -13,10 +13,7 @@ import (
 
 func InitModule(server *gin.Engine, db *gorm.DB, middleware middleware.Middleware) {
 	actionCategoryRepository := repository.NewActionCategoryRepository(db)
-
 	actionCategoryService := service.NewActionCategoryService(actionCategoryRepository)
-
 	actionCategoryController := controller.NewActionCategoryController(actionCategoryService)
-
 	routes.ServeActionCategory(server, actionCategoryController, middleware)
 }

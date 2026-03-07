@@ -9,8 +9,12 @@ import (
 
 func ServeActionCategory(app *gin.Engine, actionCategoryController controller.ActionCategoryController, middleware middleware.Middleware) {
 	routes := app.Group("/api/v1/action-category")
+	routes.Use(middleware.Authenticate())
 	{
-		routes.GET("", middleware.Authenticate(), actionCategoryController.GetAll)
-		routes.POST("", middleware.Authenticate(), actionCategoryController.Create)
+		routes.GET("", actionCategoryController.GetAll)
+		routes.GET("/:actionCategoryId", actionCategoryController.GetById)
+		routes.POST("", actionCategoryController.Create)
+		routes.PUT("/:actionCategoryId", actionCategoryController.Update)
+		routes.DELETE("/:actionCategoryId", actionCategoryController.Delete)
 	}
 }

@@ -1,13 +1,12 @@
 package dto_request
 
-type CreateActionCategoryRequest struct {
+type CreateSubFeatureRequest struct {
 	Name        string `json:"name" binding:"required"`
 	Slug        string `json:"slug" binding:"required"`
 	Description string `json:"description"`
-	Status      string `json:"status" binding:"required,oneof=active inactive"`
 }
 
-type UpdateActionCategoryRequest struct {
+type UpdateSubFeatureRequest struct {
 	Name        string `json:"name" binding:"required"`
 	Slug        string `json:"slug" binding:"required"`
 	Description string `json:"description"`

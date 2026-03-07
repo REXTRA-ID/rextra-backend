@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"rextra-backend/internal/modules/hak_akses/service"
+	"rextra-backend/internal/modules/entitlement/service"
 
 	"gorm.io/gorm"
 )
@@ -13,7 +13,7 @@ type Middleware struct {
 }
 
 type AccessFeatureMiddleware struct {
-	HakAksesService service.HakAksesService
+	HakAksesService service.EntitlementService
 }
 
 func New(db *gorm.DB) Middleware {
