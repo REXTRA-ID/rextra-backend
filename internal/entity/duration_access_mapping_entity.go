@@ -8,16 +8,10 @@ import (
 )
 
 type MappingStatus string
-type RestrictionType string
 
 const (
 	MappingStatusActive   MappingStatus = "aktif"
 	MappingStatusInactive MappingStatus = "nonaktif"
-
-	RestrictionUnlimited        RestrictionType = "unlimited"
-	RestrictionTokenGated       RestrictionType = "token_gated"
-	RestrictionFrequencyLimited RestrictionType = "frequency_limited"
-	RestrictionLocked           RestrictionType = "locked"
 )
 
 type DurationAccessMapping struct {
@@ -25,10 +19,7 @@ type DurationAccessMapping struct {
 	PlanDurationID uuid.UUID `json:"plan_duration_id" gorm:"type:uuid;not null;index:idx_dam_unique,unique"`
 	EntitlementID  uuid.UUID `json:"entitlement_id" gorm:"type:uuid;not null;index:idx_dam_unique,unique"`
 
-	RestrictionType RestrictionType `json:"restriction_type" gorm:"type:varchar(30);not null;default:'unlimited'"`
-	TokenCost       int             `json:"token_cost" gorm:"not null;default:0"`
-	UsageLimit      int             `json:"usage_limit" gorm:"not null;default:0"`
-	ResetPeriod     *string         `json:"reset_period,omitempty" gorm:"type:varchar(20)"`
+	UsageLimit int `json:"usage_limit" gorm:"not null;default:0"`
 
 	// snapshot untuk admin UI
 	EntitlementKey  string `json:"entitlement_key" gorm:"type:varchar(200);not null"`
@@ -60,10 +51,7 @@ func NewDurationAccessMapping(
 	entitlementKey string,
 	entitlementName string,
 	category string,
-	restrictionType RestrictionType,
-	tokenCost int,
 	usageLimit int,
-	resetPeriod *string,
 ) DurationAccessMapping {
 	return DurationAccessMapping{
 		PlanDurationID:  planDurationID,
@@ -71,18 +59,7 @@ func NewDurationAccessMapping(
 		EntitlementKey:  entitlementKey,
 		EntitlementName: entitlementName,
 		Category:        category,
-		RestrictionType: restrictionType,
-		TokenCost:       tokenCost,
 		UsageLimit:      usageLimit,
-		ResetPeriod:     resetPeriod,
 		Status:          MappingStatusActive,
 	}
-}
-
-func (d *DurationAccessMapping) IsTokenGated() bool {
-	return d.RestrictionType == RestrictionTokenGated
-}
-
-func (d *DurationAccessMapping) IsFrequencyLimited() bool {
-	return d.RestrictionType == RestrictionFrequencyLimited
 }

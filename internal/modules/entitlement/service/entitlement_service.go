@@ -151,10 +151,18 @@ func (s *entitlementService) Create(ctx context.Context, req dto_request.CreateE
 		return dto_response.GetEntitlementResponse{}, myerror.DatabaseError(err)
 	}
 
+	var resetPeriod *string
+	if req.ResetPeriod != "" {
+		resetPeriod = &req.ResetPeriod
+	}
+
 	newEntitlement := entity.NewEntitlement(
 		key,
 		req.Name,
 		req.Description,
+		req.RestrictionType,
+		*resetPeriod,
+		req.TokenCost,
 		entity.EntitlementLevel(req.Level),
 		parsedFeatureID,
 		parsedSubFeatureID,

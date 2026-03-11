@@ -9,6 +9,7 @@ import (
 
 type EntitlementStatus string
 type EntitlementLevel string
+type RestrictionType string
 
 const (
 	EntitlementStatusActive   EntitlementStatus = "active"
@@ -16,6 +17,11 @@ const (
 
 	EntitlementLevelFeature    EntitlementLevel = "fitur"
 	EntitlementLevelSubFeature EntitlementLevel = "sub_fitur"
+
+	RestrictionUnlimited        RestrictionType = "unlimited"
+	RestrictionTokenGated       RestrictionType = "token_gated"
+	RestrictionFrequencyLimited RestrictionType = "frequency_limited"
+	RestrictionLocked           RestrictionType = "locked"
 )
 
 type Entitlement struct {
@@ -28,6 +34,10 @@ type Entitlement struct {
 	FeatureID        uuid.UUID         `json:"feature_id" gorm:"type:uuid;not null;index"`
 	SubFeatureID     *uuid.UUID        `json:"sub_feature_id,omitempty" gorm:"type:uuid;index"`
 	ActionCategoryID uuid.UUID         `json:"action_category_id" gorm:"type:uuid;not null;index"`
+
+	RestrictionType RestrictionType `json:"restriction_type" gorm:"type:varchar(30);not null;default:'unlimited'"`
+	TokenCost       int             `json:"token_cost" gorm:"not null;default:0"`
+	ResetPeriod     *string         `json:"reset_period,omitempty" gorm:"type:varchar(20)"`
 
 	Timestamp
 
@@ -57,6 +67,8 @@ func BuildEntitlementKey(featurePrefix, subFeatureSlug, actionSlug string) strin
 
 func NewEntitlement(
 	key, name, description string,
+	restrictionType, resetPeriod string,
+	tokenCost int,
 	level EntitlementLevel,
 	featureID uuid.UUID,
 	subFeatureID *uuid.UUID,
@@ -67,9 +79,20 @@ func NewEntitlement(
 		Name:             name,
 		Description:      description,
 		Level:            level,
+		RestrictionType:  RestrictionType(restrictionType),
+		TokenCost:        tokenCost,
+		ResetPeriod:      &resetPeriod,
 		FeatureID:        featureID,
 		SubFeatureID:     subFeatureID,
 		ActionCategoryID: actionCategoryID,
 		Status:           EntitlementStatusActive,
 	}
+}
+
+func (d *Entitlement) IsTokenGated() bool {
+	return d.RestrictionType == RestrictionTokenGated
+}
+
+func (d *Entitlement) IsFrequencyLimited() bool {
+	return d.RestrictionType == RestrictionFrequencyLimited
 }

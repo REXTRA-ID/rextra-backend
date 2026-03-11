@@ -20,4 +20,10 @@ type CreateEntitlementRequest struct {
 	// Level menentukan apakah ini entitlement level fitur atau sub fitur
 	// Nilai yang valid: "fitur" atau "sub_fitur"
 	Level string `json:"level" binding:"required,oneof=fitur sub_fitur"`
+
+	RestrictionType string `json:"restriction_type" binding:"required"`
+
+	ResetPeriod string `json:"reset_period,omitempty"`
+
+	TokenCost int `json:"token_cost"`
 }

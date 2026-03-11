@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"rextra-backend/internal/modules/persona/service"
 	dto_request "rextra-backend/internal/dto/request"
+	"rextra-backend/internal/modules/persona/service"
 	myerror "rextra-backend/internal/pkg/error"
 	"rextra-backend/internal/pkg/response"
 	"rextra-backend/internal/utils"
@@ -13,8 +13,8 @@ import (
 type (
 	PersonaController interface {
 		Create(ctx *gin.Context)
-		GetByUserID(ctx *gin.Context)
-		Update(ctx *gin.Context)
+		Get(ctx *gin.Context)
+		UpdateMission(ctx *gin.Context)
 	}
 
 	personaController struct {
@@ -29,19 +29,18 @@ func NewPersona(personaService service.PersonaService) PersonaController {
 }
 
 func (c *personaController) Create(ctx *gin.Context) {
-	var req dto_request.CreatePersonaRequest
-	if err := ctx.ShouldBind(&req); err != nil {
-		response.NewFailed("failed get data from body", myerror.InvalidRequest(err)).Send(ctx)
-		return
-	}
-
 	userId, err := utils.GetUserIdFromCtx(ctx)
 	if err != nil {
 		response.NewFailed("failed get user id from context", myerror.InvalidRequest(err)).Send(ctx)
 		return
 	}
 
+	var req dto_request.CreatePersonaRequest
 	req.UserID = userId
+	if err := ctx.ShouldBind(&req); err != nil {
+		response.NewFailed("failed get data from body", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
 
 	createResult, err := c.personaService.Create(ctx, req)
 	if err != nil {
@@ -52,40 +51,41 @@ func (c *personaController) Create(ctx *gin.Context) {
 	response.NewSuccess("success create persona", createResult).Send(ctx)
 }
 
-func (c *personaController) GetByUserID(ctx *gin.Context) {
+func (c *personaController) Get(ctx *gin.Context) {
 	userId, err := utils.GetUserIdFromCtx(ctx)
 	if err != nil {
 		response.NewFailed("failed get user id from context", myerror.InvalidRequest(err)).Send(ctx)
 		return
 	}
 
-	persona, err := c.personaService.GetByUserID(ctx, userId)
+	persona, err := c.personaService.Get(ctx, userId)
 	if err != nil {
-		response.NewFailed("failed get persona by id", err).Send(ctx)
+		response.NewFailed("failed get persona", err).Send(ctx)
 		return
 	}
 
-	response.NewSuccess("success get persona by id", persona).Send(ctx)
+	response.NewSuccess("success get persona", persona).Send(ctx)
 }
 
-func (c *personaController) Update(ctx *gin.Context) {
+func (c *personaController) UpdateMission(ctx *gin.Context) {
 	userId, err := utils.GetUserIdFromCtx(ctx)
 	if err != nil {
 		response.NewFailed("failed get user id from context", myerror.InvalidRequest(err)).Send(ctx)
 		return
 	}
-
-	var req dto_request.CreatePersonaRequest
+	var req dto_request.MissionPersonaCompleteRequest
+	req.UserID = userId
 	if err := ctx.ShouldBind(&req); err != nil {
 		response.NewFailed("failed get data from body", myerror.InvalidRequest(err)).Send(ctx)
 		return
 	}
 
-	updateResult, err := c.personaService.Update(ctx, userId, req)
+	persona, err := c.personaService.UpdateMission(ctx, req)
+
 	if err != nil {
 		response.NewFailed("failed update persona", err).Send(ctx)
 		return
 	}
 
-	response.NewSuccess("success update persona", updateResult).Send(ctx)
+	response.NewSuccess("success update persona mission", persona).Send(ctx)
 }

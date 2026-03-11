@@ -96,10 +96,7 @@ func (s *durationAccessMappingService) Create(
 		entitlement.Key,
 		entitlement.Name,
 		category,
-		entity.RestrictionType(req.RestrictionType),
-		req.TokenCost,
 		req.UsageLimit,
-		req.ResetPeriod,
 	)
 
 	result, err := s.mappingRepository.Create(ctx, nil, newMapping)
@@ -205,10 +202,7 @@ func (s *durationAccessMappingService) Update(ctx context.Context, planID, planD
 		}
 	}
 
-	existing.RestrictionType = entity.RestrictionType(req.RestrictionType)
-	existing.TokenCost = req.TokenCost
 	existing.UsageLimit = req.UsageLimit
-	existing.ResetPeriod = req.ResetPeriod
 	existing.Status = entity.MappingStatus(req.Status)
 
 	result, err := s.mappingRepository.Update(ctx, nil, existing)
@@ -253,10 +247,7 @@ func toMappingResponse(m entity.DurationAccessMapping) dto_response.GetDurationA
 		EntitlementKey:  m.EntitlementKey,
 		EntitlementName: m.EntitlementName,
 		Category:        m.Category,
-		RestrictionType: string(m.RestrictionType),
-		TokenCost:       m.TokenCost,
 		UsageLimit:      m.UsageLimit,
-		ResetPeriod:     m.ResetPeriod,
 		Status:          string(m.Status),
 		CreatedAt:       m.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
