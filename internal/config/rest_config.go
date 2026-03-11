@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+<<<<<<< HEAD
 	"rextra-backend/db"
 
 	"rextra-backend/internal/job"
@@ -19,21 +20,44 @@ import (
 	tokenService "rextra-backend/internal/modules/token_usage/service"
 	"rextra-backend/internal/pkg/tripay"
 
+=======
+>>>>>>> dev
 	"log"
 	"os"
+	"rextra-backend/db"
+	"rextra-backend/internal/middleware"
+	auth "rextra-backend/internal/modules/auth"
+	kenalidiri "rextra-backend/internal/modules/kenali_diri"
+	persona "rextra-backend/internal/modules/persona"
+	token "rextra-backend/internal/modules/token"
+
+	"rextra-backend/internal/pkg/cache"
+	"rextra-backend/internal/pkg/export"
+	myfirebase "rextra-backend/internal/pkg/firebase"
 
 	"github.com/gin-gonic/gin"
 	"github.com/robfig/cron/v3"
 )
 
 type RestConfig struct {
-	server *gin.Engine
+	server       *gin.Engine
+	cacheService cache.CacheService
 }
 
 func NewRest() RestConfig {
 	db := db.New()
+
+	// Mode
+	mode := os.Getenv("APP_MODE")
+	if mode == "production" {
+		gin.SetMode(gin.ReleaseMode)
+	} else {
+		gin.SetMode(gin.DebugMode)
+	}
+
 	app := gin.Default()
 	server := NewRouter(app)
+<<<<<<< HEAD
 	middleware := middleware.New(db)
 	tripayClient := tripay.NewTripayClient()
 
@@ -73,9 +97,23 @@ func NewRest() RestConfig {
 	c.AddJob("0 0 * * *", refillTokenJob)
 
 	c.Start()
+=======
+	firebaseApp := myfirebase.New()
+	middleware := middleware.New(db, firebaseApp.MustGetClient())
+	cacheService := cache.New()
+
+	var exportService export.ExportService = export.New()
+
+	// Module
+	auth.InitModule(server, db, middleware)
+	persona.InitModule(server, db, middleware)
+	kenalidiri.InitModule(server, db, middleware, cacheService, exportService)
+	token.InitModule(server, db, middleware)
+>>>>>>> dev
 
 	return RestConfig{
-		server: server,
+		server:       server,
+		cacheService: cacheService,
 	}
 }
 
@@ -91,4 +129,13 @@ func (ap *RestConfig) Start() {
 		log.Panicf("failed to start server: %s", err)
 	}
 	log.Println("server start on port ", serve)
+}
+
+func (ap *RestConfig) Close() error {
+	if ap.cacheService != nil {
+		if closer, ok := ap.cacheService.(interface{ Close() error }); ok {
+			return closer.Close()
+		}
+	}
+	return nil
 }

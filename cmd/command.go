@@ -33,7 +33,7 @@ func getParams(db *gorm.DB) error {
 		if arg == "--migrate" {
 			migrate = true
 		}
-		if arg == "--seeder" {
+		if arg == "--seeder" || arg == "--seed" {
 			seeder = true
 		}
 		if arg == "--watch" {

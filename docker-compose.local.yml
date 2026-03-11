@@ -1,0 +1,44 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: ./docker/local/Dockerfile
+    container_name: rextra-backend-local
+    volumes:
+      - .:/app
+    ports:
+      - ${APP_PORT:-8080}:8080
+    depends_on:
+      - db
+    env_file: .env.dev
+    networks: # <--- TAMBAHAN PENTING
+      - rextra-net
+
+  db:
+    image: postgres:16
+    container_name: rextra-backend-db-local
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASS:-password}
+      POSTGRES_DB: ${DB_NAME:-rextra}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - 5433:5432
+    networks:
+      - rextra-net
+  redis:
+    image: redis:latest
+    container_name: rextra-backend-redis-local
+    env_file: .env.dev
+    ports:
+      - 6379:6379
+    networks:
+      - rextra-net
+
+volumes:
+  db-data:
+
+networks:
+  rextra-net:
+    external: true

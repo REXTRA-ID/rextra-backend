@@ -1,0 +1,161 @@
+{
+  "students": [
+    {
+      "name": "Mahasiswa Demo 1",
+      "email": "student.demo.1@test.com",
+      "phone": "081234567801",
+      "submitted_days_ago": 2,
+      "scores": { "ease": 7, "relevance": 7, "satisfaction": 7 },
+      "message": "Sangat membantu untuk mengetahui potensi diri.",
+      "obstacle_id": 5
+    },
+    {
+      "name": "Mahasiswa Demo 2",
+      "email": "student.demo.2@test.com",
+      "phone": "081234567802",
+      "submitted_days_ago": 5,
+      "scores": { "ease": 6, "relevance": 6, "satisfaction": 6 },
+      "message": "Cukup baik, tapi loading agak lama.",
+      "obstacle_id": 5
+    },
+    {
+      "name": "Mahasiswa Demo 3",
+      "email": "student.demo.3@test.com",
+      "phone": "081234567803",
+      "submitted_days_ago": 1,
+      "scores": { "ease": 5, "relevance": 5, "satisfaction": 5 },
+      "message": null,
+      "obstacle_id": 1
+    },
+    {
+      "name": "Mahasiswa Demo 4",
+      "email": "student.demo.4@test.com",
+      "phone": "081234567804",
+      "submitted_days_ago": 10,
+      "scores": { "ease": 7, "relevance": 6, "satisfaction": 7 },
+      "message": "Hasilnya akurat banget!",
+      "obstacle_id": 5
+    },
+    {
+      "name": "Mahasiswa Demo 5",
+      "email": "student.demo.5@test.com",
+      "phone": "081234567805",
+      "submitted_days_ago": 12,
+      "scores": { "ease": 6, "relevance": 5, "satisfaction": 6 },
+      "message": "Perbanyak pilihan profesi.",
+      "obstacle_id": 5
+    },
+    {
+      "name": "Mahasiswa Demo 6",
+      "email": "student.demo.6@test.com",
+      "phone": "081234567806",
+      "submitted_days_ago": 3,
+      "scores": { "ease": 4, "relevance": 4, "satisfaction": 4 },
+      "message": "Bingung dengan bbrp pertanyaan.",
+      "obstacle_id": 1
+    },
+    {
+      "name": "Mahasiswa Demo 7",
+      "email": "student.demo.7@test.com",
+      "phone": "081234567807",
+      "submitted_days_ago": 8,
+      "scores": { "ease": 7, "relevance": 7, "satisfaction": 6 },
+      "message": "Good job team.",
+      "obstacle_id": 5
+    },
+    {
+      "name": "Mahasiswa Demo 8",
+      "email": "student.demo.8@test.com",
+      "phone": "081234567808",
+      "submitted_days_ago": 15,
+      "scores": { "ease": 6, "relevance": 6, "satisfaction": 7 },
+      "message": null,
+      "obstacle_id": 5
+    },
+    {
+      "name": "Mahasiswa Demo 9",
+      "email": "student.demo.9@test.com",
+      "phone": "081234567809",
+      "submitted_days_ago": 20,
+      "scores": { "ease": 5, "relevance": 7, "satisfaction": 6 },
+      "message": "Tampilan di HP agak terpotong.",
+      "obstacle_id": 5
+    },
+    {
+      "name": "Mahasiswa Demo 10",
+      "email": "student.demo.10@test.com",
+      "phone": "081234567810",
+      "submitted_days_ago": 1,
+      "scores": { "ease": 7, "relevance": 7, "satisfaction": 7 },
+      "message": "Suka sekali!",
+      "obstacle_id": 5
+    }
+  ],
+  "experts": [
+    {
+      "name": "Expert Demo 1",
+      "email": "expert.demo.1@test.com",
+      "phone": "089876543201",
+      "profession": "UI/UX Designer",
+      "profession_id": 101,
+      "submitted_days_ago": 2,
+      "top5_status": "P1",
+      "scores": { "accuracy": 7, "logic": 7, "usefulness": 7 },
+      "suggestion": "Sudah sangat baik.",
+      "expert_info": { "degree": "S1", "uni": "ITS", "major": "Despro", "exp": 5 },
+      "obstacle_id": 1
+    },
+    {
+      "name": "Expert Demo 2",
+      "email": "expert.demo.2@test.com",
+      "phone": "089876543202",
+      "profession": "Frontend Developer",
+      "profession_id": 102,
+      "submitted_days_ago": 5,
+      "top5_status": "P2",
+      "scores": { "accuracy": 6, "logic": 6, "usefulness": 6 },
+      "suggestion": "Perbaiki layout result.",
+      "expert_info": { "degree": "S1", "uni": "UI", "major": "Informatika", "exp": 3 },
+      "obstacle_id": 1
+    },
+    {
+      "name": "Expert Demo 3",
+      "email": "expert.demo.3@test.com",
+      "phone": "089876543203",
+      "profession": "Data Analyst",
+      "profession_id": 105,
+      "submitted_days_ago": 1,
+      "top5_status": "P3_5",
+      "scores": { "accuracy": 5, "logic": 6, "usefulness": 6 },
+      "suggestion": "Tambah metric visual.",
+      "expert_info": { "degree": "S2", "uni": "ITB", "major": "Matematika", "exp": 8 },
+      "obstacle_id": 1
+    },
+    {
+      "name": "Expert Demo 4",
+      "email": "expert.demo.4@test.com",
+      "phone": "089876543204",
+      "profession": "Product Manager",
+      "profession_id": 104,
+      "submitted_days_ago": 10,
+      "top5_status": "NOT_PRESENT",
+      "scores": { "accuracy": 4, "logic": 5, "usefulness": 5 },
+      "suggestion": "Profesi saya tidak muncul di rekomendasi.",
+      "expert_info": { "degree": "S1", "uni": "UGM", "major": "Manajemen", "exp": 4 },
+      "obstacle_id": 1
+    },
+    {
+      "name": "Expert Demo 5",
+      "email": "expert.demo.5@test.com",
+      "phone": "089876543205",
+      "profession": "Backend Developer",
+      "profession_id": 103,
+      "submitted_days_ago": 3,
+      "top5_status": "P1",
+      "scores": { "accuracy": 7, "logic": 6, "usefulness": 7 },
+      "suggestion": null,
+      "expert_info": { "degree": "S1", "uni": "Binus", "major": "IT", "exp": 2 },
+      "obstacle_id": 1
+    }
+  ]
+}
