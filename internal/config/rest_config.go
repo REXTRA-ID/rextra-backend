@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-<<<<<<< HEAD
 	"rextra-backend/db"
 
 	"rextra-backend/internal/job"
@@ -14,21 +13,13 @@ import (
 	"rextra-backend/internal/modules/payment"
 	"rextra-backend/internal/modules/persona"
 	"rextra-backend/internal/modules/poin"
-	"rextra-backend/internal/modules/riasec"
-	token "rextra-backend/internal/modules/token_usage"
 	tokenRepo "rextra-backend/internal/modules/token_usage/repository"
 	tokenService "rextra-backend/internal/modules/token_usage/service"
 	"rextra-backend/internal/pkg/tripay"
 
-=======
->>>>>>> dev
 	"log"
 	"os"
-	"rextra-backend/db"
-	"rextra-backend/internal/middleware"
-	auth "rextra-backend/internal/modules/auth"
 	kenalidiri "rextra-backend/internal/modules/kenali_diri"
-	persona "rextra-backend/internal/modules/persona"
 	token "rextra-backend/internal/modules/token"
 
 	"rextra-backend/internal/pkg/cache"
@@ -57,9 +48,10 @@ func NewRest() RestConfig {
 
 	app := gin.Default()
 	server := NewRouter(app)
-<<<<<<< HEAD
-	middleware := middleware.New(db)
 	tripayClient := tripay.NewTripayClient()
+
+	firebaseApp := myfirebase.New()
+	middleware := middleware.New(db, firebaseApp.MustGetClient())
 
 	// Initialize all modules
 	auth.InitModule(server, db, middleware)
@@ -68,7 +60,6 @@ func NewRest() RestConfig {
 	token.InitModule(server, db, middleware)
 	poin.InitModule(server, db, middleware)
 	persona.InitModule(server, db, middleware)
-	riasec.InitModule(server, db, middleware)
 
 	// Cronjobs - need to create services for jobs
 	c := cron.New(cron.WithLogger(cron.DefaultLogger))
@@ -97,9 +88,6 @@ func NewRest() RestConfig {
 	c.AddJob("0 0 * * *", refillTokenJob)
 
 	c.Start()
-=======
-	firebaseApp := myfirebase.New()
-	middleware := middleware.New(db, firebaseApp.MustGetClient())
 	cacheService := cache.New()
 
 	var exportService export.ExportService = export.New()
@@ -109,7 +97,6 @@ func NewRest() RestConfig {
 	persona.InitModule(server, db, middleware)
 	kenalidiri.InitModule(server, db, middleware, cacheService, exportService)
 	token.InitModule(server, db, middleware)
->>>>>>> dev
 
 	return RestConfig{
 		server:       server,

@@ -1,24 +1,18 @@
 package middleware
 
 import (
-	"rextra-backend/internal/modules/entitlement/service"
-
+	"firebase.google.com/go/v4/auth"
 	"gorm.io/gorm"
 )
 
-/* untuk sementara */
 type Middleware struct {
-	// firebaseAuthClient *auth.Client
-	db *gorm.DB
+	firebaseAuthClient *auth.Client
+	db                 *gorm.DB
 }
 
-type AccessFeatureMiddleware struct {
-	HakAksesService service.EntitlementService
-}
-
-func New(db *gorm.DB) Middleware {
+func New(db *gorm.DB, firebaseAuthClient *auth.Client) Middleware {
 	return Middleware{
-		// firebaseAuthClient: firebaseAuthClient,
-		db: db,
+		firebaseAuthClient: firebaseAuthClient,
+		db:                 db,
 	}
 }
