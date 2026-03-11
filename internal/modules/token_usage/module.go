@@ -3,10 +3,10 @@ package token
 import (
 	"rextra-backend/internal/middleware"
 	membershipRepo "rextra-backend/internal/modules/membership/repository"
-	"rextra-backend/internal/modules/token/controller"
-	"rextra-backend/internal/modules/token/repository"
-	"rextra-backend/internal/modules/token/routes"
-	"rextra-backend/internal/modules/token/service"
+	"rextra-backend/internal/modules/token_usage/controller"
+	"rextra-backend/internal/modules/token_usage/repository"
+	"rextra-backend/internal/modules/token_usage/routes"
+	"rextra-backend/internal/modules/token_usage/service"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"

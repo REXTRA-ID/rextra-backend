@@ -14,13 +14,14 @@ import (
 type (
 	AuthController interface {
 		Register(ctx *gin.Context)
+		RegisterAdmin(ctx *gin.Context)
 		Login(ctx *gin.Context)
 		Verify(ctx *gin.Context)
 		SendVerificationEmail(ctx *gin.Context)
 		ForgetPassword(ctx *gin.Context)
 		ChangePassword(ctx *gin.Context)
 		Me(ctx *gin.Context)
-		// LoginWithGoogle(ctx *gin.Context)
+		LoginWithGoogle(ctx *gin.Context)
 		Logout(ctx *gin.Context)
 	}
 
@@ -49,6 +50,22 @@ func (c *authController) Register(ctx *gin.Context) {
 	}
 
 	response.NewSuccess("success register account", user).Send(ctx)
+}
+
+func (c *authController) RegisterAdmin(ctx *gin.Context) {
+	var req dto_request.RegisterAdminRequest
+	if err := ctx.ShouldBind(&req); err != nil {
+		response.NewFailed("failed get data from body", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
+
+	user, err := c.authService.RegisterAdmin(ctx, req)
+	if err != nil {
+		response.NewFailed("failed register admin account", err).Send(ctx)
+		return
+	}
+
+	response.NewSuccess("success register admin account", user).Send(ctx)
 }
 
 func (c *authController) Login(ctx *gin.Context) {
@@ -153,21 +170,21 @@ func (c *authController) Me(ctx *gin.Context) {
 	response.NewSuccess("success get me", res).Send(ctx)
 }
 
-// func (c *authController) LoginWithGoogle(ctx *gin.Context) {
-// 	var req dto_request.LoginWithGoogleRequest
-// 	if err := ctx.ShouldBind(&req); err != nil {
-// 		response.NewFailed("failed get data from body", myerror.InvalidRequest(err)).Send(ctx)
-// 		return
-// 	}
+func (c *authController) LoginWithGoogle(ctx *gin.Context) {
+	var req dto_request.LoginWithGoogleRequest
+	if err := ctx.ShouldBind(&req); err != nil {
+		response.NewFailed("failed get data from body", myerror.InvalidRequest(err)).Send(ctx)
+		return
+	}
 
-// 	result, err := c.authService.LoginWithGoogle(ctx.Request.Context(), req.IdToken)
-// 	if err != nil {
-// 		response.NewFailed("failed login with google", err).Send(ctx)
-// 		return
-// 	}
+	result, err := c.authService.LoginWithGoogle(ctx.Request.Context(), req.IdToken)
+	if err != nil {
+		response.NewFailed("failed login with google", err).Send(ctx)
+		return
+	}
 
-// 	response.NewSuccess("success login with google", result).Send(ctx)
-// }
+	response.NewSuccess("success login with google", result).Send(ctx)
+}
 
 func (c *authController) Logout(ctx *gin.Context) {
 	var req dto_request.LogoutRequest

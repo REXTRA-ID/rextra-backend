@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"rextra-backend/internal/modules/token/controller"
 	"rextra-backend/internal/middleware"
+	"rextra-backend/internal/modules/token_usage/controller"
 
 	"github.com/gin-gonic/gin"
 )

@@ -1,6 +1,6 @@
 package job
 
-import "rextra-backend/internal/modules/token/service"
+import "rextra-backend/internal/modules/token_usage/service"
 
 type RefillTokenJob struct {
 	TokenTransactionService service.TokenTransactionService

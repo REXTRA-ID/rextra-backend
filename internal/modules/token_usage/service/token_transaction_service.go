@@ -7,7 +7,7 @@ import (
 	dto_response "rextra-backend/internal/dto/response"
 	"rextra-backend/internal/entity"
 	membershipRepo "rextra-backend/internal/modules/membership/repository"
-	"rextra-backend/internal/modules/token/repository"
+	"rextra-backend/internal/modules/token_usage/repository"
 	myerror "rextra-backend/internal/pkg/error"
 
 	"github.com/google/uuid"

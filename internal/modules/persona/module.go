@@ -12,15 +12,12 @@ import (
 )
 
 func InitModule(server *gin.Engine, db *gorm.DB, middleware middleware.Middleware) {
-	// Repository
-	personaRepository := repository.NewPersona(db)
+	var (
+		personaRepository repository.PersonaRepository = repository.NewPersona(db)
+		personaService    service.PersonaService       = service.NewPersona(personaRepository, db)
+		personaController controller.PersonaController = controller.NewPersona(personaService)
+	)
 
-	// Service
-	personaService := service.NewPersona(personaRepository, db)
-
-	// Controller
-	personaController := controller.NewPersona(personaService)
-
-	// Routes
 	routes.ServePersona(server, personaController, middleware)
+
 }

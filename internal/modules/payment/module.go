@@ -9,7 +9,7 @@ import (
 	"rextra-backend/internal/modules/payment/service"
 	poinRepo "rextra-backend/internal/modules/poin/repository"
 	promoCodeRepo "rextra-backend/internal/modules/promo_code/repository"
-	tokenRepo "rextra-backend/internal/modules/token/repository"
+	tokenRepo "rextra-backend/internal/modules/token_usage/repository"
 	"rextra-backend/internal/pkg/tripay"
 
 	"github.com/gin-gonic/gin"

@@ -7,7 +7,6 @@ import (
 	"rextra-backend/internal/job"
 	"rextra-backend/internal/middleware"
 	"rextra-backend/internal/modules/auth"
-	"rextra-backend/internal/modules/career_recommendation"
 	"rextra-backend/internal/modules/membership"
 	membershipRepo "rextra-backend/internal/modules/membership/repository"
 	membershipService "rextra-backend/internal/modules/membership/service"
@@ -15,10 +14,9 @@ import (
 	"rextra-backend/internal/modules/persona"
 	"rextra-backend/internal/modules/poin"
 	"rextra-backend/internal/modules/riasec"
-	"rextra-backend/internal/modules/token"
-	tokenRepo "rextra-backend/internal/modules/token/repository"
-	tokenService "rextra-backend/internal/modules/token/service"
-	mailer "rextra-backend/internal/pkg/email"
+	token "rextra-backend/internal/modules/token_usage"
+	tokenRepo "rextra-backend/internal/modules/token_usage/repository"
+	tokenService "rextra-backend/internal/modules/token_usage/service"
 	"rextra-backend/internal/pkg/tripay"
 
 	"log"
@@ -39,19 +37,14 @@ func NewRest() RestConfig {
 	middleware := middleware.New(db)
 	tripayClient := tripay.NewTripayClient()
 
-	var (
-		mailerService mailer.Mailer = mailer.New()
-	)
-
 	// Initialize all modules
-	auth.InitModule(server, db, middleware, mailerService)
+	auth.InitModule(server, db, middleware)
 	membership.InitModule(server, db, middleware)
 	payment.InitModule(server, db, middleware, &tripayClient)
 	token.InitModule(server, db, middleware)
 	poin.InitModule(server, db, middleware)
 	persona.InitModule(server, db, middleware)
 	riasec.InitModule(server, db, middleware)
-	career_recommendation.InitModule(server, db, middleware)
 
 	// Cronjobs - need to create services for jobs
 	c := cron.New(cron.WithLogger(cron.DefaultLogger))
