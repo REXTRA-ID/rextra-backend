@@ -7,15 +7,9 @@ import (
 type Role string
 
 const (
-<<<<<<< HEAD
-	RoleAdmin Role = "ADMIN"
-	RoleUser  Role = "USER"
-	RoleClub  Role = "CLUB"
-=======
 	RoleAdmin  Role = "ADMIN"
 	RoleUser   Role = "USER"
 	RoleExpert Role = "EXPERT"
->>>>>>> dev
 )
 
 type User struct {
