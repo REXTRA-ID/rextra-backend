@@ -117,8 +117,12 @@ func (s *checkoutService) CalculatePrice(ctx context.Context, req dto_request.Ch
 	tokenPrice := int64(0)
 
 	if req.TokenBundlePackageID != nil && *req.TokenBundlePackageID != "" {
+		id, err := uuid.Parse(*req.TokenBundlePackageID)
+		if err != nil {
+			return dto_response.CheckoutCalculateResponse{}, fmt.Errorf("invalid token bundle id")
+		}
 		var bundle entity.TokenBundlePackage
-		if err := s.db.First(&bundle, "id = ?", *req.TokenBundlePackageID).Error; err == nil {
+		if err := s.db.First(&bundle, "id = ?", id).Error; err == nil {
 			tokenPrice = bundle.PriceRp
 		}
 	}
