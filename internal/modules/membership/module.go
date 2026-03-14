@@ -18,6 +18,7 @@ func InitModule(server *gin.Engine, db *gorm.DB, middleware middleware.Middlewar
 	planRepository := repository.NewMembershipPlanRepository(db)
 	durationRepository := repository.NewMembershipDurationRepository(db)
 	mappingRepository := repository.NewDurationAccessMappingRepository(db)
+	cycleRepository := repository.NewSubscriptionCycleRepository(db)
 
 	// entitlement repository dari modul entitlement — dibutuhkan mapping service
 	// untuk load snapshot data entitlement saat Create mapping.
@@ -29,12 +30,14 @@ func InitModule(server *gin.Engine, db *gorm.DB, middleware middleware.Middlewar
 	planService := service.NewMembershipPlanService(planRepository)
 	durationService := service.NewMembershipDurationService(durationRepository)
 	mappingService := service.NewDurationAccessMappingService(mappingRepository, durationRepository, entitlementRepository)
+	cycleService := service.NewSubscriptionCycleService(cycleRepository)
 
 	// Controllers
 	planController := controller.NewMembershipPlanController(planService)
 	durationController := controller.NewPlanDurationController(durationService)
 	mappingController := controller.NewDurationAccessMappingController(mappingService)
+	cycleController := controller.NewSubscriptionCycleController(cycleService)
 
 	// Routes
-	routes.ServeMembership(server, planController, durationController, mappingController, middleware)
+	routes.ServeMembership(server, planController, durationController, mappingController, cycleController, middleware)
 }

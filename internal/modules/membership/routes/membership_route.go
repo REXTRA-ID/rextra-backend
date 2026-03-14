@@ -12,6 +12,7 @@ func ServeMembership(
 	planController controller.MembershipPlanController,
 	durationController controller.PlanDurationController,
 	mappingController controller.DurationAccessMappingController,
+	cycleController controller.SubscriptionCycleController,
 	mw middleware.Middleware,
 ) {
 	// ── Admin routes ─────────────────────────────────────────────────────────
@@ -38,6 +39,9 @@ func ServeMembership(
 		admin.POST("/plan/:planId/duration/:durationId/mapping", mappingController.Create)
 		admin.PUT("/plan/:planId/duration/:durationId/mapping/:mappingId", mappingController.Update)
 		admin.DELETE("/plan/:planId/duration/:durationId/mapping/:mappingId", mappingController.Delete)
+
+		// Subscription Cycle
+		admin.GET("/cycles", cycleController.GetAllCycles)
 	}
 
 	// ── User routes ──────────────────────────────────────────────────────────
@@ -46,5 +50,8 @@ func ServeMembership(
 	{
 		// Katalog plan aktif untuk halaman pilih membership
 		user.GET("/catalog", planController.GetCatalog)
+
+		// Riwayat siklus langganan user
+		user.GET("/my-cycles", cycleController.GetMyCycles)
 	}
 }

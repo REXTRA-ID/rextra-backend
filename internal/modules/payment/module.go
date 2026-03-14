@@ -28,6 +28,7 @@ func InitModule(server *gin.Engine, db *gorm.DB, middleware middleware.Middlewar
 	membershipPlanRepository := membershipRepo.NewMembershipPlanRepository(db)
 	membershipDurationRepository := membershipRepo.NewMembershipDurationRepository(db)
 	membershipRepository := membershipRepo.NewMembershipRepository(db)
+	subscriptionCycleRepository := membershipRepo.NewSubscriptionCycleRepository(db)
 
 	// Service
 	paymentTransactionService := service.NewPaymentTransactionService(
@@ -40,6 +41,7 @@ func InitModule(server *gin.Engine, db *gorm.DB, middleware middleware.Middlewar
 		membershipPlanRepository,
 		membershipDurationRepository,
 		membershipRepository,
+		subscriptionCycleRepository,
 		db,
 	)
 

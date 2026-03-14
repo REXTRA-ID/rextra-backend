@@ -38,6 +38,7 @@ type (
 		membershipPlanRepository     membershipRepo.MembershipPlanRepository
 		membershipDurationRepository membershipRepo.MembershipDurationRepository
 		membershipRepository         membershipRepo.MembershipRepository
+		subscriptionCycleRepository  membershipRepo.SubscriptionCycleRepository
 		db                           *gorm.DB
 	}
 )
@@ -52,6 +53,7 @@ func NewPaymentTransactionService(
 	membershipPlanRepository membershipRepo.MembershipPlanRepository,
 	membershipDuration membershipRepo.MembershipDurationRepository,
 	membershipRepository membershipRepo.MembershipRepository,
+	subscriptionCycleRepository membershipRepo.SubscriptionCycleRepository,
 	db *gorm.DB) PaymentTransactionService {
 
 	return &paymentTransactionService{
@@ -64,6 +66,7 @@ func NewPaymentTransactionService(
 		membershipPlanRepository:     membershipPlanRepository,
 		membershipDurationRepository: membershipDuration,
 		membershipRepository:         membershipRepository,
+		subscriptionCycleRepository:  subscriptionCycleRepository,
 		db:                           db,
 	}
 }
@@ -309,6 +312,26 @@ func (s *paymentTransactionService) updateMembershipTransaction(ctx context.Cont
 		return err
 	}
 	_, err = s.poinTransactionRepository.Create(ctx, nil, poinTransaction)
+	if err != nil {
+		return err
+	}
+
+	paymentChannel := transaction.PaymentMethod
+	if paymentChannel == "" && transaction.GrossAmount == 0 {
+		paymentChannel = "FREE"
+	}
+	subscriptionCycle := entity.NewSubscriptionCycle(
+		transaction.UserID,
+		userMembership.ID,
+		string(plan.PlanName),
+		duration.DurationMonth,
+		transaction.GrossAmount,
+		paymentChannel,
+		*userMembership.StartedAt,
+		*userMembership.ExpiredAt,
+	)
+
+	_, err = s.subscriptionCycleRepository.Create(ctx, nil, subscriptionCycle)
 	if err != nil {
 		return err
 	}
