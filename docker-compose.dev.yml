@@ -1,8 +1,6 @@
 services:
   app:
-    build:
-      context: .
-      dockerfile: ./docker/dev/Dockerfile
+    image: ${IMAGE_NAME:-rextra-backend-dev:latest}
     container_name: ${APP_NAME:-rextra-backend}-dev
     volumes:
       - .:/app
