@@ -15,22 +15,6 @@ const (
 	MESSAGE_API_IS_LOCKED       = "api is now locked"
 )
 
-func (m Middleware) OnlyAllow(roles ...string) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		userRole := ctx.MustGet("role").(string)
-
-		for _, role := range roles {
-			if userRole == role {
-				ctx.Next()
-				return
-			}
-		}
-
-		res := response.NewFailed(MESSAGE_USER_NOT_AUTHORIZED, myerror.RoleNotAllowed())
-		res.SendWithAbort(ctx)
-	}
-}
-
 func (m Middleware) Authenticate() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
