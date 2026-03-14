@@ -42,14 +42,15 @@ build-docker:
 
 DOCKER_CONTAINER = $(shell docker ps --filter "name=rextra-backend-$(ENV)" --format "{{.Names}}")
 
+# Untuk CI/CD (Non-interactive), hilangkan flag -it
 docker-migrate:
-	docker exec -T $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --migrate"
+	docker exec $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --migrate"
 
 docker-seeder:
-	docker exec -T $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --seeder"
+	docker exec $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --seeder"
 
 docker-both:
-	docker exec -T $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --migrate --seeder"
+	docker exec $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --migrate --seeder"
 
 # Help
 help:

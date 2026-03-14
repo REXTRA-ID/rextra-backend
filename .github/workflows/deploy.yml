@@ -50,7 +50,10 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             cd /home/rextra/rextra-backend
-            # Tarik branch yang memicu workflow ini (dev atau fix-checkout-final)
+            # Bersihkan image lama agar disk tidak penuh
+            docker system prune -f
+            
+            # Tarik branch yang memicu workflow ini
             git fetch origin ${{ github.ref_name }}
             git checkout ${{ github.ref_name }}
             git pull origin ${{ github.ref_name }}
