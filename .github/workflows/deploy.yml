@@ -10,20 +10,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Connect to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Build and push Docker image
         id: docker_build
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           file: ./docker/dev/Dockerfile
           push: true
@@ -60,7 +60,9 @@ jobs:
             make up ENV=dev
             
             echo "Waiting for container to be ready..."
-            sleep 10
-            # Otomatisasi Migrate & Seeder
+            sleep 15
+            
+            # Perintah otomatis migrate & seeder
+            # Menggunakan -T agar tidak butuh TTY di CI
             make docker-both ENV=dev
           debug: true

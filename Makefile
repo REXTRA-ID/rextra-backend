@@ -46,10 +46,10 @@ docker-migrate:
 	docker exec -T $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --migrate"
 
 docker-seeder:
-	docker exec -T $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --seed"
+	docker exec -T $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --seeder"
 
 docker-both:
-	docker exec -T $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --migrate --seed"
+	docker exec -T $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --migrate --seeder"
 
 # Help
 help:
