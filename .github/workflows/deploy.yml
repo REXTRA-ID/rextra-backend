@@ -63,9 +63,9 @@ jobs:
             make down ENV=dev
             make up ENV=dev
             
-            echo "Waiting for container to be ready..."
+            echo "Waiting for containers to stabilize..."
             sleep 20
             
-            # Kembali ke cara Make karena lebih stabil mencari nama container
+            # Gunakan Makefile yang sudah diperbaiki (docker compose exec)
             make docker-both ENV=dev
           debug: true

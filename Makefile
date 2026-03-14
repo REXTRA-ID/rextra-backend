@@ -40,17 +40,15 @@ reset:
 build-docker:
 	docker compose -f $(COMPOSE_FILE) up -d --build
 
-DOCKER_CONTAINER = $(shell docker ps --filter "name=rextra-backend-$(ENV)" --format "{{.Names}}")
-
-# Untuk CI/CD (Non-interactive), hilangkan flag -it
+# Menggunakan docker compose exec agar mewarisi environment variables dari compose file
 docker-migrate:
-	docker exec $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --migrate"
+	docker compose -f $(COMPOSE_FILE) exec -T app go run main.go --migrate
 
 docker-seeder:
-	docker exec $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --seeder"
+	docker compose -f $(COMPOSE_FILE) exec -T app go run main.go --seeder
 
 docker-both:
-	docker exec $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --migrate --seeder"
+	docker compose -f $(COMPOSE_FILE) exec -T app go run main.go --migrate --seeder
 
 # Help
 help:
