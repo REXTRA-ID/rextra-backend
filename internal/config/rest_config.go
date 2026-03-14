@@ -112,14 +112,16 @@ func (a *planDurationPromoAdapter) GetByID(ctx context.Context, tx *gorm.DB, id 
 
 func (ap *RestConfig) Start() {
 	port := os.Getenv("APP_PORT")
-	host := os.Getenv("APP_HOST")
 	if port == "" {
 		port = "8000"
 	}
 
-	serve := fmt.Sprintf("%s:%s", host, port)
+	serve := fmt.Sprintf(":%s", port)
+	if host := os.Getenv("APP_HOST"); host != "" {
+		serve = fmt.Sprintf("%s:%s", host, port)
+	}
+
 	if err := ap.server.Run(serve); err != nil {
 		log.Panicf("failed to start server: %s", err)
 	}
-	log.Println("server start on port ", serve)
 }

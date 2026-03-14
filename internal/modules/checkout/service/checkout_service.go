@@ -205,17 +205,23 @@ func (s *checkoutService) InitiateCheckout(ctx context.Context, req dto_request.
 		CustomerName: user.Fullname, CustomerEmail: user.Email, CustomerPhone: phone, 
 		OrderItems: orderItems, ExpiredTime: expiredTime,
 	})
-	if err != nil { return dto_response.CheckoutInitiateResponse{}, err }
+	if err != nil { 
+		fmt.Printf("DEBUG: Tripay Error: %v\n", err)
+		return dto_response.CheckoutInitiateResponse{}, fmt.Errorf("failed to initiate checkout: %v", err) 
+	}
 
 	// SAVE TO DATABASE
 	var bundleID *uuid.UUID
 	tokenAmount := int64(0)
 	if req.TokenBundlePackageID != nil && *req.TokenBundlePackageID != "" {
-		id := uuid.MustParse(*req.TokenBundlePackageID)
-		bundleID = &id
-		var b entity.TokenBundlePackage
-		s.db.First(&b, "id = ?", id)
-		tokenAmount = int64(b.TokenAmount)
+		id, err := uuid.Parse(*req.TokenBundlePackageID)
+		if err == nil {
+			bundleID = &id
+			var b entity.TokenBundlePackage
+			if err := s.db.First(&b, "id = ?", id).Error; err == nil {
+				tokenAmount = int64(b.TokenAmount)
+			}
+		}
 	}
 
 	itemsJSON, _ := json.Marshal(orderItems)

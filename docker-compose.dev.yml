@@ -1,5 +1,6 @@
 services:
   app:
+    build: .
     image: ${IMAGE_NAME:-rextra-backend-dev:latest}
     container_name: ${APP_NAME:-rextra-backend}-dev
     volumes:

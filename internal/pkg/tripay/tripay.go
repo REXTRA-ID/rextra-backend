@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -80,9 +81,9 @@ func NewTripayClient() TripayClient {
 	}
 
 	return TripayClient{
-		MerchantCode: os.Getenv("TRIPAY_MERCHANT_CODE"),
-		ApiKey:       os.Getenv("TRIPAY_API_KEY"),
-		PrivateKey:   os.Getenv("TRIPAY_PRIVATE_KEY"),
+		MerchantCode: strings.TrimSpace(os.Getenv("TRIPAY_MERCHANT_CODE")),
+		ApiKey:       strings.TrimSpace(os.Getenv("TRIPAY_API_KEY")),
+		PrivateKey:   strings.TrimSpace(os.Getenv("TRIPAY_PRIVATE_KEY")),
 		BaseUrl:      baseUrl,
 	}
 }

@@ -25,6 +25,7 @@ type (
 		GetTransactionDetail(ctx *gin.Context)
 		CancelTransaction(ctx *gin.Context)
 		HandleTripayCallback(ctx *gin.Context)
+		CallbackStatusCheck(ctx *gin.Context)
 		SimulateTripayPayment(ctx *gin.Context)
 	}
 
@@ -114,6 +115,35 @@ func (c *paymentTransactionController) HandleTripayCallback(ctx *gin.Context) {
 	json.Unmarshal(rawBody, &payload)
 	c.service.HandleCallback(ctx, sig, rawBody, payload)
 	response.NewSuccess("callback processed", nil).Send(ctx)
+}
+
+func (c *paymentTransactionController) CallbackStatusCheck(ctx *gin.Context) {
+	html := `
+	<!DOCTYPE html>
+	<html>
+	<head>
+		<title>REXTRA Payment Gateway</title>
+		<style>
+			body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f4f7f6; }
+			.card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; max-width: 400px; }
+			.status-badge { display: inline-block; padding: 6px 12px; background: #2ecc71; color: white; border-radius: 20px; font-weight: bold; margin-bottom: 20px; }
+			h1 { color: #2c3e50; margin-bottom: 10px; }
+			p { color: #7f8c8d; line-height: 1.5; }
+			.footer { margin-top: 30px; font-size: 12px; color: #bdc3c7; }
+		</style>
+	</head>
+	<body>
+		<div class="card">
+			<div class="status-badge">ACTIVE</div>
+			<h1>REXTRA Callback Handler</h1>
+			<p>This endpoint is active and listening for TriPay payment notifications. Please use POST method for callback data.</p>
+			<div class="footer">REXTRA Backend &copy; 2026</div>
+		</div>
+	</body>
+	</html>
+	`
+	ctx.Header("Content-Type", "text/html")
+	ctx.String(200, html)
 }
 
 func (c *paymentTransactionController) SimulateTripayPayment(ctx *gin.Context) {

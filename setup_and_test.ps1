@@ -1,5 +1,5 @@
 # REXTRA TRANSACTION TESTER (PRO)
-$baseUrl = "http://localhost:8001/api/v1"
+$baseUrl = "http://localhost:8000/api/v1"
 
 Clear-Host
 Write-Host "==========================================" -ForegroundColor Yellow

@@ -16,6 +16,7 @@ func ServePaymentTransaction(
 	{
 		public.GET("/channels", ctrl.GetPaymentChannels)
 		public.POST("/callback/tripay", ctrl.HandleTripayCallback)
+		public.GET("/callback/tripay", ctrl.CallbackStatusCheck)
 		public.POST("/simulate/:transactionId", ctrl.SimulateTripayPayment)
 	}
 
