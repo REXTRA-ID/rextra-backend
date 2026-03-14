@@ -20,7 +20,7 @@ services:
       - app-dev-network
 
   db:
-    image: postgres:15-alpine
+    image: postgres:16
     container_name: ${APP_NAME:-rextra-backend}-db-dev
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
