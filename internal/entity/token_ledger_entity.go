@@ -11,9 +11,6 @@ import (
 	"gorm.io/gorm"
 )
 
-type TokenDirection string
-type TokenSourceType string
-
 const (
 	DirectionIN  TokenDirection = "IN"
 	DirectionOUT TokenDirection = "OUT"

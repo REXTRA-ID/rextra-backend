@@ -1,4 +1,4 @@
-package persona
+package token
 
 import (
 	"rextra-backend/internal/middleware"
@@ -7,32 +7,29 @@ import (
 	"rextra-backend/internal/modules/token/routes"
 	"rextra-backend/internal/modules/token/service"
 
+	membershipRepo "rextra-backend/internal/modules/membership/repository"
+
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
 func InitModule(server *gin.Engine, db *gorm.DB, middleware middleware.Middleware) {
-	var (
-		tokenBundleRepository   repository.TokenBundlePackageRepository = repository.NewTokenBundlePackageRepository(db)
-		tokenLedgerRepository   repository.TokenLedgerRepository        = repository.NewTokenLedgerRepository(db)
-		tokenWalletRepository   repository.TokenWalletRepository        = repository.NewTokenWalletRepository(db)
-		customPricingRepository repository.CustomPricingRepository      = repository.NewCustomPricingRepository(db)
-		topUpRepository         repository.TopupTransactionRepository   = repository.NewTopupTransactionRepository(db)
+	// Repository
+	membershipRepository := membershipRepo.NewUserMembershipRepository(db)
+	tokenTransactionRepository := repository.NewTokenTransactionRepository(db)
+	tokenUsageHistoryRepository := repository.NewTokenUsageHistoryRepository(db)
 
-		walletService        service.WalletService           = service.NewWalletService(tokenWalletRepository, tokenLedgerRepository, db)
-		bundleService        service.BundleService           = service.NewBundleService(tokenBundleRepository, db)
-		customPricingService service.CustomPricingService    = service.NewCustomPricingService(customPricingRepository, db)
-		topUpService         service.TopupTransactionService = service.NewTopupTransactionService(topUpRepository, db)
-		tokenLedgerService   service.TokenLedgerService      = service.NewTokenLedgerService(tokenLedgerRepository, db)
-		summaryService       service.TokenSummaryService     = service.NewTokenSummaryService(tokenLedgerRepository, topUpRepository, db)
-
-		tokenBundleController   controller.TokenBundleController      = controller.NewTokenBundleController(bundleService)
-		tokenWalletController   controller.TokenWalletController      = controller.NewTokenWalletController(walletService)
-		customPricingController controller.CustomPricingController    = controller.NewCustomPricingController(customPricingService)
-		topUpController         controller.TopupTransactionController = controller.NewTopupTransactionController(topUpService)
-		tokenLedgerController   controller.TokenLedgerController      = controller.NewTokenLedgerController(tokenLedgerService)
-		tokenSummaryController  controller.SummaryController          = controller.NewSummaryController(summaryService)
+	// Service
+	tokenTransactionService := service.NewTokenTransactionService(
+		membershipRepository,
+		tokenTransactionRepository,
+		tokenUsageHistoryRepository,
+		db,
 	)
 
-	routes.ServeToken(server, tokenWalletController, tokenBundleController, customPricingController, topUpController, tokenLedgerController, tokenSummaryController, middleware)
+	// Controller
+	tokenTransactionController := controller.NewTokenTransactionController(tokenTransactionService)
+
+	// Routes
+	routes.ServeTokenTransaction(server, tokenTransactionController, middleware)
 }

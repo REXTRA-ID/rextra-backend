@@ -16,90 +16,58 @@ func Migrate(db *gorm.DB) error {
 		return err
 	}
 
-	//migrate table
+	// Migrate tables in order to handle dependencies
 	if err := db.AutoMigrate(
+		// 1. Base Data
 		&entity.User{},
-		&entity.KenaliDiriCategory{},
-		&entity.KenaliDiriHistory{},
 		&entity.SessionToken{},
-		&entity.Persona{},
-		// &entity.Riasec{},
-		&entity.RiasecCode{},
-		&entity.CareerProfileTestSession{},
-		&entity.UserCareerProfile{}, 
-		&entity.RiasecQuestionSet{},
-		&entity.RiasecResponse{},
-		&entity.RiasecResult{},
-		&entity.IkigaiCandidateProfession{},
-		&entity.IkigaiResponse{},
-		&entity.IkigaiDimensionScore{},
-		&entity.IkigaiTotalScore{},
 		
-		&entity.StudentFeedback{},
-		&entity.ExpertFeedback{},
-		
-		&entity.KenaliDiriFeedback{},                         
-		
-		&entity.CareerProfileFeedbackStudent{},               
-		&entity.CareerProfileObstacleOption{},                
-		&entity.CareerProfileFeedbackObstacle{},              
-		
-		&entity.CareerProfileFeedbackExpert{},                
-		&entity.CareerProfileExpertObstacleOption{},          
-		&entity.CareerProfileFeedbackExpertObstacle{},        
-		
-		&entity.CareerRecommendation{},
-		// &entity.UserIkigai{},
-		// &entity.UserRiasec{},
-		&entity.TokenBundlePackage{},
-		&entity.TokenLedger{},
+		// 2. Settings (Singleton)
+		&entity.InvoiceSettings{},
+		&entity.TransactionIdSettings{},
+		&entity.MembershipNotificationSettings{},
+
+		// 3. Master Data (Fitur & Akses)
+		&entity.Feature{},
+		&entity.SubFeature{},
+		&entity.ActionCategory{},
+		&entity.Entitlement{},
+
+		// 4. Membership Plans & Config
+		&entity.MembershipPlans{},
+		&entity.PlanDuration{},
+		&entity.DurationAccessMapping{},
+
+		// 5. User Membership & Wallet
+		&entity.Memberships{},
 		&entity.TokenWallet{},
+		&entity.TokenLedger{},
+		&entity.PointsLedger{},
+
+		// 6. Transactions & Promo
+		&entity.Discounts{},
+		&entity.DiscountRedemption{},
+		&entity.PaymentTransactions{},
 		&entity.TopupTransaction{},
-		&entity.CustomPricingTier{},
-		&entity.CustomPricingConfig{},
+		&entity.SubscriptionCycle{},
+		&entity.PoinTransactions{},
 
-		// Jelajah Profesi Level 1
-		&entity.ProfessionMainCategory{},
-		&entity.Skill{},
-		&entity.Tool{},
-		&entity.StudyProgram{},
+		// 7. Logs & Quotas
+		&entity.UsageLog{},
+		&entity.TokenUsageHistory{},
+		&entity.UserEntitlementQuota{},
 
-		// Jelajah Profesi Level 2
-		&entity.ProfessionSubCategory{},
-
-		// Jelajah Profesi Level 3
-		&entity.Profession{},
-
-		// Jelajah Profesi Level 4
-		&entity.ProfessionAlias{},
-		&entity.ProfessionActivity{},
-		&entity.ProfessionMarketInsight{},
-		&entity.ProfessionCareerPath{},
-
-		// Jelajah Profesi Level 5
-		&entity.ProfessionSkill{},
-		&entity.ProfessionTool{},
-		&entity.ProfessionStudyProgram{},
+		// 8. Assessment
+		&entity.Persona{},
+		&entity.Riasec{},
+		&entity.CareerRecommendation{},
+		&entity.FitCheckResults{},
+		&entity.IkigaiTotalScores{},
+		&entity.UserCareerProfile{},
 	); err != nil {
 		return err
 	}
 
 	mylog.Infof("Migration completed successfully")
-
-	mylog.Infof("Adding feedback indexes...")
-	if err := AddFeedbackIndexes(db); err != nil {
-		return err
-	}
-
-	mylog.Infof("Adding feedback constraints...")
-	if err := AddFeedbackConstraints(db); err != nil {
-		return err
-	}
-
-	mylog.Infof("Adding jelajah profesi constraints...")
-	if err := AddJelajahProfesiConstraints(db); err != nil {
-		return err
-	}
-
 	return nil
 }

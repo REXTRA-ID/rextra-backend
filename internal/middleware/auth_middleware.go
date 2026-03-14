@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	myerror "rextra-backend/internal/pkg/error"
 	myjwt "rextra-backend/internal/pkg/jwt"
 	"rextra-backend/internal/pkg/response"
@@ -12,7 +11,25 @@ import (
 
 const (
 	MESSAGE_FAILED_VERIFY_TOKEN = "failed to verify token"
+	MESSAGE_USER_NOT_AUTHORIZED = "user not authorized"
+	MESSAGE_API_IS_LOCKED       = "api is now locked"
 )
+
+func (m Middleware) OnlyAllow(roles ...string) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		userRole := ctx.MustGet("role").(string)
+
+		for _, role := range roles {
+			if userRole == role {
+				ctx.Next()
+				return
+			}
+		}
+
+		res := response.NewFailed(MESSAGE_USER_NOT_AUTHORIZED, myerror.RoleNotAllowed())
+		res.SendWithAbort(ctx)
+	}
+}
 
 func (m Middleware) Authenticate() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -33,7 +50,13 @@ func (m Middleware) Authenticate() gin.HandlerFunc {
 
 		idToken, err := myjwt.GetPayloadInsideToken(authHeader)
 		if err != nil {
-			res := response.NewFailed(MESSAGE_FAILED_VERIFY_TOKEN, myerror.InvalidToken())
+			if err.Error() == "token expired" {
+				res := response.NewFailed(MESSAGE_FAILED_VERIFY_TOKEN, myerror.InvalidToken())
+				res.SendWithAbort(ctx)
+				return
+			}
+
+			res := response.NewFailed(MESSAGE_FAILED_VERIFY_TOKEN, myerror.ErrGeneral)
 			res.SendWithAbort(ctx)
 			return
 		}
@@ -43,7 +66,7 @@ func (m Middleware) Authenticate() gin.HandlerFunc {
 		ctx.Set("user_id", idToken["user_id"])
 		ctx.Set("email", idToken["email"])
 		ctx.Set("role", idToken["role"])
-		fmt.Println(idToken)
+		ctx.Set("membership", idToken["membership"])
 		ctx.Next()
 	}
 }

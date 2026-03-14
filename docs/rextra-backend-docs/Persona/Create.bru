@@ -1,0 +1,37 @@
+meta {
+  name: Create
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{host}}/api/v1/user/:id/persona
+  body: json
+  auth: bearer
+}
+
+params:path {
+  id: a87f2455-b857-4b83-8c11-6bcc7c4e7bb6
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "institution": "Institut Teknologi Sepuluh Nopember",
+    "study": "Informatics Engineering",
+    "education_level": "1", 
+    "graduation_year": 2025,
+    "career_plan": "To work as a backend developer in a multinational tech company.",
+    "career_dreams": "Building my own startup focused on AI solutions.",
+    "portfolio": true,
+    "application": false,
+    "status": "0"
+  }
+}
+
+settings {
+  encodeUrl: true
+}

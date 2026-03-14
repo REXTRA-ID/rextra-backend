@@ -27,16 +27,20 @@ func getParams(db *gorm.DB) error {
 	migrate := false
 	seeder := false
 	watch := false
+	reset := false
 
 	for _, arg := range os.Args[1:] {
 		if arg == "--migrate" {
 			migrate = true
 		}
-		if arg == "--seeder" || arg == "--seed" {
+		if arg == "--seeder" {
 			seeder = true
 		}
 		if arg == "--watch" {
 			watch = true
+		}
+		if arg == "--reset-db" {
+			reset = true
 		}
 	}
 	if migrate {
@@ -61,7 +65,13 @@ func getParams(db *gorm.DB) error {
 		os.Exit(0)
 	}
 
-	if seeder || watch || migrate {
+	if reset {
+		if err := resetDatabase(db); err != nil {
+			return fmt.Errorf("reseting failed: %w", err)
+		}
+	}
+
+	if seeder || watch || migrate || reset {
 		os.Exit(0)
 	}
 
@@ -90,5 +100,28 @@ func runWatch() error {
 	}
 
 	mylog.Infoln("Command executed successfully")
+	return nil
+}
+
+func resetDatabase(db *gorm.DB) error {
+
+	fmt.Println(mylog.ColorizeInfo("\n=========== Start Reseting ==========="))
+	mylog.Infof("Reseting Tables...")
+
+	tables, err := db.Migrator().GetTables()
+	if err != nil {
+		return err
+	}
+
+	for _, table := range tables {
+		sql := fmt.Sprintf(`TRUNCATE TABLE "%s" RESTART IDENTITY CASCADE`, table)
+
+		if err := db.Exec(sql).Error; err != nil {
+			return err
+		}
+	}
+
+	mylog.Infof("Reset completed...")
+
 	return nil
 }

@@ -1,43 +1,61 @@
 services:
   app:
-    image: rextra/rextra-backend-dev:${IMAGE_TAG:-latest}
-    container_name: rextra-backend-dev
+    build:
+      context: .
+      dockerfile: ./docker/dev/Dockerfile
+    container_name: ${APP_NAME:-rextra-backend}-dev
+    volumes:
+      - .:/app
     ports:
-      - 8080:8080
-    depends_on:
-      - db
-    env_file:
-      - ./.env.dev
+      - ${APP_PORT:-8001}:8001
+    environment:
+      - APP_MODE=development
+      - APP_PORT=${APP_PORT:-8001}
     networks:
-      - rextra-net
+      - app-dev-network
 
   db:
-    image: postgres:16
-    container_name: rextra-backend-db-dev
+    image: postgres:15-alpine
+    container_name: ${APP_NAME:-rextra-backend}-db-dev
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASS:-password}
       POSTGRES_DB: ${DB_NAME:-rextra}
-    env_file:
-      - ./.env.dev
     volumes:
       - db-data:/var/lib/postgresql/data
     ports:
       - 5433:5432
     networks:
-      - rextra-net
-  redis:
-    image: redis:latest
-    container_name: rextra-backend-redis-local
-    env_file: .env.dev
+      - app-dev-network
+
+  nginx:
+    image: nginx:latest
+    container_name: ${APP_NAME:-rextra-backend}-nginx-dev
+    volumes:
+      - .:/var/www/html
+      - ./docker/dev/nginx/default.conf:/etc/nginx/conf.d/default.conf
     ports:
-      - 6379:6379
+      - ${NGINX_PORT:-81}:80
+    depends_on:
+      - app
     networks:
-      - rextra-net
+      - app-dev-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: ${APP_NAME:-rextra-backend}-pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@rextra.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - 5050:80
+    networks:
+      - app-dev-network
 
 volumes:
   db-data:
 
 networks:
-  rextra-net:
-    external: true
+  app-dev-network:
+    driver: bridge

@@ -1,0 +1,34 @@
+meta {
+  name: Update
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{host}}/api/v1/user/:id/riasec
+  body: json
+  auth: bearer
+}
+
+params:path {
+  id: 92dac5ff-883b-48b8-a5e3-41b94f0ae679
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "riasec_code": "IAC",
+    "explanations": {
+      "I": "IIIIIIIIIIIII...",
+      "A": "AAAAAAAAAAAA...",
+      "C": "Anda juga seorang yang Konvensional..."
+    }
+  }
+}
+
+settings {
+  encodeUrl: true
+}

@@ -1,28 +1,9 @@
-.PHONY: help tidy run watch seeder migrate both up down reset build-docker docker-migrate docker-seeder docker-both
+OS := $(shell uname -s 2>/dev/null || echo Windows)
 
-# Panggil dengan: make up ENV=prod
-ENV ?= local
-APP_NAME ?= rextra-backend
-COMPOSE_FILE = docker-compose.$(ENV).yml
-PROJECT_NAME = $(APP_NAME)-$(ENV)
-
-ifeq ($(ENV),local)
-	ENV_FILE = .env.dev
-else
-	ENV_FILE = .env.$(ENV)
-endif
-
-ifeq ($(ENV),local)
-	DOCKER_RUN_CMD = go run main.go
-else
-	DOCKER_RUN_CMD = /app/main
-endif
-
-# Target Go Local
-tidy:
+dep: 
 	go mod tidy
 
-run:
+run: 
 	go run main.go
 
 watch:
@@ -31,58 +12,58 @@ watch:
 seeder:
 	go run main.go --seeder
 
+reset-db:
+	go run main.go --reset-db
+
 migrate:
 	go run main.go --migrate
 
 both:
 	go run main.go --migrate --seeder
 
+# Parsing argument --dev or --prod
+ENV ?= dev
+COMPOSE_FILE = docker-compose.$(ENV).yml
+APP_CONTAINER = rextra-backend-$(ENV)
+DB_CONTAINER  = rextra-backend-db-$(ENV)
+
 # Docker targets
 up:
-	docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) --env-file $(ENV_FILE) up -d
+	docker compose -f $(COMPOSE_FILE) up -d
 
 down:
-	docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) --env-file $(ENV_FILE) down
+	docker compose -f $(COMPOSE_FILE) down
 
 reset:
-	docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) --env-file $(ENV_FILE) down -v
+	docker compose -f $(COMPOSE_FILE) down -v
 
 build-docker:
-	docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) --env-file $(ENV_FILE) up -d --build
+	docker compose -f $(COMPOSE_FILE) up -d --build
 
-# Docker exec targets
+DOCKER_CONTAINER = $(shell docker ps --filter "name=rextra-backend-$(ENV)" --format "{{.Names}}")
+
 docker-migrate:
-	docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) --env-file $(ENV_FILE) exec app $(DOCKER_RUN_CMD) --migrate
+	docker exec -T $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --migrate"
 
 docker-seeder:
-	docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) --env-file $(ENV_FILE) exec app $(DOCKER_RUN_CMD) --seeder
+	docker exec -T $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --seed"
 
 docker-both:
-	docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) --env-file $(ENV_FILE) exec app $(DOCKER_RUN_CMD) --migrate --seeder
-
-deploy-prod:
-	docker compose -f docker-compose.prod.yml up -d --build app
+	docker exec -T $(DOCKER_CONTAINER) /bin/sh -c "go run main.go --migrate --seed"
 
 # Help
 help:
-	@echo "Usage: make [target] [ENV=local|dev|prod]"
-	@echo "  (ENV default ke 'local' jika tidak diset)"
-	@echo ""
-	@echo "Targets Lokal:"
+	@echo "Usage: make [target] [--dev|--prod]"
+	@echo "Targets:"
 	@echo "  tidy        Tidy dependencies"
 	@echo "  run         Run the application"
 	@echo "  migrate     Run database migrations locally"
 	@echo "  seeder      Seed the database locally"
 	@echo "  watch       Run program with auto loading"
-	@echo ""
-	@echo "Targets Docker (Gunakan 'ENV=prod' untuk produksi):"
-	@echo "  up          Start docker container"
-	@echo "  down        Stop docker container"
-	@echo "  reset       Stop and remove docker container and volumes"
-	@echo "  build-docker Build docker container"
+	@echo "  up          Start docker container (--dev|--prod)"
+	@echo "  down        Stop docker container (--dev|--prod)"
+	@echo "  reset       Stop and remove docker container and volumes (--dev|--prod)"
+	@echo "  build-docker Build docker container (--dev|--prod)"
 	@echo "  docker-migrate Run migrations inside Docker container"
 	@echo "  docker-seeder  Run seeder inside Docker container"
 	@echo "  docker-both    Run migrate and seeder inside Docker container"
-	@echo ""
-	@echo "Targets Deployment:"
-	@echo "  deploy-prod Deploy to production"

@@ -58,4 +58,9 @@ jobs:
             docker pull $IMAGE_NAME
             make down ENV=dev
             make up ENV=dev
+            
+            echo "Waiting for container to be ready..."
+            sleep 10
+            # Otomatisasi Migrate & Seeder
+            make docker-both ENV=dev
           debug: true
