@@ -2,6 +2,11 @@ services:
   app:
     image: ${IMAGE_NAME:-rextra-backend-dev:latest}
     container_name: ${APP_NAME:-rextra-backend}-dev
+    hostname: app-dev
+    depends_on:
+      - db
+    links:
+      - db:db
     volumes:
       - .:/app
     ports:
