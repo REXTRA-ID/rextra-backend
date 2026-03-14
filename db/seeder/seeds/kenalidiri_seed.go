@@ -90,12 +90,14 @@ func SeederKenaliDiri(db *gorm.DB) error {
 			return err
 		}
 
+		sessionID := session.ID
+		setAtTime := mustTime("2024-01-02T10:30:00Z")
 		userProfile := entity.UserCareerProfile{
 			UserID:          userID,
-			ActiveSessionID: session.ID,
+			ActiveSessionID: &sessionID,
 			Pinned:          true,
 			SetSource:       entity.SetSourceAutoFirstTime,
-			SetAt:           mustTime("2024-01-02T10:30:00Z"),
+			SetAt:           &setAtTime,
 		}
 		if err := tx.Create(&userProfile).Error; err != nil {
 			return err

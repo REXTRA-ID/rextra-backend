@@ -17,6 +17,8 @@ type IkigaiTotalScores struct {
 	CareerProfileTestSession CareerProfileTestSession `json:"-" gorm:"foreignKey:TestSessionID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
+type IkigaiTotalScore = IkigaiTotalScores
+
 func (IkigaiTotalScores) TableName() string {
 	return "ikigai_total_scores"
 }

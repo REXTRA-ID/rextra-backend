@@ -35,4 +35,6 @@ const (
 
 	TOKENUSAGE         = "usage"
 	TOKENMONTHLYREFILL = "monthly_refill"
+
+	SetSourceAutoFirstTime = "AUTO_FIRST_TIME"
 )
