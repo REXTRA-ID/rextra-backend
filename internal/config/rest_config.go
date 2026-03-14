@@ -124,4 +124,5 @@ func (ap *RestConfig) Start() {
 	if err := ap.server.Run(serve); err != nil {
 		log.Panicf("failed to start server: %s", err)
 	}
+	log.Printf("[SYSTEM] REXTRA Backend is running on %s", serve)
 }
