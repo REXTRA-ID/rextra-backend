@@ -4,9 +4,8 @@ services:
     container_name: ${APP_NAME:-rextra-backend}-dev
     hostname: app-dev
     depends_on:
-      - db
-    links:
-      - db:db
+      db:
+        condition: service_healthy
     volumes:
       - .:/app
     ports:
@@ -14,9 +13,14 @@ services:
     environment:
       - APP_MODE=development
       - APP_PORT=${APP_PORT:-8001}
-      - DB_HOST=${APP_NAME:-rextra-backend}-db-dev
+      - DB_HOST=172.20.0.10
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASS=${DB_PASS:-password}
+      - DB_NAME=${DB_NAME:-rextra}
+      - DB_PORT=5432
     networks:
-      - app-dev-network
+      app-dev-network:
+        ipv4_address: 172.20.0.11
 
   db:
     image: postgres:15-alpine
@@ -29,8 +33,14 @@ services:
       - db-data:/var/lib/postgresql/data
     ports:
       - 5433:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-rextra}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
-      - app-dev-network
+      app-dev-network:
+        ipv4_address: 172.20.0.10
 
   nginx:
     image: nginx:latest
@@ -63,3 +73,6 @@ volumes:
 networks:
   app-dev-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

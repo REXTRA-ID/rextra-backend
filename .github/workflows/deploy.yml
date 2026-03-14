@@ -50,10 +50,8 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             cd /home/rextra/rextra-backend
-            # Bersihkan image lama agar disk tidak penuh
             docker system prune -f
             
-            # Tarik branch yang memicu workflow ini
             git fetch origin ${{ github.ref_name }}
             git checkout ${{ github.ref_name }}
             git pull origin ${{ github.ref_name }}
@@ -65,18 +63,10 @@ jobs:
             make down ENV=dev
             make up ENV=dev
             
-            echo "Waiting for container to be ready..."
-            sleep 25
+            echo "Waiting for database to be healthy..."
+            # Tidak perlu sleep lama karena sudah ada healthcheck di compose
+            sleep 10
             
-            # CARI CONTAINER DB SECARA DINAMIS
-            DB_CONTAINER=$(docker ps --filter "name=db-dev" --format "{{.Names}}" | head -n 1)
-            DB_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $DB_CONTAINER)
-            echo "Database Container: $DB_CONTAINER"
-            echo "Database IP found: $DB_IP"
-            
-            # CARI CONTAINER APP SECARA DINAMIS
-            APP_CONTAINER=$(docker ps --filter "name=rextra-backend-dev" --format "{{.Names}}" | head -n 1)
-            
-            # Jalankan migrate & seeder
-            docker exec -e DB_HOST=$DB_IP $APP_CONTAINER /bin/sh -c "go run main.go --migrate --seeder"
+            # Jalankan migrate & seeder (DB_HOST sudah dipatok 172.20.0.10 di compose)
+            make docker-both ENV=dev
           debug: true
