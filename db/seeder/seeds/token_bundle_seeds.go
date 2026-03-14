@@ -3,6 +3,8 @@ package seeds
 import (
 	"rextra-backend/internal/entity"
 	mylog "rextra-backend/internal/pkg/logger"
+	"time"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -37,21 +39,38 @@ func SeedTokenBundles(db *gorm.DB) error {
 func SeedPromos(db *gorm.DB) error {
 	mylog.Infof("[PROCESS] Seeding promo codes...")
 
+	now := time.Now().UTC()
+	future := now.AddDate(1, 0, 0)
+	max50k := int64(50000)
+	max1M := int64(1000000)
+
 	promos := []entity.Discounts{
 		{
-			Code: "REXTRACLUB", Name: "Diskon Member Club", DiscountType: entity.DiscountTypeFixed, 
-			Value: 10000, Status: entity.DiscountStatusActive,
+			Code: "REXTRACLUB", Name: "Promo Rextra Club 50%", DiscountType: entity.DiscountTypePercentage,
+			Value: 50, Status: entity.DiscountStatusActive, MaxDiscountAmount: &max50k, StartsAt: &now, EndsAt: &future,
+			AppliesTo: entity.DiscountAppliesToMembership,
 		},
 		{
-			Code: "PROMO50", Name: "Diskon 50 Persen", DiscountType: entity.DiscountTypePercentage, 
-			Value: 50, Status: entity.DiscountStatusActive,
+			Code: "PROMO50", Name: "Diskon 50 Persen Global", DiscountType: entity.DiscountTypePercentage,
+			Value: 50, Status: entity.DiscountStatusActive, StartsAt: &now, EndsAt: &future,
+			AppliesTo: entity.DiscountAppliesToGlobal,
+		},
+		{
+			Code: "HEMAT10", Name: "Hemat 10 Ribu", DiscountType: entity.DiscountTypeFixed,
+			Value: 10000, Status: entity.DiscountStatusActive, StartsAt: &now, EndsAt: &future,
+			AppliesTo: entity.DiscountAppliesToGlobal,
+		},
+		{
+			Code: "SPECIAL99", Name: "Admin Test 99%", DiscountType: entity.DiscountTypePercentage,
+			Value: 99, Status: entity.DiscountStatusActive, MaxDiscountAmount: &max1M, StartsAt: &now, EndsAt: &future,
+			AppliesTo: entity.DiscountAppliesToMembership,
 		},
 	}
 
 	for _, p := range promos {
 		db.Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "code"}},
-			DoUpdates: clause.AssignmentColumns([]string{"value", "status"}),
+			DoUpdates: clause.AssignmentColumns([]string{"value", "status", "discount_type", "max_discount_amount", "applies_to"}),
 		}).Create(&p)
 	}
 
