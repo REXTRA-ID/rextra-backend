@@ -50,7 +50,10 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             cd /home/rextra/rextra-backend
-            git pull origin dev
+            # Tarik branch yang memicu workflow ini (dev atau fix-checkout-final)
+            git fetch origin ${{ github.ref_name }}
+            git checkout ${{ github.ref_name }}
+            git pull origin ${{ github.ref_name }}
 
             export IMAGE_NAME=${{ secrets.DOCKER_USERNAME }}/rextra-backend-dev:${{ github.run_number }}
             export IMAGE_TAG=${{ github.run_number }}
