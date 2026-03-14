@@ -14,6 +14,7 @@ services:
     environment:
       - APP_MODE=development
       - APP_PORT=${APP_PORT:-8001}
+      - DB_HOST=${APP_NAME:-rextra-backend}-db-dev
     networks:
       - app-dev-network
 
