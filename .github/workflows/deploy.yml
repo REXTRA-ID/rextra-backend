@@ -63,10 +63,9 @@ jobs:
             make down ENV=dev
             make up ENV=dev
             
-            echo "Waiting for database to be healthy..."
-            # Tidak perlu sleep lama karena sudah ada healthcheck di compose
-            sleep 10
+            echo "Waiting for container to be ready..."
+            sleep 20
             
-            # Jalankan migrate & seeder (DB_HOST sudah dipatok 172.20.0.10 di compose)
+            # Kembali ke cara Make karena lebih stabil mencari nama container
             make docker-both ENV=dev
           debug: true
