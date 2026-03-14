@@ -2,7 +2,7 @@ name: Deploy dev to VPS
 
 on:
   push:
-    branches: [dev]
+    branches: [dev, fix-checkout-final]
 
 jobs:
   build:
