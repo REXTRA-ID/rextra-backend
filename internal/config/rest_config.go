@@ -19,8 +19,10 @@ import (
 
 	"log"
 	"os"
+	"rextra-backend/internal/modules/access_check"
 	kenalidiri "rextra-backend/internal/modules/kenali_diri"
 	token "rextra-backend/internal/modules/token"
+	tokenModuleRepo "rextra-backend/internal/modules/token/repository"
 
 	"rextra-backend/internal/pkg/cache"
 	"rextra-backend/internal/pkg/export"
@@ -52,6 +54,11 @@ func NewRest() RestConfig {
 
 	firebaseApp := myfirebase.New()
 	middleware := middleware.New(db, firebaseApp.MustGetClient())
+
+	tokenWalletRepo := tokenModuleRepo.NewTokenWalletRepository(db)
+	tokenLedgerRepo := tokenModuleRepo.NewTokenLedgerRepository(db)
+	accessCheckSvc := access_check.NewAccessCheckService(db, tokenWalletRepo, tokenLedgerRepo)
+	middleware.SetAccessCheckService(accessCheckSvc)
 
 	// Initialize all modules
 	auth.InitModule(server, db, middleware)

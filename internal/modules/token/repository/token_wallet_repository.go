@@ -12,7 +12,7 @@ type (
 	TokenWalletRepository interface {
 		GetByUserID(ctx context.Context, tx *gorm.DB, userID string) (entity.TokenWallet, error)
 		CreateWallet(ctx context.Context, tx *gorm.DB, userID uuid.UUID) error
-		UpdateBalance(ctx context.Context, tx *gorm.DB, userID string, newBalance float64, ledgerID uuid.UUID) error
+		UpdateBalance(ctx context.Context, tx *gorm.DB, userID string, newBalance int64, ledgerID uuid.UUID) error
 	}
 
 	tokenWalletRepository struct {
@@ -52,7 +52,7 @@ func (r *tokenWalletRepository) CreateWallet(ctx context.Context, tx *gorm.DB, u
 	return nil
 }
 
-func (r *tokenWalletRepository) UpdateBalance(ctx context.Context, tx *gorm.DB, userID string, newBalance float64, ledgerID uuid.UUID) error {
+func (r *tokenWalletRepository) UpdateBalance(ctx context.Context, tx *gorm.DB, userID string, newBalance int64, ledgerID uuid.UUID) error {
 	if tx == nil {
 		tx = r.db
 	}

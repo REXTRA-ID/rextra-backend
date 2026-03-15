@@ -344,7 +344,7 @@ func (s *paymentTransactionService) updateTokenTransaction(ctx context.Context, 
 
 	tokenQuntity := transaction.TokenQuantity
 
-	if userMembership.MembershipStatus == entity.PLANSTANDARD {
+	if userMembership.PlanName == entity.PLANSTANDARD {
 		plan, err := s.membershipPlanRepository.GetByPlanName(ctx, nil, entity.PLANSTARTER)
 		if err != nil {
 			return err
