@@ -16,8 +16,8 @@ const (
 
 type ActionCategory struct {
 	ID          uuid.UUID            `json:"id" gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
-	Name        string               `json:"name" gorm:"type:varchar(50);not null"`
-	Slug        string               `json:"slug" gorm:"type:varchar(50);uniqueIndex;not null"`
+	Name        string               `json:"name" gorm:"type:varchar(100);not null"`
+	Slug        string               `json:"slug" gorm:"type:varchar(100);uniqueIndex;not null"`
 	Description string               `json:"description" gorm:"type:text"`
 	Status      ActionCategoryStatus `json:"status" gorm:"type:varchar(20);not null;default:'active'"`
 

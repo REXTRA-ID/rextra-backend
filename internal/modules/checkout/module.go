@@ -2,6 +2,8 @@ package checkout
 
 import (
 	"context"
+	"encoding/json"
+	"strings"
 
 	"rextra-backend/internal/entity"
 	"rextra-backend/internal/middleware"
@@ -12,16 +14,14 @@ import (
 	"rextra-backend/internal/pkg/tripay"
 
 	membershipRepo "rextra-backend/internal/modules/membership/repository"
-	promoService "rextra-backend/internal/modules/promo/service"
+	promoRepo "rextra-backend/internal/modules/promo/repository"
 	userRepo "rextra-backend/internal/modules/user/repository"
 
 	"github.com/google/uuid"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	dto_request "rextra-backend/internal/dto/request"
 )
 
-// Adapters
 type planRepoAdapter struct {
 	repo membershipRepo.MembershipPlanRepository
 }
@@ -30,20 +30,40 @@ func (a *planRepoAdapter) GetByIDWithDurations(ctx context.Context, tx *gorm.DB,
 }
 
 type promoRepoAdapter struct {
-	svc promoService.DiscountService
+	discountRepo   promoRepo.DiscountRepository
+	redemptionRepo promoRepo.DiscountRedemptionRepository
+	planRepo       membershipRepo.MembershipPlanRepository
 }
 func (a *promoRepoAdapter) CountEligibleVouchers(ctx context.Context, planID string) (int, error) {
-	// For now return total active discounts
-	return 0, nil
+	return 0, nil // Simple placeholder
 }
-func (a *promoRepoAdapter) ValidateAndCalculateDiscount(ctx context.Context, code string, planID string, durationID string, subtotal int64) (int64, error) {
-	res, err := a.svc.ValidateCode(ctx, dto_request.ValidateDiscountRequest{Code: code, PlanID: planID, DurationID: durationID}, "")
+func (a *promoRepoAdapter) ValidateAndCalculateDiscount(ctx context.Context, code string, planID string, subtotal int64) (int64, error) {
+	discount, err := a.discountRepo.GetByCode(ctx, nil, code)
 	if err != nil { return 0, err }
-	return res.DiscountAmount, nil
+	if !discount.IsValid() { return 0, gorm.ErrRecordNotFound }
+	
+	if discount.MembershipPlanTargets != nil {
+		plan, err := a.planRepo.GetByID(ctx, nil, uuid.MustParse(planID))
+		if err == nil {
+			var targets []string
+			json.Unmarshal(discount.MembershipPlanTargets, &targets)
+			matched := false
+			for _, t := range targets { if strings.EqualFold(t, string(plan.PlanName)) { matched = true; break } }
+			if !matched { return 0, gorm.ErrRecordNotFound }
+		}
+	}
+	return discount.CalculateDiscount(subtotal), nil
 }
-func (a *promoRepoAdapter) RecordRedemption(ctx context.Context, code string, userID uuid.UUID, transactionID uuid.UUID) error {
-	// Handled by payment service after success payment callback
-	return nil
+func (a *promoRepoAdapter) RecordRedemption(ctx context.Context, code string, userID uuid.UUID, transactionID string) error {
+	discount, err := a.discountRepo.GetByCode(ctx, nil, code)
+	if err != nil { return err }
+	
+	redemption := entity.DiscountRedemption{
+		DiscountID: discount.ID, UserID: userID, TransactionID: transactionID, CodeSnapshot: discount.Code, Status: entity.RedemptionStatusApplied,
+	}
+	_, err = a.redemptionRepo.Create(ctx, nil, redemption)
+	if err != nil { return err }
+	return a.discountRepo.IncrementRedemption(ctx, nil, discount.ID)
 }
 
 type userRepoAdapter struct {
@@ -53,11 +73,18 @@ func (a *userRepoAdapter) GetByID(ctx context.Context, tx *gorm.DB, id uuid.UUID
 	return a.repo.GetById(ctx, tx, id.String())
 }
 
-func InitModule(server *gin.Engine, db *gorm.DB, mw middleware.Middleware, tripayClient *tripay.TripayClient, promoSvc promoService.DiscountService) {
+func InitModule(server *gin.Engine, db *gorm.DB, mw middleware.Middleware, tripayClient *tripay.TripayClient) {
 	repo := repository.NewCheckoutRepository(db)
 	
-	planAdapter := &planRepoAdapter{repo: membershipRepo.NewMembershipPlanRepository(db)}
-	promoAdapter := &promoRepoAdapter{svc: promoSvc}
+	planRepo := membershipRepo.NewMembershipPlanRepository(db)
+	planAdapter := &planRepoAdapter{repo: planRepo}
+	
+	promoAdapter := &promoRepoAdapter{
+		discountRepo: promoRepo.NewDiscountRepository(db),
+		redemptionRepo: promoRepo.NewDiscountRedemptionRepository(db),
+		planRepo: planRepo,
+	}
+	
 	userAdapter := &userRepoAdapter{repo: userRepo.NewUserRepository(db)}
 
 	svc := service.NewCheckoutService(repo, planAdapter, promoAdapter, userAdapter, tripayClient, db)

@@ -81,9 +81,9 @@ func NewRest() RestConfig {
 	// Adapter for PromoService to read plan duration
 	planDurationRepo := membershipRepository.NewPlanDurationRepository(db)
 	planDurationPromoAdapter := &planDurationPromoAdapter{repo: planDurationRepo}
-	promoSvc := promoService.NewDiscountService(discountRepository, redemptionRepository, planDurationPromoAdapter, db)
+	_ = promoService.NewDiscountService(discountRepository, redemptionRepository, planDurationPromoAdapter, db)
 
-	checkout.InitModule(server, db, middleware, &tripayClient, promoSvc)
+	checkout.InitModule(server, db, middleware, &tripayClient)
 	transaction_history.InitModule(server, db, middleware)
 	user_entitlement.InitModule(server, db, middleware)
 

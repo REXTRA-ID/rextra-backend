@@ -7,5 +7,5 @@ type ErrPendingTransactionExists struct {
 }
 
 func (e *ErrPendingTransactionExists) Error() string {
-	return fmt.Sprintf("kamu masih punya transaksi yang belum dibayar: %s", e.TransactionID)
+	return fmt.Sprintf("anda memiliki transaksi pending yang belum dibayar: %s", e.TransactionID)
 }

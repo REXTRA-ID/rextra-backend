@@ -7,12 +7,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ServeCheckout(server *gin.Engine, ctrl controller.CheckoutController, mw middleware.Middleware) {
-	group := server.Group("/api/v1/checkout")
-	group.Use(mw.Authenticate())
+func ServeCheckout(app *gin.Engine, ctrl controller.CheckoutController, mw middleware.Middleware) {
+	r := app.Group("/api/v1/checkout")
+	r.Use(mw.Authenticate())
 	{
-		group.GET("/prepare", ctrl.PrepareCheckout)
-		group.POST("/calculate", ctrl.CalculatePrice)
-		group.POST("/initiate", ctrl.InitiateCheckout)
+		r.GET("/prepare", ctrl.Prepare)
+		r.POST("/calculate", ctrl.Calculate)
+		r.POST("/initiate", ctrl.Initiate)
+		r.GET("/channels", ctrl.GetPaymentChannels)
+		r.GET("/transactions", ctrl.GetTransactions)
+		r.GET("/transaction/:transactionId", ctrl.GetTransaction)
+		r.POST("/repeat/:transactionId", ctrl.Repeat)
+		r.PUT("/cancel/:transactionId", ctrl.Cancel)
 	}
 }

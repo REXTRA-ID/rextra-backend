@@ -15,7 +15,7 @@ type PlanRepository interface {
 type PromoRepository interface {
 	CountEligibleVouchers(ctx context.Context, planID string) (int, error)
 	ValidateAndCalculateDiscount(ctx context.Context, code string, planID string, subtotal int64) (int64, error)
-	RecordRedemption(ctx context.Context, code string, userID uuid.UUID, transactionID uuid.UUID) error
+	RecordRedemption(ctx context.Context, code string, userID uuid.UUID, transactionID string) error
 }
 
 type UserRepository interface {
