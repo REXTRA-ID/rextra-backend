@@ -82,7 +82,7 @@ func Migrate(db *gorm.DB) error {
 		&entity.ProfessionStudyProgram{},
 
 		// Membership
-		&entity.MembershipDuration{},
+		&entity.PlanDuration{},
 		&entity.MembershipPlans{},
 		&entity.Memberships{},
 
@@ -99,9 +99,9 @@ func Migrate(db *gorm.DB) error {
 		&entity.TokenTransaction{},
 		&entity.TokenUsageHistory{},
 
-		// Promo Code
-		&entity.PromoCodes{},
-		&entity.PromoCodeUsage{},
+		// Promo Code (Sekarang Discounts)
+		&entity.Discounts{},
+		&entity.DiscountRedemption{},
 
 		// Hak Akses (Access Rights)
 		&entity.Feature{},
