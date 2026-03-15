@@ -1,0 +1,34 @@
+meta {
+  name: Request
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{host}}/api/v1/user/:id/riasec
+  body: json
+  auth: bearer
+}
+
+params:path {
+  id: 92dac5ff-883b-48b8-a5e3-41b94f0ae679
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "riasec_code": "REC",
+    "explanations": {
+      "R": "Anda memiliki sisi Realistis yang kuat...",
+      "E": "Sifat Enterprising Anda menunjukkan bahwa...",
+      "C": "Anda juga seorang yang Konvensional..."
+    }
+  }
+}
+
+settings {
+  encodeUrl: true
+}

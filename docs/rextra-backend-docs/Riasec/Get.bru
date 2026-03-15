@@ -1,0 +1,23 @@
+meta {
+  name: Get
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{host}}/api/v1/user/:id/riasec
+  body: none
+  auth: bearer
+}
+
+params:path {
+  id: 92dac5ff-883b-48b8-a5e3-41b94f0ae679
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+settings {
+  encodeUrl: true
+}

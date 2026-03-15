@@ -74,10 +74,11 @@ func SeedCareerProfileData(db *gorm.DB) error {
 		err := tx.Where("user_id = ?", userID).First(&existingProfile).Error
 		if err == nil {
 			// Update existing
-			existingProfile.ActiveSessionID = userProfile.ActiveSessionID
-			existingProfile.SetSource = userProfile.SetSource
-			existingProfile.SetAt = userProfile.SetAt
-			existingProfile.Pinned = userProfile.Pinned
+			existingProfile.TestSessionID = userProfile.TestSessionID
+			existingProfile.TopProfession1ID = userProfile.TopProfession1ID
+			existingProfile.TopProfession2ID = userProfile.TopProfession2ID
+			existingProfile.RIASECCode = userProfile.RIASECCode
+			existingProfile.IsActive = userProfile.IsActive
 			if err := tx.Save(&existingProfile).Error; err != nil {
 				return err
 			}

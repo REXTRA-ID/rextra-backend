@@ -23,10 +23,6 @@ func InvalidCreds() Error {
 	return newError(Error_InvalidCreds, Message[Error_InvalidCreds], "")
 }
 
-func NotVerified() Error {
-	return newError(Error_NotVerified, Message[Error_NotVerified], "")
-}
-
 func InvalidToken() Error {
 	return newError(Error_InvalidToken, Message[Error_InvalidToken], "")
 }

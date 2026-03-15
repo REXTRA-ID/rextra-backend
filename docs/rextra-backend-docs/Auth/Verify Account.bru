@@ -1,0 +1,19 @@
+meta {
+  name: Verify Account
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{host}}/api/v1/auth/verify?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImF6a2FyaXpxdWxsYWg5OUBnbWFpbC5jb20iLCJleHAiOjE3NTU1ODAzMjAsImlzcyI6InJleHRyYS1iYWNrZW5kIiwidXNlcl9pZCI6ImE4MTNlYzY1LTdkOGQtNDA0Zi05MmU0LTZmYzg0MWI5ZDU4MSIsInZlcnNpb24iOiIxLjAuMCJ9.EPL1ccGX3Dkwud9nO6dk65u2CUO_YkLJ8NalnbQRGBc
+  body: none
+  auth: inherit
+}
+
+params:query {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImF6a2FyaXpxdWxsYWg5OUBnbWFpbC5jb20iLCJleHAiOjE3NTU1ODAzMjAsImlzcyI6InJleHRyYS1iYWNrZW5kIiwidXNlcl9pZCI6ImE4MTNlYzY1LTdkOGQtNDA0Zi05MmU0LTZmYzg0MWI5ZDU4MSIsInZlcnNpb24iOiIxLjAuMCJ9.EPL1ccGX3Dkwud9nO6dk65u2CUO_YkLJ8NalnbQRGBc
+}
+
+settings {
+  encodeUrl: true
+}

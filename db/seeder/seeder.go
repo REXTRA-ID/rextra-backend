@@ -10,28 +10,11 @@ import (
 
 func Seeding(db *gorm.DB) error {
 	seeders := []func(*gorm.DB) error{
-		// ── Urutan seeding untuk fresh database ──
-		// 1. Master data tanpa dependency
 		seeds.SeederUser,
-		seeds.SeederRiasecCodes,
-		seeds.SeedTokenBundlePackages,
-		seeds.SeedStudentObstacleOptions,
-		seeds.SeedExpertObstacleOptions,
-		
-		// Jelajah Profesi Categories
-		seeds.SeedProfessionMainCategory,
-		seeds.SeedProfessionSubCategory,
-
-		// 2. KenaliDiri (depends: User) — TRUNCATE + recreate
-		seeds.SeederKenaliDiri,
-		// 3. Remaining entities (depends: User, KenaliDiri sessions)
-		seeds.SeedRemainingEntities,
-		// 4. Additional career profile data (depends: User, RiasecCodes)
-		seeds.SeedCareerProfileData,
-		// 5. Feedback data (depends: User, sessions, obstacle options)
-		seeds.SeedFeedbackData,
-		// 6. Topup transactions (depends: User, TokenBundlePackage)
-		seeds.SeedTopupTransactions,
+		seeds.SeederMembershipPlan,
+		seeds.SeedPlanDurations,
+		seeds.SeedPromos,
+		seeds.SeedTokenBundles,
 	}
 
 	fmt.Println(mylog.ColorizeInfo("\n=========== Start Seeding ==========="))

@@ -90,12 +90,13 @@ func SeederKenaliDiri(db *gorm.DB) error {
 			return err
 		}
 
+		sessionID := session.ID
+		setAtTime := mustTime("2024-01-02T10:30:00Z")
 		userProfile := entity.UserCareerProfile{
 			UserID:          userID,
-			ActiveSessionID: session.ID,
-			Pinned:          true,
-			SetSource:       entity.SetSourceAutoFirstTime,
-			SetAt:           mustTime("2024-01-02T10:30:00Z"),
+			TestSessionID:   sessionID,
+			IsActive:        true,
+			ActivatedAt:     setAtTime,
 		}
 		if err := tx.Create(&userProfile).Error; err != nil {
 			return err
@@ -142,9 +143,9 @@ func SeederKenaliDiri(db *gorm.DB) error {
 					{"profession_id": 102, "profession_name": "Business Intelligence", "match_percentage": 86, "match_reasoning": "Kombinasi analisis dan komunikasi"},
 				},
 			}),
-			TopProfession1ID: 101,
-			TopProfession2ID: 102,
-			CalculatedAt:     mustTime("2024-01-02T10:25:00Z"),
+			TopProfession1ID: ptrInt64(101),
+			TopProfession2ID: ptrInt64(102),
+			CreatedAt:        mustTime("2024-01-02T10:25:00Z"),
 		}
 		if err := tx.Create(&ikigaiScores).Error; err != nil {
 			return err

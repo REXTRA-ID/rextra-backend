@@ -1,0 +1,58 @@
+[
+    {
+        "plan_name": "Starter",
+        "category": "unpaid",
+        "tier_label": "REXTRA NON CLUB",
+        "description": "Paket dasar registrasi",
+        "status": "aktif",
+        "pricing_mode": "manual",
+        "duration_mode": "tanpa_durasi",
+        "base_price1_m": 0,
+        "base_token1_m": 0,
+        "starter_duration_months": 1
+    },
+    {
+        "plan_name": "Standard",
+        "category": "unpaid",
+        "tier_label": "REXTRA NON CLUB",
+        "description": "Paket standar gratis",
+        "status": "aktif",
+        "pricing_mode": "manual",
+        "duration_mode": "tanpa_durasi",
+        "base_price1_m": 0,
+        "base_token1_m": 0
+    },
+    {
+        "plan_name": "Basic",
+        "category": "paid",
+        "tier_label": "REXTRA NON CLUB",
+        "description": "Paket berbayar Basic",
+        "status": "aktif",
+        "pricing_mode": "manual",
+        "duration_mode": "durasi_tetap",
+        "base_price1_m": 15000,
+        "base_token1_m": 10
+    },
+    {
+        "plan_name": "Pro",
+        "category": "paid",
+        "tier_label": "REXTRA NON CLUB",
+        "description": "Paket berbayar Pro",
+        "status": "aktif",
+        "pricing_mode": "manual",
+        "duration_mode": "durasi_tetap",
+        "base_price1_m": 25000,
+        "base_token1_m": 25
+    },
+    {
+        "plan_name": "Max",
+        "category": "paid",
+        "tier_label": "REXTRA CLUB",
+        "description": "Paket eksklusif CLUB",
+        "status": "aktif",
+        "pricing_mode": "manual",
+        "duration_mode": "durasi_tetap",
+        "base_price1_m": 50000,
+        "base_token1_m": 100
+    }
+]

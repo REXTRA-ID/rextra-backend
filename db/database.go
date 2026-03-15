@@ -12,6 +12,9 @@ import (
 
 func New() *gorm.DB {
 	DBHost := os.Getenv("DB_HOST")
+	if DBHost == "" {
+		DBHost = "db" // Default fallback
+	}
 	DBUser := os.Getenv("DB_USER")
 	DBPassword := os.Getenv("DB_PASS")
 	DBName := os.Getenv("DB_NAME")

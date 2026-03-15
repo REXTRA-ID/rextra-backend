@@ -1,26 +1,18 @@
 [
-  {
-    "fullname": "admin youngtive",
-    "email": "admin@email.com",
-    "password": "Password.1",
-    "is_verified": true,
-    "phone_number": "0888888888",
-    "role": "ADMIN"
-  },
-  {
-    "fullname": "user youngtive",
-    "email": "user@email.com",
-    "password": "Password.2",
-    "is_verified": true,
-    "phone_number": "0888888889",
-    "role": "USER"
-  },
-  {
-    "fullname": "expert youngtive",
-    "email": "expert@email.com",
-    "password": "Password.3",
-    "is_verified": true,
-    "phone_number": "0888888890",
-    "role": "EXPERT"
-  }
+    {
+        "username":"admin youngtive",
+        "email":"admin@email.com",
+        "password":"Password",
+        "is_verified": true,
+        "phone_number": "0888888888",
+        "role":"ADMIN"
+    },
+    {
+        "username": "aldoger",
+        "email": "nainggolanben12@gmail.com",
+        "password": "aldoger",
+        "is_verified": true,
+        "phone_number": "081213637771",
+        "role": "USER"
+    }
 ]
