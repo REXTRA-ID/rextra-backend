@@ -6,6 +6,7 @@ type CreateMembershipPlanRequest struct {
 	TierLabel    string  `json:"tier_label" binding:"required"`
 	EmblemKey    string  `json:"emblem_key"`
 	Description  string  `json:"description"`
+	MarketingIntro string `json:"marketing_intro"`
 	PricingMode  string  `json:"pricing_mode" binding:"required,oneof=manual otomatis"`
 	DurationMode string  `json:"duration_mode" binding:"required,oneof=dengan_durasi tanpa_durasi"`
 	BasePrice1M  int64   `json:"base_price_1m"`
@@ -23,6 +24,7 @@ type UpdateMembershipPlanRequest struct {
 	TierLabel    string   `json:"tier_label" binding:"required"`
 	EmblemKey    string   `json:"emblem_key"`
 	Description  string   `json:"description"`
+	MarketingIntro string `json:"marketing_intro"`
 	Status       string   `json:"status" binding:"required,oneof=aktif nonaktif"`
 	PricingMode  string   `json:"pricing_mode" binding:"required,oneof=manual otomatis"`
 	BasePrice1M  int64    `json:"base_price_1m"`

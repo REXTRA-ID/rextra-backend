@@ -42,6 +42,7 @@ type MembershipPlans struct {
 	TierLabel    string       `json:"tier_label" gorm:"type:varchar(50);not null"`
 	EmblemKey    string       `json:"emblem_key" gorm:"type:varchar(50)"`
 	Description  string       `json:"description" gorm:"type:text"`
+	MarketingIntro string     `json:"marketing_intro" gorm:"type:text"`
 	Status       PlanStatus   `json:"status" gorm:"type:varchar(20);not null;default:'aktif'"`
 	PricingMode  PricingMode  `json:"pricing_mode" gorm:"type:varchar(20);not null;default:'manual'"`
 	DurationMode DurationMode `json:"duration_mode" gorm:"type:varchar(20);not null;default:'dengan_durasi'"`

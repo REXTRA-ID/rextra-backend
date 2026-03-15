@@ -5,6 +5,7 @@ import (
 	"rextra-backend/internal/modules/membership/service"
 	myerror "rextra-backend/internal/pkg/error"
 	"rextra-backend/internal/pkg/response"
+	"rextra-backend/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,8 +25,8 @@ type (
 	}
 )
 
-func NewMembershipPlanController(svc service.MembershipPlanService) MembershipPlanController {
-	return &membershipPlanController{planService: svc}
+func NewMembershipPlan(planService service.MembershipPlanService) MembershipPlanController {
+	return &membershipPlanController{planService: planService}
 }
 
 func (c *membershipPlanController) Create(ctx *gin.Context) {
@@ -63,14 +64,14 @@ func (c *membershipPlanController) Update(ctx *gin.Context) {
 }
 
 func (c *membershipPlanController) Delete(ctx *gin.Context) {
-	if err := c.planService.Delete(ctx, ctx.Param("planId")); err != nil {
-		response.NewFailed("failed delete", err).Send(ctx); return
-	}
+	err := c.planService.Delete(ctx, ctx.Param("planId"))
+	if err != nil { response.NewFailed("failed delete", err).Send(ctx); return }
 	response.NewSuccess("deleted", nil).Send(ctx)
 }
 
 func (c *membershipPlanController) GetCatalog(ctx *gin.Context) {
-	result, err := c.planService.GetCatalog(ctx)
+	userID, _ := utils.GetUserIdFromCtx(ctx)
+	result, err := c.planService.GetCatalog(ctx, userID)
 	if err != nil { response.NewFailed("failed get catalog", err).Send(ctx); return }
 	response.NewSuccess("retrieved", result).Send(ctx)
 }

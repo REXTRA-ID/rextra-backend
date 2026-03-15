@@ -14,40 +14,40 @@ func ServeMembership(
 	mappingCtrl controller.DurationAccessMappingController,
 	mw middleware.Middleware,
 ) {
-	// User Routes
-	userRoutes := app.Group("/api/v1/membership")
+	public := app.Group("/api/v1/membership")
 	{
-		userRoutes.GET("/plan", planCtrl.GetCatalog)
+		public.GET("/plan", mw.Authenticate(), planCtrl.GetCatalog)
 	}
 
-	// Admin Routes
-	adminRoutes := app.Group("/api/v1/admin/membership")
-	adminRoutes.Use(mw.Authenticate(), mw.OnlyAllow("ADMIN"))
+	admin := app.Group("/api/v1/admin/membership")
+	admin.Use(mw.Authenticate(), mw.OnlyAllow("ADMIN"))
 	{
-		// Plan CRUD
-		adminRoutes.GET("/plan", planCtrl.GetAll)
-		adminRoutes.POST("/plan", planCtrl.Create)
-		adminRoutes.GET("/plan/:planId", planCtrl.GetById)
-		adminRoutes.PUT("/plan/:planId", planCtrl.Update)
-		adminRoutes.DELETE("/plan/:planId", planCtrl.Delete)
-
-		// Duration CRUD (Nested)
-		duration := adminRoutes.Group("/plan/:planId/duration")
+		// Plans
+		plans := admin.Group("/plan")
 		{
-			duration.GET("", durationCtrl.GetAll)
-			duration.POST("", durationCtrl.Create)
-			duration.GET("/:durationId", durationCtrl.GetById)
-			duration.PUT("/:durationId", durationCtrl.Update)
-			duration.DELETE("/:durationId", durationCtrl.Delete)
+			plans.POST("", planCtrl.Create)
+			plans.GET("", planCtrl.GetAll)
+			plans.GET("/:planId", planCtrl.GetById)
+			plans.PUT("/:planId", planCtrl.Update)
+			plans.DELETE("/:planId", planCtrl.Delete)
 
-			// Access Mapping CRUD (Nested)
-			mapping := duration.Group("/:durationId/mapping")
+			// Durations
+			durations := plans.Group("/:planId/duration")
 			{
-				mapping.GET("", mappingCtrl.GetAll)
-				mapping.POST("", mappingCtrl.Create)
-				mapping.GET("/:mappingId", mappingCtrl.GetById)
-				mapping.PUT("/:mappingId", mappingCtrl.Update)
-				mapping.DELETE("/:mappingId", mappingCtrl.Delete)
+				durations.POST("", durationCtrl.Create)
+				durations.GET("", durationCtrl.GetAll)
+				durations.GET("/:durationId", durationCtrl.GetById)
+				durations.PUT("/:durationId", durationCtrl.Update)
+				durations.DELETE("/:durationId", durationCtrl.Delete)
+
+				// Mappings (Benefits)
+				mapping := durations.Group("/:durationId/mapping")
+				{
+					mapping.POST("", mappingCtrl.Create)
+					mapping.GET("/:mappingId", mappingCtrl.GetById)
+					mapping.PUT("/:mappingId", mappingCtrl.Update)
+					mapping.DELETE("/:mappingId", mappingCtrl.Delete)
+				}
 			}
 		}
 	}
