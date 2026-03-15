@@ -118,17 +118,28 @@ func (s *authService) Verify(ctx context.Context, token string) error {
 	user, err := s.userRepository.GetByEmail(ctx, nil, payloadToken["email"])
 	if err != nil { return err }
 
-	starterPlan, err := s.membershipPlanRepository.GetByPlanName(ctx, nil, entity.PlanName(entity.PLANSTARTER))
+	// Initialize membership with Standard plan
+	standardPlan, err := s.membershipPlanRepository.GetByPlanName(ctx, nil, entity.PlanName(entity.PLANSTANDARD))
 	if err != nil { return err }
 
-	userMembership := entity.NewMembership(user.ID, entity.PlanName(entity.PLANSTARTER))
-	userMembership.PlanID = &starterPlan.ID
-	userMembership.HasClaimedStarter = true
+	userMembership := entity.NewMembership(user.ID, entity.PlanName(entity.PLANSTANDARD))
+	userMembership.PlanID = &standardPlan.ID
 	
-	now := time.Now().UTC()
-	expiredAt := now.AddDate(0, starterPlan.StarterDurationMonths, 0)
-	userMembership.StartedAt = &now
-	userMembership.ExpiredAt = &expiredAt
+	// Try to find default 1 month duration for Standard benefits
+	standardDurations, err := s.membershipPlanRepository.GetDurationsByPlanID(ctx, nil, standardPlan.ID)
+	if err == nil {
+		for _, d := range standardDurations {
+			if d.DurationMonths == 1 {
+				userMembership.DurationID = &d.ID
+				userMembership.DurationMonths = &d.DurationMonths
+				break
+			}
+		}
+	}
+
+	userMembership.IsActive = true
+	userMembership.HasClaimedStarter = false
+	userMembership.ExpiredAt = nil // Standard is unlimited
 
 	_, err = s.membershipRepository.Create(ctx, nil, userMembership)
 	if err != nil { return err }

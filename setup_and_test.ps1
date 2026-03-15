@@ -1,225 +1,163 @@
-# REXTRA TRANSACTION TESTER (PRO) - DYNAMIC VERSION
+# REXTRA TRANSACTION TESTER (PRO) - MOBILE SIMULATION VERSION
 $baseUrl = "http://localhost:8000/api/v1"
+$dbHost = "103.171.84.248"
+$dbUser = "postgres"
+$dbPass = "password"
+$dbName = "rextra"
+$dbPort = "5433"
 
-function Show-Error {
-    param($Msg, $Exception)
-    Write-Host "`nERROR: $Msg" -ForegroundColor Red
-    if ($Exception.Response) {
-        try {
-            $stream = $Exception.Response.GetResponseStream()
-            $reader = New-Object System.IO.StreamReader($stream)
-            $body = $reader.ReadToEnd() | ConvertFrom-Json
-            Write-Host "Pesan Server: $($body.error)" -ForegroundColor Yellow
-        } catch {}
-    } else {
-        Write-Host "Detail: $($Exception.Message)" -ForegroundColor Gray
-    }
+# Helper to run DB queries with robust logic
+function Invoke-DBQuery($Query) {
+    $jsCode = "const { Client } = require('pg'); const client = new Client({ host: '$dbHost', user: '$dbUser', password: '$dbPass', database: '$dbName', port: $dbPort }); async function run() { try { await client.connect(); const res = await client.query(\`$Query\`); process.stdout.write(JSON.stringify(res.rows)); } catch (e) { process.stderr.write(e.message); } finally { await client.end(); } } run();"
+    $jsCode | Out-File -FilePath "temp_db.js" -Encoding utf8 -Force
+    $out = node temp_db.js 2>$null
+    Remove-Item "temp_db.js" -ErrorAction SilentlyContinue
+    if ([string]::IsNullOrWhiteSpace($out)) { return @() }
+    try { return ($out | ConvertFrom-Json) } catch { return @() }
 }
 
-Clear-Host
-Write-Host "==========================================" -ForegroundColor Yellow
-Write-Host "   REXTRA TRANSACTION TESTER (PRO)        " -ForegroundColor Yellow
-Write-Host "==========================================" -ForegroundColor Yellow
-
-# 1. Login
-Write-Host "`nAuthenticating..." -ForegroundColor Cyan
-$loginBody = @{ email = "admin@email.com"; password = "admin123" } | ConvertTo-Json
-try {
-    $loginResp = Invoke-RestMethod -Uri "$baseUrl/auth/login" -Method Post -Body $loginBody -ContentType "application/json"
-    $token = $loginResp.data.access_token
-    Write-Host "Login Berhasil!" -ForegroundColor Green
-} catch {
-    Show-Error "Gagal Login" $_
-    exit
-}
-
-while ($true) {
-    # 1.5 Cek Membership Aktif
-    Write-Host "`nMengecek status membership Anda..." -ForegroundColor Gray
-    $myMem = $null
-    try {
-        $memResp = Invoke-RestMethod -Uri "$baseUrl/my/membership" -Method Get -Headers @{ Authorization = "Bearer $token" }
-        $myMem = $memResp.data
-        Write-Host "Status: $($myMem.plan_name) ($($myMem.remaining_days) Hari Tersisa)" -ForegroundColor Cyan
-    } catch {
-        Write-Host "Status: Belum Memiliki Membership Aktif" -ForegroundColor Gray
-    }
-
-    Write-Host "`n=== MENU UTAMA REXTRA ===" -ForegroundColor Yellow
-    Write-Host "1. Buat Transaksi Baru / Perpanjang / Upgrade"
-    Write-Host "2. Lihat Daftar Transaksi Saya"
-    Write-Host "3. Keluar"
+function Show-MobileDashboard($DashboardData) {
+    if (!$DashboardData) { Write-Host "Error: Data Dashboard Tidak Ditemukan" -ForegroundColor Red; return }
+    $m = $DashboardData.membership
+    $u = $DashboardData.ui_state
+    $w = $DashboardData.wallet
     
-    $mainOpt = Read-Host "Pilih menu (1-3)"
+    Clear-Host
+    Write-Host "--- SIMULASI LAYAR MOBILE REXTRA ---" -ForegroundColor Gray
+    Write-Host "=========================================="
 
-    if ($mainOpt -eq "2") {
-        Write-Host "`n[DAFTAR TRANSAKSI ANDA]" -ForegroundColor Cyan
-        try {
-            $list = Invoke-RestMethod -Uri "$baseUrl/checkout/transactions" -Method Get -Headers @{ Authorization = "Bearer $token" }
-            if ($list.data.Count -eq 0) { Write-Host "(Belum ada riwayat transaksi)" -ForegroundColor Gray }
-            $list.data | ForEach-Object {
-                $statusColor = "White"
-                if ($_.payment_status -eq "paid") { $statusColor = "Green" }
-                elseif ($_.payment_status -eq "pending") { $statusColor = "Yellow" }
-                elseif ($_.payment_status -eq "cancelled") { $statusColor = "Red" }
-                
-                Write-Host "[$($_.transaction_id)] " -NoNewline
-                Write-Host "$($_.payment_status)" -ForegroundColor $statusColor -NoNewline
-                Write-Host " | $($_.change_type) | Total: Rp $($_.total_amount)"
-                if ($_.items) { $itemNames = $_.items | ForEach-Object { $_.name }; Write-Host "   Items: $($itemNames -join ', ')" -ForegroundColor Gray }
+    $bgColor = "Blue"
+    if ($m.plan_name -eq "Pro") { $bgColor = "Magenta" }
+    elseif ($m.plan_name -eq "Max") { $bgColor = "Yellow" }
+    elseif ($m.plan_name -eq "Basic") { $bgColor = "Green" }
+    
+    Write-Host " [ SECTION A - MEMBERSHIP CARD ] " -BackgroundColor $bgColor -ForegroundColor Black
+    Write-Host "  $($m.status_label) " -ForegroundColor Gray
+    Write-Host "  $($m.plan_name.ToUpper()) " -ForegroundColor White
+    Write-Host " "
+    Write-Host "  Aktif hingga $($m.active_until)"
+    Write-Host "  Sisa $($m.remaining_days) hari" -ForegroundColor Yellow
+    Write-Host " "
+    Write-Host "  Token Tersedia:"
+    Write-Host "  $($w.token_balance) Token" -ForegroundColor Cyan
+    Write-Host " ------------------------------------------ " -ForegroundColor $bgColor
+
+    if ($u.is_near_expiry) {
+        Write-Host "`n [ ALERT: PENGINGAT ] " -BackgroundColor Yellow -ForegroundColor Black
+        Write-Host " Membership kamu akan segera berakhir" -ForegroundColor Yellow
+        Write-Host " Langganan REXTRA CLUB kamu akan berakhir dalam $($m.remaining_days) hari."
+        Write-Host " Perpanjang sekarang agar akses tetap aktif tanpa jeda."
+    }
+
+    if ($u.is_expired) {
+        Write-Host "`n [ ALERT: MEMBERSHIP BERAKHIR ] " -BackgroundColor Red -ForegroundColor White
+        Write-Host " Masa aktif membership kamu sudah habis." -ForegroundColor Red
+        Write-Host " Segera perbarui untuk mendapatkan kembali akses fitur."
+    }
+
+    Write-Host "`n [ QUICK ACTIONS ]" -ForegroundColor Gray
+    Write-Host " Top Up | Perpanjang | Riwayat"
+
+    Write-Host "`n [ SECTION B - BENEFIT MEMBERSHIP ] " -ForegroundColor White
+    Write-Host " ------------------------------------------ "
+    if ($DashboardData.benefits) {
+        foreach ($group in $DashboardData.benefits) {
+            Write-Host " * $($group.feature_name): $($group.access_label)" -ForegroundColor Cyan
+            if ($group.sub_features) {
+                foreach ($sub in $group.sub_features) {
+                    Write-Host "   - $($sub.name): $($sub.access_label)"
+                }
             }
-        } catch {
-            Show-Error "Gagal mengambil daftar" $_
+            Write-Host " ------------------------------------------ "
         }
-        continue
-    } elseif ($mainOpt -eq "3") {
-        break
+    }
+}
+
+# --- MAIN FLOW ---
+while ($true) {
+    Clear-Host
+    Write-Host "==========================================" -ForegroundColor Yellow
+    Write-Host "   REXTRA SYSTEM TESTER (MOBILE FLOW)     " -ForegroundColor Yellow
+    Write-Host "==========================================" -ForegroundColor Yellow
+
+    Write-Host "Pilih Skenario Pengetesan:"
+    Write-Host "1. Akun Baru (Manual Klaim Starter)"
+    Write-Host "2. Akun Lama - Hampir Expired (H-3)"
+    Write-Host "3. Akun Lama - Sudah Expired"
+    Write-Host "4. Akun Lama - Masih Aktif (Sisa 60 Hari)"
+    Write-Host "5. Keluar"
+
+    $scenChoice = Read-Host "`nPilih nomor"
+    if ($scenChoice -eq "5") { break }
+
+    $testMail = "tester_mobile_$($scenChoice)@email.com"
+    $testHash = '$2a$04$jP9U2bPN8tfpHfuqMni6bOFz6xokF2nrdpZOQRGPqpTceGPpfO0Wq' # admin123
+
+    Write-Host "`n[1/3] Menyiapkan State Database..." -ForegroundColor Gray
+    $null = Invoke-DBQuery "DELETE FROM subscription_cycles WHERE membership_id IN (SELECT id FROM memberships WHERE user_id IN (SELECT id FROM users WHERE email = '$testMail'))"
+    $null = Invoke-DBQuery "DELETE FROM payment_transactions WHERE user_id IN (SELECT id FROM users WHERE email = '$testMail')"
+    $null = Invoke-DBQuery "DELETE FROM memberships WHERE user_id IN (SELECT id FROM users WHERE email = '$testMail')"
+    $null = Invoke-DBQuery "DELETE FROM users WHERE email = '$testMail'"
+
+    $userRows = Invoke-DBQuery "INSERT INTO users (id, fullname, email, password, is_verified, phone_number, role) VALUES (gen_random_uuid(), 'Mobile Tester', '$testMail', '$testHash', true, '081222333444', 'USER') RETURNING id"
+    if ($userRows.Count -eq 0) { Write-Host "Gagal menyiapkan data user!"; pause; continue }
+    $testUid = $userRows[0].id
+
+    if ($scenChoice -eq "1") {
+        $null = Invoke-DBQuery "INSERT INTO memberships (id, user_id, plan_name, is_active, has_claimed_starter) VALUES (gen_random_uuid(), '$testUid', 'Starter', false, false)"
+    }
+    elseif ($scenChoice -eq "2") {
+        $pRes = Invoke-DBQuery "SELECT id FROM membership_plans WHERE plan_name = 'Pro'"
+        $pId = $pRes[0].id
+        $dRes = Invoke-DBQuery "SELECT id FROM plan_durations WHERE plan_id = '$pId' AND duration_months = 1"
+        $dId = $dRes[0].id
+        $st = (Get-Date).AddDays(-27).ToString("yyyy-MM-dd HH:mm:ss")
+        $en = (Get-Date).AddDays(3).ToString("yyyy-MM-dd HH:mm:ss")
+        $null = Invoke-DBQuery "INSERT INTO memberships (id, user_id, plan_id, plan_name, duration_id, duration_months, is_active, started_at, expired_at, has_claimed_starter) VALUES (gen_random_uuid(), '$testUid', '$pId', 'Pro', '$dId', 1, true, '$st', '$en', true)"
+    }
+    elseif ($scenChoice -eq "3") {
+        $pRes = Invoke-DBQuery "SELECT id FROM membership_plans WHERE plan_name = 'Basic'"
+        $pId = $pRes[0].id
+        $dRes = Invoke-DBQuery "SELECT id FROM plan_durations WHERE plan_id = '$pId' AND duration_months = 1"
+        $dId = $dRes[0].id
+        $st = (Get-Date).AddDays(-40).ToString("yyyy-MM-dd HH:mm:ss")
+        $en = (Get-Date).AddDays(-1).ToString("yyyy-MM-dd HH:mm:ss")
+        $null = Invoke-DBQuery "INSERT INTO memberships (id, user_id, plan_id, plan_name, duration_id, duration_months, is_active, started_at, expired_at, has_claimed_starter) VALUES (gen_random_uuid(), '$testUid', '$pId', 'Basic', '$dId', 1, false, '$st', '$en', true)"
+    }
+    elseif ($scenChoice -eq "4") {
+        $pRes = Invoke-DBQuery "SELECT id FROM membership_plans WHERE plan_name = 'Max'"
+        $pId = $pRes[0].id
+        $dRes = Invoke-DBQuery "SELECT id FROM plan_durations WHERE plan_id = '$pId' AND duration_months = 3"
+        $dId = $dRes[0].id
+        $st = (Get-Date).AddDays(-30).ToString("yyyy-MM-dd HH:mm:ss")
+        $en = (Get-Date).AddDays(60).ToString("yyyy-MM-dd HH:mm:ss")
+        $null = Invoke-DBQuery "INSERT INTO memberships (id, user_id, plan_id, plan_name, duration_id, duration_months, is_active, started_at, expired_at, has_claimed_starter) VALUES (gen_random_uuid(), '$testUid', '$pId', 'Max', '$dId', 3, true, '$st', '$en', true)"
     }
 
-    # PROSES BUAT TRANSAKSI (Menu 1)
-    # 2. Ambil Plan
-    $plans = (Invoke-RestMethod -Uri "$baseUrl/membership/plan" -Method Get).data
-    Write-Host "`n[PILIH PAKET TUJUAN]" -ForegroundColor Cyan
-    for ($i=0; $i -lt $plans.Count; $i++) {
-        Write-Host "$($i+1). $($plans[$i].plan_name) ($($plans[$i].tier_label))"
-    }
-    $planChoice = Read-Host "Pilih nomor paket"
-    $planIdx = [int]$planChoice - 1
-    if ($planIdx -lt 0 -or $planIdx -ge $plans.Count) { $planIdx = 0 }
-    $selectedPlan = $plans[$planIdx]
-
-    # Tentukan Change Type
-    $changeType = "PEMBELIAN_BARU"
-    if ($myMem -and $myMem.plan_name -ne "Starter") {
-        Write-Host "`nAnda memiliki paket aktif. Pilih jenis transaksi:" -ForegroundColor Yellow
-        Write-Host "1. RENEWAL (Perpanjang Paket yang Sama)"
-        Write-Host "2. UPGRADE (Pindah ke Paket Lebih Tinggi)"
-        Write-Host "3. DOWNGRADE (Pindah ke Paket Lebih Rendah)"
-        Write-Host "4. PEMBELIAN_BARU (Timpa Total)"
-        $ctOpt = Read-Host "Pilih (1-4, Default: 1)"
-        if ($ctOpt -eq "2") { $changeType = "UPGRADE" }
-        elseif ($ctOpt -eq "3") { $changeType = "DOWNGRADE" }
-        elseif ($ctOpt -eq "4") { $changeType = "PEMBELIAN_BARU" }
-        else { $changeType = "RENEWAL" }
-    }
-
+    Write-Host "[2/3] Authenticating..." -ForegroundColor Cyan
     try {
-        $prepare = Invoke-RestMethod -Uri "$baseUrl/checkout/prepare?plan_id=$($selectedPlan.id)&change_type=$changeType" -Method Get -Headers @{ Authorization = "Bearer $token" }
+        $loginBody = @{ email = $testMail; password = "admin123" } | ConvertTo-Json
+        $loginResp = Invoke-RestMethod -Uri "$baseUrl/auth/login" -Method Post -Body $loginBody -ContentType "application/json"
+        $authToken = $loginResp.data.access_token
+
+        if ($scenChoice -eq "1") {
+            Write-Host "`nSelamat Datang di REXTRA!" -ForegroundColor Green
+            Write-Host "Kamu berhak mendapatkan akses STARTER PLAN GRATIS selama 30 hari."
+            $claimPrompt = Read-Host "Klaim Sekarang? (y/n)"
+            if ($claimPrompt -eq "y") {
+                $null = Invoke-RestMethod -Uri "$baseUrl/my/claim-starter" -Method Post -Headers @{ Authorization = "Bearer $authToken" }
+                Write-Host "Klaim Starter Sukses! Menuju Dashboard..." -ForegroundColor Green
+                Start-Sleep -Seconds 1
+            }
+        }
+
+        Write-Host "[3/3] Memuat Halaman Dashboard..." -ForegroundColor Cyan
+        $dashboardData = Invoke-RestMethod -Uri "$baseUrl/my/membership/dashboard" -Method Get -Headers @{ Authorization = "Bearer $authToken" }
+        Show-MobileDashboard $dashboardData.data
     } catch {
-        Show-Error "Gagal menyiapkan checkout" $_
-        continue
+        Write-Host "Gagal eksekusi skenario: $($_.Exception.Message)" -ForegroundColor Red
     }
-
-    # Pilih Durasi
-    Write-Host "`n--- PILIH DURASI ---"
-    $durations = $prepare.data.plan.durations
-    for ($i=0; $i -lt $durations.Count; $i++) {
-        Write-Host "$($i+1). $($durations[$i].duration_months) Bulan - Rp $($durations[$i].final_price)"
-    }
-    $durChoice = Read-Host "Pilih nomor durasi"
-    $durIdx = [int]$durChoice - 1
-    if ($durIdx -lt 0 -or $durIdx -ge $durations.Count) { $durIdx = 0 }
-    $selectedDur = $durations[$durIdx]
-
-    # Pilih Bundle
-    Write-Host "`n--- ADD-ON TOKEN ---"
-    $bundles = $prepare.data.token_bundles
-    Write-Host "0. Tanpa Tambahan Token"
-    for ($i=0; $i -lt $bundles.Count; $i++) {
-        Write-Host "$($i+1). $($bundles[$i].name) ($($bundles[$i].token_amount) Token) - Rp $($bundles[$i].price_rp)"
-    }
-    $bunChoice = Read-Host "Pilih nomor bundle"
-    $bunIdx = [int]$bunChoice
-    $selectedBunId = $null
-    if ($bunIdx -gt 0 -and $bunIdx -le $bundles.Count) { $selectedBunId = $bundles[$bunIdx-1].id }
-
-    # PROMO SECTION
-    $promo = ""
-    while ($true) {
-        Write-Host "`n--- PROMO & DISKON ---" -ForegroundColor Cyan
-        $pubPromos = $prepare.data.eligible_discounts
-        if ($pubPromos.Count -gt 0) {
-            Write-Host "Diskon Publik Tersedia:"
-            $pubPromos | ForEach-Object { Write-Host "- [$($_.code)] $($_.name): $($_.description)" -ForegroundColor Green }
-        }
-        
-        $promoInput = Read-Host "Masukkan Kode Promo (Kosongkan jika tidak ada)"
-        if ([string]::IsNullOrWhiteSpace($promoInput)) { $promo = $null; break }
-        
-        try {
-            $valBody = @{ code = $promoInput; plan_id = $selectedPlan.id; duration_id = $selectedDur.id } | ConvertTo-Json
-            $valResp = Invoke-RestMethod -Uri "$baseUrl/promo/validate" -Method Post -Body $valBody -ContentType "application/json" -Headers @{ Authorization = "Bearer $token" }
-            Write-Host "PROMO BERHASIL: $($valResp.data.message)" -ForegroundColor Green
-            $promo = $promoInput
-            break
-        } catch {
-            Show-Error "Promo Tidak Valid" $_
-            $retry = Read-Host "Coba kode lain? (y/n)"
-            if ($retry -ne "y") { $promo = $null; break }
-        }
-    }
-
-    # 3. Kalkulasi
-    $calcBody = @{ 
-        plan_id = $selectedPlan.id; duration_id = $selectedDur.id; change_type = $changeType; 
-        token_bundle_package_id = $selectedBunId; promo_code = $promo; use_credit = $true
-    } | ConvertTo-Json
     
-    try {
-        $calc = Invoke-RestMethod -Uri "$baseUrl/checkout/calculate" -Method Post -Body $calcBody -ContentType "application/json" -Headers @{ Authorization = "Bearer $token" }
-        $total = $calc.data.total_amount
-        Write-Host "`n--- RINGKASAN PEMBAYARAN ---" -ForegroundColor Yellow
-        Write-Host "Harga Paket: Rp $($calc.data.membership_price)"
-        if ($calc.data.token_price -gt 0) { Write-Host "Add-on Token: Rp $($calc.data.token_price)" }
-        if ($calc.data.discount_amount -gt 0) { Write-Host "Diskon: -Rp $($calc.data.discount_amount)" -ForegroundColor Green }
-        if ($calc.data.duration_credit -gt 0) { Write-Host "Kredit Sisa Paket Lama: -Rp $($calc.data.duration_credit)" -ForegroundColor Cyan }
-        Write-Host "TOTAL AKHIR: Rp $total" -ForegroundColor Green
-    } catch {
-        Show-Error "Gagal kalkulasi harga" $_
-        continue
-    }
-
-    # 4. Pilih Kanal
-    Write-Host "`n--- PILIH KANAL BAYAR ---"
-    try {
-        $channels = (Invoke-RestMethod -Uri "$baseUrl/checkout/channels" -Method Get -Headers @{ Authorization = "Bearer $token" }).data
-        for ($i=0; $i -lt $channels.Count; $i++) { Write-Host "$($i+1). $($channels[$i].name) (Admin: Rp $($channels[$i].admin_fee))" }
-        $chanChoice = Read-Host "Pilih nomor kanal"
-        $chanIdx = [int]$chanChoice - 1
-        if ($chanIdx -lt 0 -or $chanIdx -ge $channels.Count) { $chanIdx = 0 }
-        $selectedChan = $channels[$chanIdx]
-    } catch {
-        Show-Error "Gagal mengambil daftar channel" $_
-        continue
-    }
-
-    # Initiate
-    $initBody = @{ 
-        plan_id = $selectedPlan.id; duration_id = $selectedDur.id; change_type = $changeType; 
-        token_bundle_package_id = $selectedBunId; promo_code = $promo; 
-        payment_method = $selectedChan.code; use_credit = $true
-    } | ConvertTo-Json
-    
-    try {
-        $init = Invoke-RestMethod -Uri "$baseUrl/checkout/initiate" -Method Post -Body $initBody -ContentType "application/json" -Headers @{ Authorization = "Bearer $token" }
-        $trxId = $init.data.transaction_id
-        Write-Host "`n--- TRANSAKSI BERHASIL DIBUAT: $trxId ---" -ForegroundColor Green
-        
-        while ($true) {
-            Write-Host "`n[TINDAKAN]" -ForegroundColor Yellow
-            Write-Host "1. Buka Browser Pembayaran | 2. Batalkan | 3. Simulasikan LUNAS | 4. Kembali"
-            $opt = Read-Host "Pilih"
-            if ($opt -eq "1") { Start-Process $init.data.payment_url }
-            elseif ($opt -eq "2") {
-                $cancelBody = @{ cancel_reason = "CHANGE_ORDER"; cancel_note = "Dibatalkan via tester" } | ConvertTo-Json
-                Invoke-RestMethod -Uri "$baseUrl/checkout/cancel/$trxId" -Method Post -Body $cancelBody -ContentType "application/json" -Headers @{ Authorization = "Bearer $token" }
-                Write-Host "TRANSAKSI $trxId TELAH DIBATALKAN!" -ForegroundColor Red; break
-            } elseif ($opt -eq "3") {
-                Invoke-RestMethod -Uri "$baseUrl/payment/simulate/$trxId" -Method Post
-                Write-Host "PEMBAYARAN BERHASIL DISIMULASIKAN!" -ForegroundColor Green; break
-            } else { break }
-        }
-    } catch {
-        Show-Error "Gagal membuat transaksi" $_
-    }
+    Write-Host "`nSkenario Selesai. Tekan tombol apa saja untuk kembali ke Menu."
+    $null = [Console]::ReadKey()
 }

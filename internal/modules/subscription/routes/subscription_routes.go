@@ -27,6 +27,7 @@ func ServeSubscription(
 	user.Use(mw.Authenticate())
 	{
 		user.GET("/membership", membershipCtrl.GetMyMembership)
+		user.GET("/membership/dashboard", membershipCtrl.GetDashboard)
 		user.GET("/subscription-cycle", cycleCtrl.GetMyCycles)
 		user.POST("/claim-starter", membershipCtrl.ClaimStarter)
 	}

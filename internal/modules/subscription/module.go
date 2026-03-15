@@ -9,6 +9,8 @@ import (
 
 	membershipRepo "rextra-backend/internal/modules/membership/repository"
 	userRepo "rextra-backend/internal/modules/user/repository"
+	entitlementRepo "rextra-backend/internal/modules/user_entitlement/repository"
+	tokenRepo "rextra-backend/internal/modules/token/repository"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -19,8 +21,16 @@ func InitModule(server *gin.Engine, db *gorm.DB, middleware middleware.Middlewar
 	membershipPlanRepository := membershipRepo.NewMembershipPlanRepository(db)
 	cycleRepository := repository.NewSubscriptionCycleRepository(db)
 	userRepository := userRepo.NewUserRepository(db)
+	userEntitlementRepository := entitlementRepo.NewUserEntitlementRepository(db)
+	tokenWalletRepository := tokenRepo.NewTokenWalletRepository(db)
 
-	membershipService := service.NewUserMembershipService(membershipRepository, membershipPlanRepository, userRepository)
+	membershipService := service.NewUserMembershipService(
+		membershipRepository,
+		membershipPlanRepository,
+		userRepository,
+		userEntitlementRepository,
+		tokenWalletRepository,
+	)
 	cycleService := service.NewSubscriptionCycleService(cycleRepository, membershipRepository)
 
 	membershipController := controller.NewUserMembershipController(membershipService)

@@ -16,6 +16,7 @@ type (
 		GetById(ctx *gin.Context)
 		GetMyMembership(ctx *gin.Context)
 		ClaimStarter(ctx *gin.Context)
+		GetDashboard(ctx *gin.Context)
 	}
 
 	userMembershipController struct {
@@ -60,4 +61,12 @@ func (c *userMembershipController) ClaimStarter(ctx *gin.Context) {
 		return
 	}
 	response.NewSuccess("starter plan claimed successfully", nil).Send(ctx)
+}
+
+func (c *userMembershipController) GetDashboard(ctx *gin.Context) {
+	userID, err := utils.GetUserIdFromCtx(ctx)
+	if err != nil { response.NewFailed("unauthorized", myerror.InvalidRequest(err)).Send(ctx); return }
+	result, err := c.service.GetDashboard(ctx, userID)
+	if err != nil { response.NewFailed("failed get dashboard", err).Send(ctx); return }
+	response.NewSuccess("dashboard retrieved", result).Send(ctx)
 }
