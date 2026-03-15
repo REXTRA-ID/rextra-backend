@@ -116,7 +116,7 @@ func (t *TripayClient) CreatePaymentTransaction(req CreatePaymentRequest) (Tripa
 		return TripayResponse{}, fmt.Errorf("failed to parse tripay response: %s", string(body))
 	}
 	if !fullResp.Success {
-		return TripayResponse{}, fmt.Errorf("tripay error: %s", fullResp.Message)
+		return TripayResponse{}, fmt.Errorf("tripay error: %s (Body: %s)", fullResp.Message, string(body))
 	}
 	var data TripayResponse
 	json.Unmarshal(fullResp.Data, &data)

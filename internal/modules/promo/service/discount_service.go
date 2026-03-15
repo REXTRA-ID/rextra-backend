@@ -69,6 +69,7 @@ func (s *discountService) Create(ctx context.Context, req dto_request.CreateDisc
 	newDiscount.MinPurchaseAmount = req.MinPurchaseAmount
 	newDiscount.MaxTotalRedemptions = req.MaxTotalRedemptions
 	newDiscount.MaxRedemptionsPerUser = req.MaxRedemptionsPerUser
+	newDiscount.IsPublic = req.IsPublic
 	newDiscount.StartsAt = req.StartsAt
 	newDiscount.EndsAt = req.EndsAt
 
@@ -190,7 +191,7 @@ func normalizePagination(page, pageSize int) (int, int) {
 }
 
 func toDiscountResponse(d entity.Discounts) dto_response.GetDiscountResponse {
-	resp := dto_response.GetDiscountResponse{ID: d.ID.String(), Code: d.Code, Name: d.Name, DiscountType: string(d.DiscountType), Value: d.Value, AppliesTo: string(d.AppliesTo), MaxDiscountAmount: d.MaxDiscountAmount, MinPurchaseAmount: d.MinPurchaseAmount, MaxTotalRedemptions: d.MaxTotalRedemptions, MaxRedemptionsPerUser: d.MaxRedemptionsPerUser, CurrentRedemptions: d.CurrentRedemptions, Priority: d.Priority, Stackable: d.Stackable, Description: d.Description, Status: string(d.Status), CreatedBy: d.CreatedBy, UpdatedBy: d.UpdatedBy, CreatedAt: d.CreatedAt.Format(time.RFC3339), UpdatedAt: d.UpdatedAt.Format(time.RFC3339)}
+	resp := dto_response.GetDiscountResponse{ID: d.ID.String(), Code: d.Code, Name: d.Name, DiscountType: string(d.DiscountType), Value: d.Value, AppliesTo: string(d.AppliesTo), MaxDiscountAmount: d.MaxDiscountAmount, MinPurchaseAmount: d.MinPurchaseAmount, MaxTotalRedemptions: d.MaxTotalRedemptions, MaxRedemptionsPerUser: d.MaxRedemptionsPerUser, CurrentRedemptions: d.CurrentRedemptions, Priority: d.Priority, Stackable: d.Stackable, IsPublic: d.IsPublic, Description: d.Description, Status: string(d.Status), CreatedBy: d.CreatedBy, UpdatedBy: d.UpdatedBy, CreatedAt: d.CreatedAt.Format(time.RFC3339), UpdatedAt: d.UpdatedAt.Format(time.RFC3339)}
 	if d.MembershipPlanTargets != nil { json.Unmarshal(d.MembershipPlanTargets, &resp.MembershipPlanTargets) }
 	if d.StartsAt != nil { s := d.StartsAt.Format(time.RFC3339); resp.StartsAt = &s }
 	if d.EndsAt != nil { e := d.EndsAt.Format(time.RFC3339); resp.EndsAt = &e }

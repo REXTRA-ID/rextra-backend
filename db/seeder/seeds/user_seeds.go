@@ -5,6 +5,7 @@ import (
 	"rextra-backend/internal/utils"
 	mylog "rextra-backend/internal/pkg/logger"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func SeederUser(db *gorm.DB) error {
@@ -32,11 +33,10 @@ func SeederUser(db *gorm.DB) error {
 	}
 
 	for _, user := range users {
-		// Hapus dulu biar ga conflict, baru insert
-		db.Unscoped().Where("email = ?", user.Email).Delete(&entity.User{})
-		if err := db.Create(&user).Error; err != nil {
-			return err
-		}
+		db.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "email"}},
+			DoUpdates: clause.AssignmentColumns([]string{"fullname", "password", "is_verified", "phone_number", "role"}),
+		}).Create(&user)
 	}
 
 	mylog.Infof("[COMPLETE] Seeding users completed")

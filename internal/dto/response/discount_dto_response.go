@@ -15,6 +15,7 @@ type GetDiscountResponse struct {
 	CurrentRedemptions    int  `json:"current_redemptions"`
 	Priority  int  `json:"priority"`
 	Stackable bool `json:"stackable"`
+	IsPublic  bool `json:"is_public"`
 	StartsAt *string `json:"starts_at,omitempty"`
 	EndsAt   *string `json:"ends_at,omitempty"`
 	Description string `json:"description"`

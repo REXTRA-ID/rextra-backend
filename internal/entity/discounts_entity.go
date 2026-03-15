@@ -46,6 +46,7 @@ type Discounts struct {
 
 	Priority  int  `json:"priority" gorm:"not null;default:0"`
 	Stackable bool `json:"stackable" gorm:"not null;default:false"`
+	IsPublic  bool `json:"is_public" gorm:"not null;default:false"`
 
 	StartsAt *time.Time `json:"starts_at,omitempty"`
 	EndsAt   *time.Time `json:"ends_at,omitempty"`

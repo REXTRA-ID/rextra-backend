@@ -22,6 +22,7 @@ type Memberships struct {
 
 	IsActive  bool `json:"is_active" gorm:"not null;default:true"`
 	AutoRenew bool `json:"auto_renew" gorm:"not null;default:false"`
+	HasClaimedStarter bool `json:"has_claimed_starter" gorm:"not null;default:false"`
 
 	CurrentTokenBalance int `json:"current_token_balance" gorm:"not null;default:0"`
 	CurrentPoinBalance  int `json:"current_poin_balance" gorm:"not null;default:0"`

@@ -28,5 +28,6 @@ func ServeSubscription(
 	{
 		user.GET("/membership", membershipCtrl.GetMyMembership)
 		user.GET("/subscription-cycle", cycleCtrl.GetMyCycles)
+		user.POST("/claim-starter", membershipCtrl.ClaimStarter)
 	}
 }

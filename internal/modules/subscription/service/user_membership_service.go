@@ -22,16 +22,26 @@ type (
 		GetAll(ctx context.Context, req dto_request.UserMembershipFilterRequest) (dto_response.PaginatedUserMembershipResponse, error)
 		GetById(ctx context.Context, membershipID string) (dto_response.GetUserMembershipResponse, error)
 		GetMyMembership(ctx context.Context, userID string) (dto_response.GetUserMembershipResponse, error)
+		ClaimStarter(ctx context.Context, userID string) error
 	}
 
 	userMembershipService struct {
-		membershipRepo membershipRepo.UserMembershipRepository
-		userRepo       repository.UserRepository
+		membershipRepo     membershipRepo.UserMembershipRepository
+		membershipPlanRepo membershipRepo.MembershipPlanRepository
+		userRepo           repository.UserRepository
 	}
 )
 
-func NewUserMembershipService(membershipRepo membershipRepo.UserMembershipRepository, userRepo repository.UserRepository) UserMembershipService {
-	return &userMembershipService{membershipRepo: membershipRepo, userRepo: userRepo}
+func NewUserMembershipService(
+	membershipRepo membershipRepo.UserMembershipRepository,
+	membershipPlanRepo membershipRepo.MembershipPlanRepository,
+	userRepo repository.UserRepository,
+) UserMembershipService {
+	return &userMembershipService{
+		membershipRepo:     membershipRepo,
+		membershipPlanRepo: membershipPlanRepo,
+		userRepo:           userRepo,
+	}
 }
 
 func (s *userMembershipService) GetAll(ctx context.Context, req dto_request.UserMembershipFilterRequest) (dto_response.PaginatedUserMembershipResponse, error) {
@@ -72,6 +82,37 @@ func (s *userMembershipService) GetMyMembership(ctx context.Context, userID stri
 		return dto_response.GetUserMembershipResponse{}, myerror.DatabaseError(err)
 	}
 	return toDetailResponse(membership), nil
+}
+
+func (s *userMembershipService) ClaimStarter(ctx context.Context, userID string) error {
+	parsedUserID, err := uuid.Parse(userID)
+	if err != nil { return myerror.InvalidRequest(err) }
+
+	membership, err := s.membershipRepo.GetByUserID(ctx, nil, parsedUserID)
+	if err != nil { return myerror.DatabaseError(err) }
+
+	if membership.HasClaimedStarter {
+		return myerror.New("anda sudah pernah mengklaim starter plan", myerror.Error_InvalidRequest)
+	}
+
+	starterPlan, err := s.membershipPlanRepo.GetByPlanName(ctx, nil, entity.PlanName(entity.PLANSTARTER))
+	if err != nil { return myerror.RecordNotFound("starter plan") }
+
+	now := time.Now().UTC()
+	expiredAt := now.AddDate(0, starterPlan.StarterDurationMonths, 0)
+
+	membership.PlanID = &starterPlan.ID
+	membership.PlanName = starterPlan.PlanName
+	membership.DurationID = nil
+	membership.DurationMonths = nil
+	membership.StartedAt = &now
+	membership.ExpiredAt = &expiredAt
+	membership.IsActive = true
+	membership.HasClaimedStarter = true
+	membership.UpdatedAt = now
+
+	_, err = s.membershipRepo.Update(ctx, nil, membership)
+	return err
 }
 
 func toDetailResponse(m entity.Memberships) dto_response.GetUserMembershipResponse {

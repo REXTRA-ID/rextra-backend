@@ -15,6 +15,7 @@ type (
 		GetAll(ctx *gin.Context)
 		GetById(ctx *gin.Context)
 		GetMyMembership(ctx *gin.Context)
+		ClaimStarter(ctx *gin.Context)
 	}
 
 	userMembershipController struct {
@@ -49,4 +50,14 @@ func (c *userMembershipController) GetMyMembership(ctx *gin.Context) {
 	result, err := c.service.GetMyMembership(ctx, userID)
 	if err != nil { response.NewFailed("failed get mine", err).Send(ctx); return }
 	response.NewSuccess("retrieved", result).Send(ctx)
+}
+
+func (c *userMembershipController) ClaimStarter(ctx *gin.Context) {
+	userID, err := utils.GetUserIdFromCtx(ctx)
+	if err != nil { response.NewFailed("unauthorized", myerror.InvalidRequest(err)).Send(ctx); return }
+	if err := c.service.ClaimStarter(ctx, userID); err != nil {
+		response.NewFailed("failed to claim starter plan", err).Send(ctx)
+		return
+	}
+	response.NewSuccess("starter plan claimed successfully", nil).Send(ctx)
 }

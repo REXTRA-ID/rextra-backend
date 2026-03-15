@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	dto_request "rextra-backend/internal/dto/request"
@@ -106,6 +107,7 @@ func (s *checkoutService) Prepare(ctx context.Context, userID uuid.UUID, req dto
 	}
 
 	voucherCount, _ := s.promoRepo.CountEligibleVouchers(ctx, req.PlanID)
+	publicDiscounts, _ := s.promoRepo.GetPublicDiscounts(ctx, "MEMBERSHIP")
 	bundles, err := s.repo.GetActiveTokenBundles(ctx, nil)
 	if err != nil { return dto_response.CheckoutPrepareResponse{}, myerror.DatabaseError(err) }
 
@@ -129,7 +131,25 @@ func (s *checkoutService) Prepare(ctx context.Context, userID uuid.UUID, req dto
 		})
 	}
 
-	return dto_response.CheckoutPrepareResponse{Plan: planInfo, CurrentMembership: membershipInfo, EligibleVoucherCount: voucherCount, TokenBundles: tokenBundleInfos}, nil
+	var eligibleDiscounts []dto_response.CheckoutDiscountInfo
+	for _, d := range publicDiscounts {
+		// Filter by plan if targets specified
+		if d.MembershipPlanTargets != nil {
+			var targets []string
+			json.Unmarshal(d.MembershipPlanTargets, &targets)
+			matched := false
+			for _, t := range targets { if strings.EqualFold(t, string(plan.PlanName)) { matched = true; break } }
+			if !matched { continue }
+		}
+		eligibleDiscounts = append(eligibleDiscounts, dto_response.CheckoutDiscountInfo{
+			ID: d.ID.String(), Code: d.Code, Name: d.Name, Description: d.Description, DiscountType: string(d.DiscountType), Value: d.Value,
+		})
+	}
+
+	return dto_response.CheckoutPrepareResponse{
+		Plan: planInfo, CurrentMembership: membershipInfo, EligibleVoucherCount: voucherCount,
+		EligibleDiscounts: eligibleDiscounts, TokenBundles: tokenBundleInfos,
+	}, nil
 }
 
 func (s *checkoutService) Calculate(ctx context.Context, userID uuid.UUID, req dto_request.CheckoutCalculateRequest) (dto_response.CheckoutCalculateResponse, error) {
@@ -250,10 +270,16 @@ func (s *checkoutService) Initiate(ctx context.Context, userID uuid.UUID, req dt
 	}
 	total += adminFee
 
+	if adminFee > 0 {
+		tripayOrderItems = append(tripayOrderItems, tripay.TripayOrderItem{
+			SKU: "ADMIN_FEE", Name: "Biaya Layanan", Price: adminFee, Quantity: 1,
+		})
+	}
+
 	merchantRef := transactionID
 	expiresAt := time.Now().UTC().Add(6 * time.Hour)
 	tripayResp, err := s.tripayClient.CreatePaymentTransaction(tripay.CreatePaymentRequest{
-		Method: req.PaymentMethod, MerchantRef: merchantRef, Amount: total, CustomerName: user.Fullname, CustomerEmail: user.Email, OrderItems: tripayOrderItems, ExpiredTime: expiresAt.Unix(),
+		Method: req.PaymentMethod, MerchantRef: merchantRef, Amount: total, CustomerName: user.Fullname, CustomerEmail: user.Email, CustomerPhone: user.PhoneNumber, OrderItems: tripayOrderItems, ExpiredTime: expiresAt.Unix(),
 	})
 	if err != nil { return dto_response.CheckoutInitiateResponse{}, myerror.New("gagal membuat invoice pembayaran, coba lagi", myerror.SystemError) }
 

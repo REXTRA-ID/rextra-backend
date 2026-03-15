@@ -1,10 +1,20 @@
 package dto_response
 
 type CheckoutPrepareResponse struct {
-	Plan            CheckoutPlanInfo          `json:"plan"`
-	CurrentMembership *CheckoutMembershipInfo `json:"current_membership,omitempty"`
-	EligibleVoucherCount int                  `json:"eligible_voucher_count"`
-	TokenBundles    []CheckoutTokenBundleInfo `json:"token_bundles"`
+	Plan                 CheckoutPlanInfo          `json:"plan"`
+	CurrentMembership    *CheckoutMembershipInfo   `json:"current_membership,omitempty"`
+	EligibleVoucherCount int                       `json:"eligible_voucher_count"`
+	EligibleDiscounts    []CheckoutDiscountInfo    `json:"eligible_discounts"`
+	TokenBundles         []CheckoutTokenBundleInfo `json:"token_bundles"`
+}
+
+type CheckoutDiscountInfo struct {
+	ID           string `json:"id"`
+	Code         string `json:"code"`
+	Name         string `json:"name"`
+	Description  string `json:"description"`
+	DiscountType string `json:"discount_type"`
+	Value        float64 `json:"value"`
 }
 
 type CheckoutPlanInfo struct {

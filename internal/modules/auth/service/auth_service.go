@@ -123,6 +123,7 @@ func (s *authService) Verify(ctx context.Context, token string) error {
 
 	userMembership := entity.NewMembership(user.ID, entity.PlanName(entity.PLANSTARTER))
 	userMembership.PlanID = &starterPlan.ID
+	userMembership.HasClaimedStarter = true
 	
 	now := time.Now().UTC()
 	expiredAt := now.AddDate(0, starterPlan.StarterDurationMonths, 0)

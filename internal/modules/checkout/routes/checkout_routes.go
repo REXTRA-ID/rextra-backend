@@ -18,6 +18,6 @@ func ServeCheckout(app *gin.Engine, ctrl controller.CheckoutController, mw middl
 		r.GET("/transactions", ctrl.GetTransactions)
 		r.GET("/transaction/:transactionId", ctrl.GetTransaction)
 		r.POST("/repeat/:transactionId", ctrl.Repeat)
-		r.PUT("/cancel/:transactionId", ctrl.Cancel)
+		r.POST("/cancel/:transactionId", ctrl.Cancel)
 	}
 }

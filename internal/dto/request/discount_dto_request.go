@@ -15,6 +15,7 @@ type CreateDiscountRequest struct {
 	MaxRedemptionsPerUser *int `json:"max_redemptions_per_user,omitempty"`
 	Priority int `json:"priority" binding:"min=0"`
 	Stackable bool `json:"stackable"`
+	IsPublic bool `json:"is_public"`
 	StartsAt *time.Time `json:"starts_at,omitempty"`
 	EndsAt *time.Time `json:"ends_at,omitempty"`
 	Description string `json:"description" binding:"max=500"`

@@ -65,6 +65,9 @@ func (a *promoRepoAdapter) RecordRedemption(ctx context.Context, code string, us
 	if err != nil { return err }
 	return a.discountRepo.IncrementRedemption(ctx, nil, discount.ID)
 }
+func (a *promoRepoAdapter) GetPublicDiscounts(ctx context.Context, appliesTo string) ([]entity.Discounts, error) {
+	return a.discountRepo.GetPublicDiscounts(ctx, nil, appliesTo)
+}
 
 type userRepoAdapter struct {
 	repo userRepo.UserRepository

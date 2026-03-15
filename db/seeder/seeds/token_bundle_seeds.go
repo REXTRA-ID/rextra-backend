@@ -48,29 +48,29 @@ func SeedPromos(db *gorm.DB) error {
 		{
 			Code: "REXTRACLUB", Name: "Promo Rextra Club 50%", DiscountType: entity.DiscountTypePercentage,
 			Value: 50, Status: entity.DiscountStatusActive, MaxDiscountAmount: &max50k, StartsAt: &now, EndsAt: &future,
-			AppliesTo: entity.DiscountAppliesToMembership,
+			AppliesTo: entity.DiscountAppliesToMembership, IsPublic: true,
 		},
 		{
 			Code: "PROMO50", Name: "Diskon 50 Persen Global", DiscountType: entity.DiscountTypePercentage,
 			Value: 50, Status: entity.DiscountStatusActive, StartsAt: &now, EndsAt: &future,
-			AppliesTo: entity.DiscountAppliesToGlobal,
+			AppliesTo: entity.DiscountAppliesToGlobal, IsPublic: true,
 		},
 		{
 			Code: "HEMAT10", Name: "Hemat 10 Ribu", DiscountType: entity.DiscountTypeFixed,
 			Value: 10000, Status: entity.DiscountStatusActive, StartsAt: &now, EndsAt: &future,
-			AppliesTo: entity.DiscountAppliesToGlobal,
+			AppliesTo: entity.DiscountAppliesToGlobal, IsPublic: true,
 		},
 		{
 			Code: "SPECIAL99", Name: "Admin Test 99%", DiscountType: entity.DiscountTypePercentage,
 			Value: 99, Status: entity.DiscountStatusActive, MaxDiscountAmount: &max1M, StartsAt: &now, EndsAt: &future,
-			AppliesTo: entity.DiscountAppliesToMembership,
+			AppliesTo: entity.DiscountAppliesToMembership, IsPublic: false,
 		},
 	}
 
 	for _, p := range promos {
 		db.Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "code"}},
-			DoUpdates: clause.AssignmentColumns([]string{"value", "status", "discount_type", "max_discount_amount", "applies_to"}),
+			DoUpdates: clause.AssignmentColumns([]string{"value", "status", "discount_type", "max_discount_amount", "applies_to", "is_public"}),
 		}).Create(&p)
 	}
 

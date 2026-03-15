@@ -18,6 +18,7 @@ type (
 		SoftDelete(ctx context.Context, tx *gorm.DB, id uuid.UUID) error
 		IncrementRedemption(ctx context.Context, tx *gorm.DB, id uuid.UUID) error
 		DecrementRedemption(ctx context.Context, tx *gorm.DB, id uuid.UUID) error
+		GetPublicDiscounts(ctx context.Context, tx *gorm.DB, appliesTo string) ([]entity.Discounts, error)
 	}
 
 	discountRepository struct {
@@ -84,4 +85,15 @@ func (r *discountRepository) IncrementRedemption(ctx context.Context, tx *gorm.D
 func (r *discountRepository) DecrementRedemption(ctx context.Context, tx *gorm.DB, id uuid.UUID) error {
 	if tx == nil { tx = r.db }
 	return tx.WithContext(ctx).Model(&entity.Discounts{}).Where("id = ?", id).UpdateColumn("current_redemptions", gorm.Expr("GREATEST(0, current_redemptions - 1)")).Error
+}
+
+func (r *discountRepository) GetPublicDiscounts(ctx context.Context, tx *gorm.DB, appliesTo string) ([]entity.Discounts, error) {
+	if tx == nil { tx = r.db }
+	var results []entity.Discounts
+	query := tx.WithContext(ctx).Where("status = ? AND is_public = true", entity.DiscountStatusActive)
+	if appliesTo != "" {
+		query = query.Where("applies_to = ? OR applies_to = 'GLOBAL'", appliesTo)
+	}
+	err := query.Order("priority DESC").Find(&results).Error
+	return results, err
 }

@@ -16,10 +16,11 @@ import (
 
 func InitModule(server *gin.Engine, db *gorm.DB, middleware middleware.Middleware) {
 	membershipRepository := membershipRepo.NewUserMembershipRepository(db)
+	membershipPlanRepository := membershipRepo.NewMembershipPlanRepository(db)
 	cycleRepository := repository.NewSubscriptionCycleRepository(db)
 	userRepository := userRepo.NewUserRepository(db)
 
-	membershipService := service.NewUserMembershipService(membershipRepository, userRepository)
+	membershipService := service.NewUserMembershipService(membershipRepository, membershipPlanRepository, userRepository)
 	cycleService := service.NewSubscriptionCycleService(cycleRepository, membershipRepository)
 
 	membershipController := controller.NewUserMembershipController(membershipService)
