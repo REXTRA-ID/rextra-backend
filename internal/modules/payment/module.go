@@ -7,41 +7,31 @@ import (
 	"rextra-backend/internal/modules/payment/repository"
 	"rextra-backend/internal/modules/payment/routes"
 	"rextra-backend/internal/modules/payment/service"
-	poinRepo "rextra-backend/internal/modules/poin/repository"
-	promoCodeRepo "rextra-backend/internal/modules/promo_code/repository"
-	tokenRepo "rextra-backend/internal/modules/token_usage/repository"
+	userRepo "rextra-backend/internal/modules/user/repository"
 	"rextra-backend/internal/pkg/tripay"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
-func InitModule(server *gin.Engine, db *gorm.DB, middleware middleware.Middleware, tripay *tripay.TripayClient) {
+func InitModule(server *gin.Engine, db *gorm.DB, middleware middleware.Middleware, tripayClient *tripay.TripayClient) {
 	// Repositories
 	paymentTransactionRepository := repository.NewPaymentTransactionRepository(db)
 
 	// Cross-module repositories
-	tokenTransactionRepository := tokenRepo.NewTokenTransactionRepository(db)
-	poinTransactionRepository := poinRepo.NewPoinTransactionsRepository(db)
-	promoCodeRepository := promoCodeRepo.NewPromoCodesRepository(db)
-	promoCodeUsageRepository := promoCodeRepo.NewPromoCodeUsageRepository(db)
 	membershipPlanRepository := membershipRepo.NewMembershipPlanRepository(db)
 	membershipDurationRepository := membershipRepo.NewMembershipDurationRepository(db)
-	membershipRepository := membershipRepo.NewMembershipRepository(db)
-	subscriptionCycleRepository := membershipRepo.NewSubscriptionCycleRepository(db)
+	userRepository := userRepo.NewUser(db)
+	promoFacade := service.NewPromoFacade()
 
 	// Service
 	paymentTransactionService := service.NewPaymentTransactionService(
-		tokenTransactionRepository,
-		poinTransactionRepository,
-		*tripay,
 		paymentTransactionRepository,
-		promoCodeRepository,
-		promoCodeUsageRepository,
 		membershipPlanRepository,
 		membershipDurationRepository,
-		membershipRepository,
-		subscriptionCycleRepository,
+		promoFacade,
+		userRepository,
+		tripayClient,
 		db,
 	)
 

@@ -33,7 +33,7 @@ type Memberships struct {
 	CurrentPoinBalance  int `json:"current_poin_balance" gorm:"not null;default:0"`
 
 	// Statistik
-	PaidCycleCount   int `json:"paid_cycle_count" gorm:"not null;default:0"`   // berapa kali bayar
+	PaidCycleCount   int `json:"paid_cycle_count" gorm:"not null;default:0"`  // berapa kali bayar
 	EntitlementCount int `json:"entitlement_count" gorm:"not null;default:0"` // berapa entitlement aktif
 
 	Timestamp
@@ -126,6 +126,19 @@ func (m *Memberships) Deactivate(fallbackPlanID uuid.UUID, fallbackPlanName Enum
 	m.UpdatedAt = now
 }
 
+// ExpiringMembership mengubah status membership yang sudah expired menjadi plan non-member
+func (m *Memberships) ExpiringMembership(plan *MembershipPlans) {
+	now := time.Now().UTC()
+	m.PlanID = &plan.ID
+	m.PlanName = plan.PlanName
+	m.DurationID = nil
+	m.DurationMonths = nil
+	m.StartedAt = nil
+	m.ExpiredAt = nil
+	m.IsActive = false
+	m.UpdatedAt = now
+}
+
 // RemainingDays menghitung sisa hari sebelum expired
 func (m *Memberships) RemainingDays() int {
 	if m.ExpiredAt == nil {
@@ -165,7 +178,7 @@ func (m *Memberships) DeductPoinBalance(amount int) {
 func (m *Memberships) UpdateMembership(plan *MembershipPlans, duration *MembershipDuration) {
 	now := time.Now().UTC()
 	expired := now.AddDate(0, duration.DurationMonth, 0)
-	
+
 	m.PlanID = &plan.ID
 	m.PlanName = plan.PlanName
 	m.DurationID = &duration.ID
@@ -194,7 +207,7 @@ func (m *Memberships) CalculateTotalToken(bonusToken *int) int {
 
 // CalculateRextraPoin mengalkulasi tambahan rextra poin
 func (m *Memberships) CalculateRextraPoin() int {
-    if m.Duration == nil {
+	if m.Duration == nil {
 		return 0
 	}
 	// Assumption: base point per successful checkout is 10, times multiplier
@@ -205,5 +218,22 @@ func (m *Memberships) CalculateRextraPoin() int {
 // AddMembershipToken menambah balance token pada membership
 func (m *Memberships) AddMembershipToken(amount int) {
 	m.CurrentTokenBalance += amount
+	m.UpdatedAt = time.Now().UTC()
+}
+
+// RefillToken menambah balance token sesuai dengan monthly token plan
+func (m *Memberships) RefillToken() int {
+	refillAmount := 0
+	if m.Plan != nil {
+		refillAmount = m.Plan.MonthlyToken
+	}
+	m.CurrentTokenBalance += refillAmount
+	m.UpdatedAt = time.Now().UTC()
+	return refillAmount
+}
+
+// UseMembershipToken mengurangi balance token pada membership
+func (m *Memberships) UseMembershipToken(amount int) {
+	m.CurrentTokenBalance -= amount
 	m.UpdatedAt = time.Now().UTC()
 }

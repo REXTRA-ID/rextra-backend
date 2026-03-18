@@ -1,17 +1,29 @@
 package routes
 
 import (
-	"rextra-backend/internal/modules/payment/controller"
 	"rextra-backend/internal/middleware"
+	"rextra-backend/internal/modules/payment/controller"
 
 	"github.com/gin-gonic/gin"
 )
 
-func ServePaymentTransaction(app *gin.Engine, membershipPlanController controller.PaymentTransactionController, middleware middleware.Middleware) {
-
-	routes := app.Group("/api/v1/transaction")
+func ServePaymentTransaction(app *gin.Engine, c controller.PaymentTransactionController, middleware middleware.Middleware) {
+	checkout := app.Group("/api/v1/checkout")
+	checkout.Use(middleware.Authenticate())
 	{
-		routes.POST("/membership", middleware.Authenticate(), membershipPlanController.MakeNewTransactionMembership)
-		routes.POST("/token", middleware.Authenticate(), membershipPlanController.MakeNewTransactionTokenStandAlone)
+		checkout.GET("/prepare", c.Prepare)
+		checkout.POST("/calculate", c.Calculate)
+		checkout.POST("/initiate", c.Initiate)
+		checkout.POST("/:transactionId/repeat", c.Repeat)
+		checkout.POST("/:transactionId/cancel", c.Cancel)
+	}
+
+	app.GET("/api/v1/payment-channels", middleware.Authenticate(), c.GetPaymentChannels)
+
+	mytrx := app.Group("/api/v1/my-transactions")
+	mytrx.Use(middleware.Authenticate())
+	{
+		mytrx.GET("", c.GetTransactions)
+		mytrx.GET("/:transactionId", c.GetTransaction)
 	}
 }
