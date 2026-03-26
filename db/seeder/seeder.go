@@ -17,7 +17,7 @@ func Seeding(db *gorm.DB) error {
 		seeds.SeedTokenBundlePackages,
 		seeds.SeedStudentObstacleOptions,
 		seeds.SeedExpertObstacleOptions,
-		
+
 		// Jelajah Profesi Categories
 		seeds.SeedProfessionMainCategory,
 		seeds.SeedProfessionSubCategory,

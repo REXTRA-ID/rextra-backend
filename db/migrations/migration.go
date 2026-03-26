@@ -26,7 +26,7 @@ func Migrate(db *gorm.DB) error {
 		// &entity.Riasec{},
 		&entity.RiasecCode{},
 		&entity.CareerProfileTestSession{},
-		&entity.UserCareerProfile{}, 
+		&entity.UserCareerProfile{},
 		&entity.RiasecQuestionSet{},
 		&entity.RiasecResponse{},
 		&entity.RiasecResult{},
@@ -34,20 +34,20 @@ func Migrate(db *gorm.DB) error {
 		&entity.IkigaiResponse{},
 		&entity.IkigaiDimensionScore{},
 		&entity.IkigaiTotalScore{},
-		
+
 		&entity.StudentFeedback{},
 		&entity.ExpertFeedback{},
-		
-		&entity.KenaliDiriFeedback{},                         
-		
-		&entity.CareerProfileFeedbackStudent{},               
-		&entity.CareerProfileObstacleOption{},                
-		&entity.CareerProfileFeedbackObstacle{},              
-		
-		&entity.CareerProfileFeedbackExpert{},                
-		&entity.CareerProfileExpertObstacleOption{},          
-		&entity.CareerProfileFeedbackExpertObstacle{},        
-		
+
+		&entity.KenaliDiriFeedback{},
+
+		&entity.CareerProfileFeedbackStudent{},
+		&entity.CareerProfileObstacleOption{},
+		&entity.CareerProfileFeedbackObstacle{},
+
+		&entity.CareerProfileFeedbackExpert{},
+		&entity.CareerProfileExpertObstacleOption{},
+		&entity.CareerProfileFeedbackExpertObstacle{},
+
 		&entity.CareerRecommendation{},
 		// &entity.UserIkigai{},
 		// &entity.UserRiasec{},
@@ -80,6 +80,38 @@ func Migrate(db *gorm.DB) error {
 		&entity.ProfessionSkill{},
 		&entity.ProfessionTool{},
 		&entity.ProfessionStudyProgram{},
+
+		// Hak Akses
+		&entity.ActionCategory{},
+		&entity.Feature{},
+		&entity.SubFeature{},
+		&entity.Entitlement{},
+
+		// Membership
+		&entity.MembershipDuration{},
+		&entity.MembershipPlans{},
+		&entity.Memberships{},
+		&entity.DurationAccessMapping{},
+		&entity.SubscriptionCycle{},
+		&entity.UserEntitlementQuota{},
+		&entity.UsageLog{},
+
+		// Redemption Code
+		&entity.RedemptionCode{},
+
+		// Transaction
+		&entity.PaymentTransactions{},
+
+		// Poin Transaction
+		&entity.PoinTransactions{},
+
+		// Token Usage
+		&entity.TokenTransaction{},
+		&entity.TokenUsageHistory{},
+
+		// Promo Code
+		&entity.PromoCodes{},
+		&entity.PromoCodeUsage{},
 	); err != nil {
 		return err
 	}

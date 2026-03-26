@@ -1,0 +1,53 @@
+[
+  {
+    "code": "MEMBER10",
+    "description": "Diskon 10% untuk pembelian paket membership tertentu",
+    "promo_type": "membership",
+    "discount_type": "percentage",
+    "discount_value": 10,
+    "applicable_plans": ["Basic", "Premium"],
+    "applicable_durations": [1, 3, 6, 12],
+    "bonus_token": null,
+    "min_token_purchase": null,
+    "max_usage": 1000,
+    "max_usage_per_usage": 1,
+    "current_usage": 0,
+    "valid_from": "2025-01-01T00:00:00Z",
+    "valid_until": "2025-12-31T23:59:59Z",
+    "is_active": true
+  },
+  {
+    "code": "TOKEN50K",
+    "description": "Potongan langsung Rp50.000 untuk pembelian token minimal 100",
+    "promo_type": "token",
+    "discount_type": "fixed_amount",
+    "discount_value": 50000,
+    "applicable_plans": ["Basic", "Premium"],
+    "applicable_durations": [],
+    "bonus_token": null,
+    "min_token_purchase": 100,
+    "max_usage": 500,
+    "max_usage_per_usage": 1,
+    "current_usage": 0,
+    "valid_from": "2025-01-01T00:00:00Z",
+    "valid_until": "2025-06-30T23:59:59Z",
+    "is_active": true
+  },
+  {
+    "code": "BOTHBONUS",
+    "description": "Bonus 20 token untuk pembelian membership atau token",
+    "promo_type": "both",
+    "discount_type": "fixed_amount",
+    "discount_value": 0,
+    "applicable_plans": ["Basic", "Premium", "Max"],
+    "applicable_durations": [6, 12],
+    "bonus_token": 20,
+    "min_token_purchase": 50,
+    "max_usage": 300,
+    "max_usage_per_usage": 1,
+    "current_usage": 0,
+    "valid_from": "2025-02-01T00:00:00Z",
+    "valid_until": "2025-08-31T23:59:59Z",
+    "is_active": true
+  }
+]

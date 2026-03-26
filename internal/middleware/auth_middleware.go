@@ -43,6 +43,7 @@ func (m Middleware) Authenticate() gin.HandlerFunc {
 		ctx.Set("user_id", idToken["user_id"])
 		ctx.Set("email", idToken["email"])
 		ctx.Set("role", idToken["role"])
+		ctx.Set("membership", idToken["membership"])
 		fmt.Println(idToken)
 		ctx.Next()
 	}
