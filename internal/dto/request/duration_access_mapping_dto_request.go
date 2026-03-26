@@ -1,17 +1,14 @@
 package dto_request
 
 type CreateDurationAccessMappingRequest struct {
-	EntitlementID   string  `json:"entitlement_id" binding:"required"`
-	RestrictionType string  `json:"restriction_type" binding:"required,oneof=unlimited token_gated frequency_limited locked"`
-	TokenCost       int     `json:"token_cost"`
-	UsageLimit      int     `json:"usage_limit"`
-	ResetPeriod     *string `json:"reset_period,omitempty"`
+	EntitlementID string `json:"entitlement_id" binding:"required"`
+	// UsageLimit hanya relevan jika entitlement.RestrictionType = "frequency_limited"
+	// Nilainya ditentukan manual per plan per durasi oleh admin
+	UsageLimit int `json:"usage_limit"`
 }
 
 type UpdateDurationAccessMappingRequest struct {
-	RestrictionType string  `json:"restriction_type" binding:"required,oneof=unlimited token_gated frequency_limited locked"`
-	TokenCost       int     `json:"token_cost"`
-	UsageLimit      int     `json:"usage_limit"`
-	ResetPeriod     *string `json:"reset_period,omitempty"`
-	Status          string  `json:"status" binding:"required,oneof=aktif nonaktif"`
+	// UsageLimit hanya relevan jika entitlement.RestrictionType = "frequency_limited"
+	UsageLimit int    `json:"usage_limit"`
+	Status     string `json:"status" binding:"required,oneof=aktif nonaktif"`
 }

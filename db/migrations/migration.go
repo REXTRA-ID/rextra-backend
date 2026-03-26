@@ -81,10 +81,20 @@ func Migrate(db *gorm.DB) error {
 		&entity.ProfessionTool{},
 		&entity.ProfessionStudyProgram{},
 
+		// Hak Akses
+		&entity.ActionCategory{},
+		&entity.Feature{},
+		&entity.SubFeature{},
+		&entity.Entitlement{},
+
 		// Membership
 		&entity.MembershipDuration{},
 		&entity.MembershipPlans{},
 		&entity.Memberships{},
+		&entity.DurationAccessMapping{},
+		&entity.SubscriptionCycle{},
+		&entity.UserEntitlementQuota{},
+		&entity.UsageLog{},
 
 		// Redemption Code
 		&entity.RedemptionCode{},

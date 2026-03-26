@@ -180,28 +180,6 @@ func (s *durationAccessMappingService) Update(ctx context.Context, planID, planD
 		return dto_response.GetDurationAccessMappingResponse{}, myerror.RecordNotFound("access mapping")
 	}
 
-	// Validasi restriction-specific fields
-	if entity.RestrictionType(req.RestrictionType) == entity.RestrictionTokenGated && req.TokenCost <= 0 {
-		return dto_response.GetDurationAccessMappingResponse{}, myerror.New(
-			"token_cost must be greater than 0 when restriction_type is 'token_gated'",
-			myerror.Error_InvalidRequest,
-		)
-	}
-	if entity.RestrictionType(req.RestrictionType) == entity.RestrictionFrequencyLimited {
-		if req.UsageLimit <= 0 {
-			return dto_response.GetDurationAccessMappingResponse{}, myerror.New(
-				"usage_limit must be greater than 0 when restriction_type is 'frequency_limited'",
-				myerror.Error_InvalidRequest,
-			)
-		}
-		if req.ResetPeriod == nil || *req.ResetPeriod == "" {
-			return dto_response.GetDurationAccessMappingResponse{}, myerror.New(
-				"reset_period is required when restriction_type is 'frequency_limited'",
-				myerror.Error_InvalidRequest,
-			)
-		}
-	}
-
 	existing.UsageLimit = req.UsageLimit
 	existing.Status = entity.MappingStatus(req.Status)
 

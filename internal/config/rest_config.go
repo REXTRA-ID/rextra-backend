@@ -6,7 +6,10 @@ import (
 
 	"rextra-backend/internal/job"
 	"rextra-backend/internal/middleware"
+	actioncategory "rextra-backend/internal/modules/action_category"
 	"rextra-backend/internal/modules/auth"
+	"rextra-backend/internal/modules/entitlement"
+	"rextra-backend/internal/modules/feature"
 	"rextra-backend/internal/modules/membership"
 	membershipRepo "rextra-backend/internal/modules/membership/repository"
 	membershipService "rextra-backend/internal/modules/membership/service"
@@ -60,23 +63,13 @@ func NewRest() RestConfig {
 	accessCheckSvc := access_check.NewAccessCheckService(db, tokenWalletRepo, tokenLedgerRepo)
 	middleware.SetAccessCheckService(accessCheckSvc)
 
-	// Initialize all modules
-	auth.InitModule(server, db, middleware)
-	membership.InitModule(server, db, middleware)
-	payment.InitModule(server, db, middleware, &tripayClient)
-	token.InitModule(server, db, middleware)
-	poin.InitModule(server, db, middleware)
-	persona.InitModule(server, db, middleware)
-
-	// Cronjobs - need to create services for jobs
+	// Cronjobs
 	c := cron.New(cron.WithLogger(cron.DefaultLogger))
 
-	// Create repositories and services for cronjobs
 	membershipRepository := membershipRepo.NewMembershipRepository(db)
 	membershipPlanRepository := membershipRepo.NewMembershipPlanRepository(db)
 	membershipSvc := membershipService.NewMembershipService(membershipRepository, membershipPlanRepository)
 
-	// Note: Cronjobs are temporarily disabled until we refactor job package to use module services
 	tokenTransactionRepository := tokenRepo.NewTokenTransactionRepository(db)
 	tokenUsageHistoryRepository := tokenRepo.NewTokenUsageHistoryRepository(db)
 	tokenTransactionSvc := tokenService.NewTokenTransactionService(membershipRepository, tokenTransactionRepository, tokenUsageHistoryRepository, db)
@@ -89,21 +82,26 @@ func NewRest() RestConfig {
 		TokenTransactionService: tokenTransactionSvc,
 	}
 
-	// c.AddJob("0 0 1 * *", refillTokenJob)
 	c.AddJob("0 0 * * *", expireMembershipjob)
-
 	c.AddJob("0 0 * * *", refillTokenJob)
-
 	c.Start()
-	cacheService := cache.New()
 
+	cacheService := cache.New()
 	var exportService export.ExportService = export.New()
 
-	// Module
+	// Initialize all modules
 	auth.InitModule(server, db, middleware)
 	persona.InitModule(server, db, middleware)
 	kenalidiri.InitModule(server, db, middleware, cacheService, exportService)
 	token.InitModule(server, db, middleware)
+	poin.InitModule(server, db, middleware)
+	payment.InitModule(server, db, middleware, &tripayClient)
+	membership.InitModule(server, db, middleware)
+
+	// Hak akses modules
+	actioncategory.InitModule(server, db, middleware)
+	feature.InitModule(server, db, middleware)
+	entitlement.InitModule(server, db, middleware)
 
 	return RestConfig{
 		server:       server,
