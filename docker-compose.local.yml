@@ -7,7 +7,7 @@ services:
     volumes:
       - .:/app
     ports:
-      - ${APP_PORT:-8080}:8080
+      - ${APP_PORT:-8000}:${APP_PORT:-8000}
     depends_on:
       - db
     env_file: .env.dev
@@ -24,7 +24,7 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
     ports:
-      - 5432:5432
+      - 5433:5432
     networks:
       - rextra-net
 

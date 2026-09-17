@@ -6,13 +6,9 @@ type ValidateHashRequest struct {
 	Hash string `json:"hash"`
 }
 
-type RiasecQuestionSubmitRequest struct {
-	Answer []int `json:"answers"`
-}
+type RiasecQuestionSubmitRequest map[string]interface{}
 
-type IkigaiQuestionSubmitRequest struct {
-	Answer datatypes.JSON `json:"answers"`
-}
+type IkigaiQuestionSubmitRequest map[string]interface{}
 
 type IkigaiTest struct {
 	ChartData     datatypes.JSON `json:"chart_data"`

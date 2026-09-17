@@ -1,10 +1,6 @@
 package dto_response
 
-import (
-	"time"
 
-	"gorm.io/datatypes"
-)
 
 type RiasecQuestionResponse struct {
 	ID             string   `json:"id"`
@@ -14,38 +10,12 @@ type RiasecQuestionResponse struct {
 	Type           string   `json:"type"`
 }
 
-type RiasecQuestionSubmitResponse struct {
-	NormalizedScores datatypes.JSON `json:"normalized_scores"`
-	Profile          string           `json:"profile"`
-}
+type RiasecQuestionSubmitResponse map[string]interface{}
 
-type RiasecResultResponse struct {
-	ID            	 string   `json:"id"`
-	Profile          string           `json:"profile"`
-	NormalizedScores datatypes.JSON `json:"normalized_scores"`
-	CreatedAt    	time.Time `json:"created_at"`	
-}
+type RiasecResultResponse map[string]interface{}
 
-type IkigaiQuestionResponse struct {
-	IkigaiQuestions []datatypes.JSON `json:"ikigai_questions"`
-}
+type IkigaiQuestionResponse map[string]interface{}
 
-type IkigaiQuestionSubmitResponse struct {
-	ChartData datatypes.JSON `json:"chart_data"`
-    Hash string `json:"hash"`
-    Profile string `json:"profile"`
-    Results datatypes.JSON `json:"results"`
-    RiasecExplanations datatypes.JSON `json:"riasec_explanations"`
-    RiasecMapFull datatypes.JSON `json:"riasec_map_full"`
-}
+type IkigaiQuestionSubmitResponse map[string]interface{}
 
-type IkigaiResultResponse struct {
-	ID             string   `json:"id"`
-	Profile          string           `json:"profile"`
-	ChartData datatypes.JSON `json:"chart_data"`
-    Hash string `json:"hash"`
-    Results datatypes.JSON `json:"results"`
-    RiasecExplanations datatypes.JSON `json:"riasec_explanations"`
-    RiasecMapFull datatypes.JSON `json:"riasec_map_full"`
-	CreatedAt time.Time `json:"created_at"`
-}
+type IkigaiResultResponse map[string]interface{}

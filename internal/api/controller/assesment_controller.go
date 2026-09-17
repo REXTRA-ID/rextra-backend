@@ -81,7 +81,7 @@ func (c *assesmentcontroller) SubmitRiasecAnswer(ctx *gin.Context) {
 		return
 	}
 
-	if req.Answer == nil {
+	if len(req) == 0 {
 		response.NewFailed("failed submit riasec answer", myerror.ErrBodyRequest).Send(ctx)
 		return
 	}
@@ -147,7 +147,7 @@ func (c *assesmentcontroller) SubmitIkigaiAnswer(ctx *gin.Context) {
 		return
 	}
 
-	if req.Answer == nil {
+	if len(req) == 0 {
 		response.NewFailed("failed submit ikigai answer", myerror.ErrBodyRequest).Send(ctx)
 		return
 	}

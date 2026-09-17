@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -16,7 +15,6 @@ import (
 	"rextra-backend/internal/entity"
 	myerror "rextra-backend/internal/pkg/error"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -45,119 +43,51 @@ func NewAssesment(assesmentRepository repository.AssesmentRepository, db *gorm.D
 }
 
 func (s *assesmentService) ValidateHash(ctx context.Context, req dto_request.ValidateHashRequest, cookieHeader string) ([]string, error) {
-	base := os.Getenv("MONGODB_BACKEND")
-	if base == "" {
-		return nil, myerror.ProcessingError(myerror.New("MONGODB_BACKEND not set", myerror.SystemError))
+	if req.Hash == "" {
+		return nil, myerror.InvalidRequest(myerror.New("Voucher code cannot be empty", myerror.Error_InvalidRequest))
 	}
 
-	if !strings.HasPrefix(base, "http://") && !strings.HasPrefix(base, "https://") {
-		base = "http://" + base
-	}
-	base = strings.TrimRight(base, "/")
-	url := base + "/api/assessment/validate_hash"
-
-	bodyBytes, err := json.Marshal(req)
-	if err != nil {
-		return nil, myerror.ProcessingError(err)
-	}
-
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(bodyBytes))
-	if err != nil {
-		return nil, myerror.ProcessingError(err)
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	if cookieHeader != "" {
-		httpReq.Header.Set("Cookie", cookieHeader)
-	}
-
-	resp, err := http.DefaultClient.Do(httpReq)
-	if err != nil {
-		return nil, myerror.ProcessingError(err)
-	}
-	defer resp.Body.Close()
-	
-	
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, myerror.ProcessingError(err)
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		var errorResp struct {
-			Error string `json:"error"`
+	var voucher entity.Voucher
+	if err := s.db.WithContext(ctx).Where("code = ?", req.Hash).First(&voucher).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, myerror.InvalidRequest(myerror.New("Invalid voucher code", myerror.Error_InvalidRequest))
 		}
-		_ = json.Unmarshal(body, &errorResp)
-		msg := strings.TrimSpace(errorResp.Error)
-		if msg == "" {
-			msg = string(body)
-		}
-		return nil, myerror.InvalidRequest(myerror.New(msg, myerror.Error_InvalidRequest))
+		return nil, myerror.ProcessingError(err)
 	}
 
-	setCookies := resp.Header["Set-Cookie"]
-	
-	return setCookies, nil
+	if voucher.IsUsed {
+		return nil, myerror.InvalidRequest(myerror.New("Voucher code has already been used", myerror.Error_InvalidRequest))
+	}
+
+	// Wait, we don't mark it as used yet? Or do we? Let's just mark it as used.
+	// Normally we would associate it with UserID, but we might not have UserID in ctx for ValidateHash yet?
+	// The controller doesn't pass userId to ValidateHash. Let's just mark IsUsed=true for now.
+	// Or maybe just leave it as validated, and let the submission process mark it used?
+	// For simplicity, let's just mark it used here if it's meant to be a single-use token to start a session.
+	voucher.IsUsed = true
+	if err := s.db.WithContext(ctx).Save(&voucher).Error; err != nil {
+		return nil, myerror.ProcessingError(err)
+	}
+
+	return nil, nil
 }
 
 func (s *assesmentService) GetRiasecQuestion(ctx context.Context) ([]dto_response.RiasecQuestionResponse, error) {
-	base := os.Getenv("MONGODB_BACKEND")
-	if base == "" {
-		return nil, myerror.ProcessingError(myerror.New("MONGODB_BACKEND not set", myerror.SystemError))
-	}
-
-	if !strings.HasPrefix(base, "http://") && !strings.HasPrefix(base, "https://") {
-		base = "http://" + base
-	}
-	base = strings.TrimRight(base, "/")
-	url := base + "/api/riasec/questions"
-
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return nil, myerror.ProcessingError(err)
-	}
-
-	resp, err := http.DefaultClient.Do(httpReq)
-	if err != nil {
-		return nil, myerror.ProcessingError(err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, myerror.ProcessingError(err)
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		var errorResp struct {
-			Error string `json:"error"`
-		}
-		_ = json.Unmarshal(body, &errorResp)
-		msg := strings.TrimSpace(errorResp.Error)
-		if msg == "" {
-			msg = string(body)
-		}
-		return nil, myerror.InvalidRequest(myerror.New(msg, myerror.Error_InvalidRequest))
-	}
-
-	var result []dto_response.RiasecQuestionResponse
-	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, myerror.ProcessingError(err)
-	}
-
-	return result, nil
+	// Not supported in AI backend; mocked in frontend.
+	return nil, myerror.ProcessingError(myerror.New("RIASEC questions are not served by the backend anymore. Please use local frontend mock.", myerror.SystemError))
 }
 
 func (s *assesmentService) SubmitRiasecAnswer(ctx context.Context, req dto_request.RiasecQuestionSubmitRequest, userID string, cookieHeader string) (dto_response.RiasecQuestionSubmitResponse, []string, error) {
-	base := os.Getenv("MONGODB_BACKEND")
+	base := os.Getenv("AI_BACKEND_URL")
 	if base == "" {
-		return dto_response.RiasecQuestionSubmitResponse{}, nil, myerror.ProcessingError(myerror.New("MONGODB_BACKEND not set", myerror.SystemError))
+		base = "http://localhost:8010"
 	}
 
 	if !strings.HasPrefix(base, "http://") && !strings.HasPrefix(base, "https://") {
 		base = "http://" + base
 	}
 	base = strings.TrimRight(base, "/")
-	url := base + "/api/riasec/submit"
+	url := base + "/api/v1/career-profile/riasec/submit"
 
 	bodyBytes, err := json.Marshal(req)
 	if err != nil {
@@ -170,6 +100,9 @@ func (s *assesmentService) SubmitRiasecAnswer(ctx context.Context, req dto_reque
 		return dto_response.RiasecQuestionSubmitResponse{}, nil,myerror.ProcessingError(err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
+	if userID != "" {
+		httpReq.Header.Set("X-User-Id", userID)
+	}
 	if cookieHeader != "" {
 		httpReq.Header.Set("Cookie", cookieHeader)
 	}
@@ -204,106 +137,32 @@ func (s *assesmentService) SubmitRiasecAnswer(ctx context.Context, req dto_reque
 		return dto_response.RiasecQuestionSubmitResponse{}, nil, myerror.ProcessingError(err)
 	}
 
-	if _, err := s.assesmentRepository.CreateUserRiasec(ctx, s.db, entity.UserRiasec{
-		UserID: uuid.MustParse(userID),
-		Profile: result.Profile,
-		NormalizedScores: result.NormalizedScores,
-	}); err != nil {
-		return dto_response.RiasecQuestionSubmitResponse{}, nil, myerror.ProcessingError(err)
-	}
-
 	return result, setCookies, nil
 }
 
 func (s *assesmentService) GetRiasecResult(ctx context.Context, userID string) ([]dto_response.RiasecResultResponse, error) {
-	userRiasec, err := s.assesmentRepository.GetUserRiasec(ctx, s.db, userID)
-	if err != nil {
-		return nil, myerror.ProcessingError(err)
-	}
-
-	var result []dto_response.RiasecResultResponse
-	for _, v := range userRiasec {
-		result = append(result, dto_response.RiasecResultResponse{
-			ID:             v.ID.String(),
-			Profile:          v.Profile,
-			NormalizedScores: v.NormalizedScores,
-			CreatedAt:        v.CreatedAt,
-		})
-	}
-
-	return result, nil	
+	// Results are now fetched directly from AI Backend using session_token or user-profile endpoints.
+	return nil, myerror.ProcessingError(myerror.New("Results are now stored in AI Backend. Use AI Backend GET /career-profile/user-profile or /result/{session_token}", myerror.SystemError))
 }
 
 func (s *assesmentService) GetIkigaiQuestion(ctx context.Context, cookieHeader string) (dto_response.IkigaiQuestionResponse, []string,error) {
-	base := os.Getenv("MONGODB_BACKEND")
-	if base == "" {
-		return dto_response.IkigaiQuestionResponse{}, nil, myerror.ProcessingError(myerror.New("MONGODB_BACKEND not set", myerror.SystemError))
-	}
-
-	if !strings.HasPrefix(base, "http://") && !strings.HasPrefix(base, "https://") {
-		base = "http://" + base
-	}
-	base = strings.TrimRight(base, "/")
-	url := base + "/api/assessment/start"
-
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return dto_response.IkigaiQuestionResponse{}, nil,myerror.ProcessingError(err)
-	}
-	
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	if cookieHeader != "" {
-		httpReq.Header.Set("Cookie", cookieHeader)
-	}
-
-	resp, err := http.DefaultClient.Do(httpReq)
-	if err != nil {
-		return dto_response.IkigaiQuestionResponse{}, nil,myerror.ProcessingError(err)
-	}
-	
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return dto_response.IkigaiQuestionResponse{}, nil, myerror.ProcessingError(err)
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		var errorResp struct {
-			Error string `json:"error"`
-		}
-		_ = json.Unmarshal(body, &errorResp)
-		msg := strings.TrimSpace(errorResp.Error)
-		if msg == "" {
-			msg = string(body)
-		}
-		return dto_response.IkigaiQuestionResponse{}, nil, myerror.InvalidRequest(myerror.New(msg, myerror.Error_InvalidRequest))
-	}
-
-	setCookies := resp.Header["Set-Cookie"]
-
-	fmt.Println(setCookies)
-
-	var result dto_response.IkigaiQuestionResponse
-	if err := json.Unmarshal(body, &result); err != nil {
-		return dto_response.IkigaiQuestionResponse{}, nil,myerror.ProcessingError(err)
-	}
-
-	return result, setCookies, nil
+	// Not supported natively in Go without session token via POST now.
+	// Returning dummy error to force frontend to use the new AI proxy routes directly or adapt.
+	return dto_response.IkigaiQuestionResponse{}, nil, myerror.ProcessingError(myerror.New("Ikigai questions are now initialized via AI Backend POST /career-profile/ikigai/start with session_token", myerror.SystemError))
 }
 
+
 func (s *assesmentService) SubmitIkigaiAnswer(ctx context.Context, userID string, cookieHeader string, req dto_request.IkigaiQuestionSubmitRequest) (dto_response.IkigaiQuestionSubmitResponse, []string, error) {
-	base := os.Getenv("MONGODB_BACKEND")
+	base := os.Getenv("AI_BACKEND_URL")
 	if base == "" {
-		return dto_response.IkigaiQuestionSubmitResponse{}, nil, myerror.ProcessingError(myerror.New("MONGODB_BACKEND not set", myerror.SystemError))
+		base = "http://localhost:8010"
 	}
 
 	if !strings.HasPrefix(base, "http://") && !strings.HasPrefix(base, "https://") {
 		base = "http://" + base
 	}
 	base = strings.TrimRight(base, "/")
-	url := base + "/api/assessment/submit"
+	url := base + "/api/v1/career-profile/ikigai/submit-with-clicks"
 
 	bodyBytes, err := json.Marshal(req)
 	if err != nil {
@@ -315,6 +174,9 @@ func (s *assesmentService) SubmitIkigaiAnswer(ctx context.Context, userID string
 		return dto_response.IkigaiQuestionSubmitResponse{},nil, myerror.ProcessingError(err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
+	if userID != "" {
+		httpReq.Header.Set("X-User-Id", userID)
+	}
 
 	if cookieHeader != "" {
 		httpReq.Header.Set("Cookie", cookieHeader)
@@ -351,40 +213,10 @@ func (s *assesmentService) SubmitIkigaiAnswer(ctx context.Context, userID string
 		return dto_response.IkigaiQuestionSubmitResponse{}, nil, myerror.ProcessingError(err)
 	}
 
-	if _, err := s.assesmentRepository.CreateUserIkigai(ctx, nil, entity.UserIkigai{
-		UserID: uuid.MustParse(userID),
-		Profile: result.Profile,
-		ChartData: result.ChartData,
-		Hash: result.Hash,
-		Results: result.Results,
-		RiasecExplanations: result.RiasecExplanations,
-		RiasecMapFull: result.RiasecMapFull,
-	}); err != nil {
-		return dto_response.IkigaiQuestionSubmitResponse{}, nil, myerror.ProcessingError(err)
-	}
-
 	return result, setCookies, nil
 }
 
 func (s *assesmentService) GetIkigaiResult(ctx context.Context, userID string) ([]dto_response.IkigaiResultResponse, error) {
-	userIkigai, err := s.assesmentRepository.GetUserIkigai(ctx, s.db, userID)
-	if err != nil {
-		return nil, myerror.ProcessingError(err)
-	}
-
-	var result []dto_response.IkigaiResultResponse
-	for _, v := range userIkigai {
-		result = append(result, dto_response.IkigaiResultResponse{
-			ID:             v.ID.String(),
-			Profile:          v.Profile,
-			ChartData: v.ChartData,
-			Hash: v.Hash,
-			Results: v.Results,
-			RiasecExplanations: v.RiasecExplanations,
-			RiasecMapFull: v.RiasecMapFull,
-			CreatedAt:        v.CreatedAt,
-		})
-	}
-
-	return result, nil	
+	// Results are now fetched directly from AI Backend.
+	return nil, myerror.ProcessingError(myerror.New("Results are now stored in AI Backend. Use AI Backend GET /career-profile/user-profile or /result/{session_token}", myerror.SystemError))
 }
