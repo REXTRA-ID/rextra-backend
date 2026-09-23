@@ -47,7 +47,7 @@ func New() Mailer {
 
 func (m Mailer) Send(toEmail, subject string) Mailer {
 	mailer := gomail.NewMessage()
-	mailer.SetHeader("From", m.emailConfig.SenderName)
+	mailer.SetHeader("From", mailer.FormatAddress(m.emailConfig.AuthEmail, m.emailConfig.SenderName))
 	mailer.SetHeader("To", toEmail)
 	mailer.SetHeader("Subject", subject)
 	mailer.SetBody("text/html", m.Body)
