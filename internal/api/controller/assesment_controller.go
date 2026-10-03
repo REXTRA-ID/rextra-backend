@@ -45,7 +45,9 @@ func (c *assesmentcontroller) ValidateHash(ctx *gin.Context) {
 		return
 	}
 
-	setCookies, err := c.assesmentService.ValidateHash(ctx.Request.Context(), req, cookieHeader)
+	userID, _ := utils.GetUserIdFromCtx(ctx)
+
+	setCookies, err := c.assesmentService.ValidateHash(ctx.Request.Context(), req, cookieHeader, userID)
 	if err != nil {
 		response.NewFailed("failed validate hash", err).Send(ctx)
 		return

@@ -1,4 +1,4 @@
-package service
+﻿package service
 
 import (
 	"bytes"
@@ -7,7 +7,12 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"fmt"
 	"strings"
+	"time"
+
+	"cloud.google.com/go/firestore"
+	"github.com/google/uuid"
 
 	"rextra-backend/internal/api/repository"
 	dto_request "rextra-backend/internal/dto/request"
@@ -20,7 +25,7 @@ import (
 
 type (
 	AssesmentService interface {
-		ValidateHash(ctx context.Context, req dto_request.ValidateHashRequest, cookieHeader string) ([]string, error)
+		ValidateHash(ctx context.Context, req dto_request.ValidateHashRequest, cookieHeader string, userID string) ([]string, error)
 		GetRiasecQuestion(ctx context.Context) ([]dto_response.RiasecQuestionResponse, error)
 		SubmitRiasecAnswer(ctx context.Context, req dto_request.RiasecQuestionSubmitRequest, userID string, cookieHeader string) (dto_response.RiasecQuestionSubmitResponse, []string, error)
 		GetRiasecResult(ctx context.Context, userID string) ([]dto_response.RiasecResultResponse, error)
@@ -31,18 +36,20 @@ type (
 
 	assesmentService struct {
 		assesmentRepository repository.AssesmentRepository
-		db                *gorm.DB
+		db *gorm.DB
+		firestore *firestore.Client
 	}
 )
 
-func NewAssesment(assesmentRepository repository.AssesmentRepository, db *gorm.DB) AssesmentService {
+func NewAssesment(assesmentRepository repository.AssesmentRepository, db *gorm.DB, fs *firestore.Client) AssesmentService {
 	return &assesmentService{
 		assesmentRepository: assesmentRepository,
-		db:                db,
+		db: db,
+		firestore: fs,
 	}
 }
 
-func (s *assesmentService) ValidateHash(ctx context.Context, req dto_request.ValidateHashRequest, cookieHeader string) ([]string, error) {
+func (s *assesmentService) ValidateHash(ctx context.Context, req dto_request.ValidateHashRequest, cookieHeader string, userID string) ([]string, error) {
 	if req.Hash == "" {
 		return nil, myerror.InvalidRequest(myerror.New("Voucher code cannot be empty", myerror.Error_InvalidRequest))
 	}
@@ -52,29 +59,71 @@ func (s *assesmentService) ValidateHash(ctx context.Context, req dto_request.Val
 		if err == gorm.ErrRecordNotFound {
 			return nil, myerror.InvalidRequest(myerror.New("Invalid voucher code", myerror.Error_InvalidRequest))
 		}
-		return nil, myerror.ProcessingError(err)
+		fmt.Println("ERROR in GetRiasecQuestion: ", err); return nil, myerror.ProcessingError(err)
 	}
 
 	if voucher.IsUsed {
 		return nil, myerror.InvalidRequest(myerror.New("Voucher code has already been used", myerror.Error_InvalidRequest))
 	}
 
-	// Wait, we don't mark it as used yet? Or do we? Let's just mark it as used.
-	// Normally we would associate it with UserID, but we might not have UserID in ctx for ValidateHash yet?
-	// The controller doesn't pass userId to ValidateHash. Let's just mark IsUsed=true for now.
-	// Or maybe just leave it as validated, and let the submission process mark it used?
-	// For simplicity, let's just mark it used here if it's meant to be a single-use token to start a session.
 	voucher.IsUsed = true
+	if userID != "" {
+		if parsedUUID, err := uuid.Parse(userID); err == nil {
+			voucher.UserID = &parsedUUID
+		}
+	}
+	
+	now := time.Now()
+	voucher.UsedAt = &now
+
 	if err := s.db.WithContext(ctx).Save(&voucher).Error; err != nil {
-		return nil, myerror.ProcessingError(err)
+		fmt.Println("ERROR in GetRiasecQuestion: ", err); return nil, myerror.ProcessingError(err)
 	}
 
 	return nil, nil
 }
 
 func (s *assesmentService) GetRiasecQuestion(ctx context.Context) ([]dto_response.RiasecQuestionResponse, error) {
-	// Not supported in AI backend; mocked in frontend.
-	return nil, myerror.ProcessingError(myerror.New("RIASEC questions are not served by the backend anymore. Please use local frontend mock.", myerror.SystemError))
+	base := os.Getenv("AI_BACKEND_URL")
+	if base == "" {
+		base = "http://localhost:8010"
+	}
+	if !strings.HasPrefix(base, "http://") && !strings.HasPrefix(base, "https://") {
+		base = "http://" + base
+	}
+	base = strings.TrimRight(base, "/")
+	url := base + "/api/v1/career-profile/riasec/questions"
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		fmt.Println("ERROR in GetRiasecQuestion: ", err); return nil, myerror.ProcessingError(err)
+	}
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		fmt.Println("ERROR in GetRiasecQuestion: ", err); return nil, myerror.ProcessingError(err)
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("ERROR in GetRiasecQuestion: ", err); return nil, myerror.ProcessingError(err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("ERROR AI returned status: ", resp.StatusCode); return nil, myerror.ProcessingError(myerror.New("AI Backend returned error", myerror.SystemError))
+	}
+
+	// Parse JSON
+	var aiResp struct {
+		Data []dto_response.RiasecQuestionResponse `json:"data"`
+	}
+	if err := json.Unmarshal(bodyBytes, &aiResp); err != nil {
+		fmt.Println("ERROR in GetRiasecQuestion: ", err); return nil, myerror.ProcessingError(err)
+	}
+
+	return aiResp.Data, nil
 }
 
 func (s *assesmentService) SubmitRiasecAnswer(ctx context.Context, req dto_request.RiasecQuestionSubmitRequest, userID string, cookieHeader string) (dto_response.RiasecQuestionSubmitResponse, []string, error) {
@@ -220,3 +269,6 @@ func (s *assesmentService) GetIkigaiResult(ctx context.Context, userID string) (
 	// Results are now fetched directly from AI Backend.
 	return nil, myerror.ProcessingError(myerror.New("Results are now stored in AI Backend. Use AI Backend GET /career-profile/user-profile or /result/{session_token}", myerror.SystemError))
 }
+
+
+

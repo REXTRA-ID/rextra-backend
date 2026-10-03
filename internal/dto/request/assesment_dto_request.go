@@ -18,3 +18,8 @@ type IkigaiTest struct {
 	RiasecExplanations datatypes.JSON `json:"riasec_explanations"`
 	RiasecMapFull  datatypes.JSON `json:"riasec_map_full"`
 }
+
+type GenerateVouchersRequest struct {
+	Amount int    `json:"amount" binding:"required,min=1,max=1000"`
+	Prefix string `json:"prefix"` // optional, default "REXTRA"
+}

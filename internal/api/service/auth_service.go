@@ -1,4 +1,4 @@
-package service
+﻿package service
 
 import (
 	"context"
@@ -106,25 +106,37 @@ func (s *authService) registerUser(ctx context.Context, user entity.User) (dto_r
 	}
 	user.Password = hashPassword
 
+	// Jika SMTP tidak dikonfigurasi (local dev), langsung verifikasi user
+	smtpEmail := os.Getenv("SMTP_AUTH_EMAIL")
+	autoVerify := smtpEmail == ""
+
+	if autoVerify {
+		user.IsVerified = true
+	}
+
 	createResult, err := s.userRepository.Create(ctx, nil, user)
 	if err != nil {
 		return dto_response.RegisterResponse{}, err
 	}
 
-	token, err := myjwt.GenerateToken(map[string]string{
-		"user_id": createResult.ID.String(),
-		"email":   createResult.Email,
-	}, 24*time.Hour)
-	if err != nil {
-		return dto_response.RegisterResponse{}, err
-	}
+	// Kirim email verifikasi hanya jika SMTP dikonfigurasi
+	if !autoVerify {
+		token, err := myjwt.GenerateToken(map[string]string{
+			"user_id": createResult.ID.String(),
+			"email":   createResult.Email,
+		}, 24*time.Hour)
+		if err != nil {
+			return dto_response.RegisterResponse{}, err
+		}
 
-	token = fmt.Sprintf("%s/verifikasi-akun?token=%s", os.Getenv("FE_URL"), token)
-	if err := s.mailService.MakeMail("./internal/pkg/email/template/verification_email.html", map[string]any{
-		"Fullname": createResult.Fullname,
-		"Verify":   token,
-	}).Send(createResult.Email, "Verify Your Account").Error; err != nil {
-		return dto_response.RegisterResponse{}, err
+		token = fmt.Sprintf("%s/verifikasi-akun?token=%s", os.Getenv("FE_URL"), token)
+		// Jika email gagal dikirim, log saja tapi jangan blokir registrasi
+		if mailErr := s.mailService.MakeMail("./internal/pkg/email/template/verification_email.html", map[string]any{
+			"Fullname": createResult.Fullname,
+			"Verify":   token,
+		}).Send(createResult.Email, "Verify Your Account").Error; mailErr != nil {
+			fmt.Printf("[WARN] Gagal kirim email verifikasi ke %s: %v\n", createResult.Email, mailErr)
+		}
 	}
 
 	return dto_response.RegisterResponse{
@@ -230,7 +242,7 @@ func (s *authService) Login(ctx context.Context, req dto_request.LoginRequest) (
 		"user_id": user.ID.String(),
 		"email":   user.Email,
 		"role":    string(user.Role),
-	}, 1*time.Minute)
+	}, 24*time.Hour)
 	if err != nil {
 		return dto_response.LoginResponse{}, err
 	}
@@ -344,7 +356,7 @@ func (s *authService) LoginWithGoogle(ctx context.Context, idToken string) (dto_
 		"user_id": user.ID.String(),
 		"email":   user.Email,
 		"role":    string(user.Role),
-	}, 1*time.Minute)
+	}, 24*time.Hour)
 	if err != nil {
 		return dto_response.LoginResponse{}, err
 	}
@@ -358,7 +370,7 @@ func (s *authService) LoginWithGoogle(ctx context.Context, idToken string) (dto_
 	refreshToken, err := s.sessionRepository.Create(ctx, nil, entity.SessionToken{
 		UserID:       user.ID.String(),
 		Token:        token,
-		ExpiresAt:    time.Now().Add(30 * 24 * time.Hour),
+		ExpiresAt:    time.Now().Add(1 * time.Minute),
 		IsActive:     true,
 		AuthProvider: authToken.Firebase.SignInProvider,
 		DeviceInfo:   nil,
@@ -401,3 +413,4 @@ func (s *authService) Logout(ctx context.Context, req dto_request.LogoutRequest)
 
 	return nil
 }
+

@@ -19,3 +19,8 @@ type IkigaiQuestionResponse map[string]interface{}
 type IkigaiQuestionSubmitResponse map[string]interface{}
 
 type IkigaiResultResponse map[string]interface{}
+
+type GenerateVouchersResponse struct {
+	Generated int      `json:"generated"`
+	Codes     []string `json:"codes"`
+}

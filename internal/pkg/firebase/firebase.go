@@ -1,4 +1,4 @@
-package myfirebase
+﻿package myfirebase
 
 import (
 	"context"
@@ -12,6 +12,8 @@ import (
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
+"cloud.google.com/go/firestore"
+
 	"google.golang.org/api/option"
 )
 
@@ -86,4 +88,12 @@ func GetGooglePhoneNumber(accessToken string) (string, error) {
 		return profile.PhoneNumbers[0].Value, nil
 	}
 	return "", nil
+}
+
+func (f Firebase) GetFirestoreClient(ctx context.Context) (*firestore.Client, error) {
+	client, err := f.App.Firestore(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return client, nil
 }

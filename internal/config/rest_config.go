@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"rextra-backend/db"
 
@@ -37,6 +38,11 @@ func NewRest() RestConfig {
 	server := NewRouter(app)
 	firebaseApp := myfirebase.New()
 	middleware := middleware.New(db, firebaseApp.MustGetClient())
+	
+	firestoreClient, err := firebaseApp.GetFirestoreClient(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to init firestore: %v", err)
+	}
 
 	var (
 		//=========== (PACKAGE) ===========//
@@ -57,7 +63,8 @@ func NewRest() RestConfig {
 		personaService              service.PersonaService              = service.NewPersona(personaRepository, db)
 		riasecService               service.RiasecService               = service.NewRiasec(riasecRepository, db)
 		careerRecommendationService service.CareerRecommendationService = service.NewCareerRecommendation(careerRecommendationRepository, db)
-		assesmentService            service.AssesmentService            = service.NewAssesment(assesmentRepository, db)
+		assesmentService            service.AssesmentService            = service.NewAssesment(assesmentRepository, db, firestoreClient)
+		adminService                service.AdminService                = service.NewAdmin(db, firestoreClient)
 
 		//=========== (CONTROLLER) ===========//
 		authController                 controller.AuthController                 = controller.NewAuth(authService)
@@ -66,6 +73,7 @@ func NewRest() RestConfig {
 		riasecController               controller.RiasecController               = controller.NewRiasec(riasecService)
 		careerRecommendationController controller.CareerRecommendationController = controller.NewCareerRecommendation(careerRecommendationService)
 		assesmentController            controller.AssesmentController            = controller.NewAssesment(assesmentService)
+		adminController                controller.AdminController                = controller.NewAdmin(adminService)
 	)
 
 	// Register all routes
@@ -75,6 +83,7 @@ func NewRest() RestConfig {
 	routes.ServeRiasec(server, riasecController, middleware)
 	routes.ServeCareerRecommendation(server, careerRecommendationController, middleware)
 	routes.ServeAssesment(server, assesmentController, middleware)
+	routes.ServeAdmin(server, adminController)
 
 	return RestConfig{
 		server: server,
