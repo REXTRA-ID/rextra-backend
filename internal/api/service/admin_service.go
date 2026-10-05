@@ -1,4 +1,4 @@
-package service
+﻿package service
 
 import (
 	"context"
@@ -11,7 +11,6 @@ import (
 
 	dto_request "rextra-backend/internal/dto/request"
 	dto_response "rextra-backend/internal/dto/response"
-	"rextra-backend/internal/entity"
 	myerror "rextra-backend/internal/pkg/error"
 )
 
@@ -41,7 +40,6 @@ func (s *adminService) GenerateVouchers(ctx context.Context, req dto_request.Gen
 	prefix = strings.ToUpper(prefix)
 
 	var codes []string
-	var vouchers []entity.Voucher
 
 	for i := 0; i < req.Amount; i++ {
 		code := prefix + "-" + strings.ToUpper(strings.Split(uuid.New().String(), "-")[0])
@@ -64,3 +62,5 @@ func (s *adminService) GenerateVouchers(ctx context.Context, req dto_request.Gen
 		Codes:     codes,
 	}, nil
 }
+
+

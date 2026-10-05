@@ -1,4 +1,4 @@
-﻿package service
+package service
 
 import (
 	"context"
@@ -318,6 +318,7 @@ func (s *authService) SendVerificationEmail(ctx context.Context, email string) e
 func (s *authService) LoginWithGoogle(ctx context.Context, idToken string) (dto_response.LoginResponse, error) {
 	authToken, err := s.firebaseClient.VerifyIDToken(ctx, idToken)
 	if err != nil {
+		fmt.Printf("[GOOGLE LOGIN ERROR] VerifyIDToken failed: %v\n", err)
 		return dto_response.LoginResponse{}, myerror.InvalidToken()
 	}
 
